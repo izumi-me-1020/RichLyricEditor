@@ -62,6 +62,7 @@ const ImportPanel: React.FC = () => {
   const duration = useAudioStore((s) => s.duration);
   const setSource = useAudioStore((s) => s.setSource);
   const setMetadata = useProjectStore((s) => s.setMetadata);
+  const projectTitle = useProjectStore((s) => s.metadata.title);
 
   const handleFileDrop = useCallback(
     (file: File) => {
@@ -113,6 +114,7 @@ const ImportPanel: React.FC = () => {
 
   if (source && source.type === "youtube") {
     const videoId = source.videoId;
+    const displayTitle = projectTitle && projectTitle !== videoId ? projectTitle : videoId;
 
     return (
       <div data-tour="import-dropzone" className="flex flex-col-reverse flex-1 size-full">
@@ -129,8 +131,8 @@ const ImportPanel: React.FC = () => {
             style={{ height: ROW_HEIGHT }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-composer-text select-text">{videoId}</p>
-              <p className="text-xs text-composer-text-muted">from YouTube</p>
+              <p className="text-sm font-medium truncate text-composer-text select-text">{displayTitle}</p>
+              <p className="text-xs text-composer-text-muted select-text">{videoId} ・ from YouTube</p>
             </div>
 
             <div className="flex items-center gap-1.5">

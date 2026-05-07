@@ -8,6 +8,7 @@ interface SessionResponse {
 interface AudioResponse {
   tunnelUrl: string;
   expiresAt: number;
+  filename?: string;
   durationSec?: number;
 }
 

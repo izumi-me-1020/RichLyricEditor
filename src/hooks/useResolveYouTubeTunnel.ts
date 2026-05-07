@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useEnsureAuth } from "@/hooks/useEnsureAuth";
 import { useAudioStore } from "@/stores/audio";
+import { useProjectStore } from "@/stores/project";
 import { CobaltApiError, getAudio } from "@/utils/cobalt-api";
 
 // -- Constants ----------------------------------------------------------------
@@ -28,10 +29,17 @@ function useResolveYouTubeTunnel(): void {
       ensureRef
         .current()
         .then((jwt) => getAudio(videoId, jwt))
-        .then(({ tunnelUrl, expiresAt }) => {
+        .then(({ tunnelUrl, expiresAt, filename }) => {
           const current = useAudioStore.getState().source;
           if (current?.type === "youtube" && current.videoId === videoId) {
             useAudioStore.getState().setYouTubeTunnel(tunnelUrl, expiresAt);
+            if (filename) {
+              const project = useProjectStore.getState();
+              const currentTitle = project.metadata.title;
+              if (!currentTitle || currentTitle === videoId) {
+                project.setMetadata({ title: filename });
+              }
+            }
           }
         })
         .catch((err) => {

@@ -84,6 +84,7 @@ const useAudioStore = create<AudioState & AudioActions>((set, get) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
   registerAudioElement: (audioElement) => set({ audioElement }),
   seekTo: (time: number) => {
+    if (!Number.isFinite(time) || time < 0) return;
     const audio = get().audioElement;
     if (audio) {
       audio.currentTime = time;

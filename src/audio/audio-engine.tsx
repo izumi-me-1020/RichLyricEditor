@@ -58,8 +58,41 @@ const AudioEngine: React.FC = () => {
     audioRef.current = audio;
     registerAudioElement(audio);
 
-    const handleLoadedMetadata = () => setDuration(audio.duration);
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    let durationProbeActive = false;
+
+    const applyDuration = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+        if (durationProbeActive) {
+          durationProbeActive = false;
+          try {
+            audio.currentTime = 0;
+          } catch {}
+        }
+        return true;
+      }
+      return false;
+    };
+
+    const handleLoadedMetadata = () => {
+      if (applyDuration()) return;
+      if (audio.duration === Number.POSITIVE_INFINITY && !durationProbeActive) {
+        durationProbeActive = true;
+        try {
+          audio.currentTime = 1e9;
+        } catch {}
+      }
+    };
+    const handleDurationChange = () => {
+      applyDuration();
+    };
+    const handleTimeUpdate = () => {
+      if (durationProbeActive) {
+        applyDuration();
+        return;
+      }
+      setCurrentTime(audio.currentTime);
+    };
     const handleEnded = () => setIsPlaying(false);
     const handleError = (e: Event) => {
       console.error(LOG_PREFIX, "Audio error:", e);
@@ -77,12 +110,14 @@ const AudioEngine: React.FC = () => {
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("durationchange", handleDurationChange);
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("durationchange", handleDurationChange);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("error", handleError);
