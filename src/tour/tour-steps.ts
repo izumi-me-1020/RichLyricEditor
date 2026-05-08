@@ -112,7 +112,8 @@ function createTourSteps(): DriveStep[] {
       element: () => document.querySelector('[data-tour="timeline-panel"]') as Element,
       popover: {
         title: "Fine-tune on the timeline",
-        description: "Drag words to adjust timing. Use Cmd/Ctrl + scroll to zoom. Press F to toggle playhead follow.",
+        description:
+          "Drag words to adjust timing. Use Cmd/Ctrl + scroll to zoom. Press F to toggle playhead follow. Group repeating sections with Cmd/Ctrl+G, then duplicate them as linked instances with Cmd/Ctrl+D so edits propagate everywhere.",
         side: "top",
         align: "center",
       },

@@ -190,6 +190,21 @@ const TimelineContextMenu: React.FC = () => {
     clearContextMenu();
   }, [contextMenu, lines, setLinesWithHistory, clearContextMenu]);
 
+  const gutterLineGroupInfo = useMemo(() => {
+    if (!contextMenu || contextMenu.target.kind !== "gutter") return null;
+    const { lineId } = contextMenu.target;
+    const realLine = rawLines.find((l) => l.id === lineId);
+    if (!realLine?.groupId) return null;
+    return { lineId, groupId: realLine.groupId };
+  }, [contextMenu, rawLines]);
+
+  const handleDetachLine = useCallback(() => {
+    if (!gutterLineGroupInfo) return;
+    useProjectStore.getState().detachLine(gutterLineGroupInfo.lineId);
+    toast.success("Line detached. Cmd+Z to undo.");
+    clearContextMenu();
+  }, [gutterLineGroupInfo, clearContextMenu]);
+
   const handleAssignAgent = useCallback(
     (agentId: string) => {
       if (!contextMenu || contextMenu.target.kind !== "gutter") return;
@@ -492,6 +507,12 @@ const TimelineContextMenu: React.FC = () => {
                     );
                   })}
                 </div>
+                <MenuDivider />
+              </>
+            )}
+            {gutterLineGroupInfo && (
+              <>
+                <MenuItem label="Detach this line" onClick={handleDetachLine} />
                 <MenuDivider />
               </>
             )}

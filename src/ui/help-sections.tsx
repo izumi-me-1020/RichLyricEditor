@@ -386,6 +386,37 @@ const TimelineSection: React.FC = () => (
         <li>Right-click a word: Edit text, Split syllables, Merge (if multiple selected), Delete.</li>
         <li>Right-click empty track space: Add word here.</li>
         <li>Right-click the gutter: Add line above/below, Assign agent, Delete line.</li>
+        <li>Right-click a group banner: Add instance, Shift to playhead, Rename, Recolor, Detach instance, Delete group.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 className={HEADING}>Linked groups</h4>
+      <ul className={`${PROSE} list-disc pl-4 space-y-1`}>
+        <li>
+          Select a contiguous range of lines and press <strong>{MOD_KEY} + G</strong> to group them. The lines now share
+          a template: edits to text, agents, or splits propagate to every linked instance.
+        </li>
+        <li>
+          Select all words of one instance and press <strong>{MOD_KEY} + D</strong> to add a new linked instance at the
+          playhead. Structure and timing are inherited; subsequent timing edits stay local to that instance.
+        </li>
+        <li>
+          Drag the group banner horizontally to shift the entire instance in time. Sibling instances are unaffected.
+          Click the banner to select all words in the instance.
+        </li>
+        <li>
+          Hover the "1 of N" badge to ping every linked sibling so you can see at a glance where they sit on the
+          timeline.
+        </li>
+        <li>
+          Click the chevron on the banner to collapse the instance to a single strip. A subtle progress fill shows
+          playback position while collapsed.
+        </li>
+        <li>
+          Right-click any line in a group and choose <strong>Detach this line</strong> to make a single line diverge
+          (e.g. an extra "yeah" in the final chorus) without losing the rest of the link.
+        </li>
       </ul>
     </div>
 
