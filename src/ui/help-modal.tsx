@@ -126,6 +126,8 @@ const SHORTCUT_SECTIONS: ShortcutSectionProps[] = [
       { keys: ["F2"], description: "Edit selected word text" },
       { keys: ["S"], description: "Split selected word into syllables", shortcutId: "timeline.splitSyllable" },
       { keys: ["M"], description: "Merge adjacent selected words", shortcutId: "timeline.mergeWords" },
+      { keys: ["ArrowLeft"], description: "Nudge selected word left", shortcutId: "timeline.nudgeLeft" },
+      { keys: ["ArrowRight"], description: "Nudge selected word right", shortcutId: "timeline.nudgeRight" },
       { keys: ["Double Click"], description: "Edit word / create word" },
     ],
   },
