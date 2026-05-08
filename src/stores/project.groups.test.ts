@@ -465,3 +465,99 @@ describe("project store · shiftInstance", () => {
     expect(useProjectStore.getState().lines[0].begin).toBeCloseTo(10);
   });
 });
+
+describe("project store · updateLineWithHistory auto-propagation", () => {
+  function seedTwoInstancesWithTimings() {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "I love you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          begin: 30,
+          end: 32,
+        },
+        {
+          id: "a1",
+          text: "I love you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          begin: 60,
+          end: 62,
+        },
+      ],
+    });
+  }
+
+  it("propagates text edits to linked siblings", () => {
+    seedTwoInstancesWithTimings();
+    useProjectStore.getState().updateLineWithHistory("a0", { text: "I really love you" });
+
+    const lines = useProjectStore.getState().lines;
+    expect(lines.find((l) => l.id === "a0")?.text).toBe("I really love you");
+    expect(lines.find((l) => l.id === "a1")?.text).toBe("I really love you");
+  });
+
+  it("propagates agentId edits", () => {
+    seedTwoInstancesWithTimings();
+    useProjectStore.getState().updateLineWithHistory("a0", { agentId: "v1000" });
+
+    const lines = useProjectStore.getState().lines;
+    expect(lines.find((l) => l.id === "a0")?.agentId).toBe("v1000");
+    expect(lines.find((l) => l.id === "a1")?.agentId).toBe("v1000");
+  });
+
+  it("does NOT propagate per-instance fields like begin/end", () => {
+    seedTwoInstancesWithTimings();
+    useProjectStore.getState().updateLineWithHistory("a0", { begin: 25, end: 27 });
+
+    const lines = useProjectStore.getState().lines;
+    expect(lines.find((l) => l.id === "a0")?.begin).toBe(25);
+    expect(lines.find((l) => l.id === "a0")?.end).toBe(27);
+    expect(lines.find((l) => l.id === "a1")?.begin).toBe(60);
+    expect(lines.find((l) => l.id === "a1")?.end).toBe(62);
+  });
+
+  it("skips detached siblings", () => {
+    seedTwoInstancesWithTimings();
+    useProjectStore.setState((state) => ({
+      lines: state.lines.map((l) => (l.id === "a1" ? { ...l, detached: true } : l)),
+    }));
+
+    useProjectStore.getState().updateLineWithHistory("a0", { text: "new text" });
+
+    const lines = useProjectStore.getState().lines;
+    expect(lines.find((l) => l.id === "a0")?.text).toBe("new text");
+    expect(lines.find((l) => l.id === "a1")?.text).toBe("I love you");
+  });
+
+  it("does not affect lines from other groups", () => {
+    seedTwoInstancesWithTimings();
+    useProjectStore.setState((state) => ({
+      lines: [
+        ...state.lines,
+        { id: "x", text: "other group", agentId: "v1", groupId: "g2", instanceIdx: 0, templateLineIdx: 0 },
+      ],
+    }));
+
+    useProjectStore.getState().updateLineWithHistory("a0", { text: "changed" });
+
+    expect(useProjectStore.getState().lines.find((l) => l.id === "x")?.text).toBe("other group");
+  });
+
+  it("standalone (non-grouped) edits work as before (regression)", () => {
+    useProjectStore.setState({
+      lines: [{ id: "s", text: "standalone", agentId: "v1" }],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("s", { text: "edited" });
+
+    expect(useProjectStore.getState().lines[0].text).toBe("edited");
+  });
+});

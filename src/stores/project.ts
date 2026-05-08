@@ -231,14 +231,35 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
         });
       }
 
+      const target = state.lines.find((l) => l.id === id);
+      const propagateLinked =
+        target !== undefined &&
+        target.groupId !== undefined &&
+        target.templateLineIdx !== undefined &&
+        !target.detached;
+      const linkedUpdates = propagateLinked ? extractLinkedFields(updates) : null;
+      const linkedGroupId = propagateLinked ? target.groupId : null;
+      const linkedTemplateLineIdx = propagateLinked ? target.templateLineIdx : null;
+
       const newLines = state.lines.map((line) => {
-        if (line.id !== id) return line;
-        const merged = { ...line, ...updates };
-        if (updates.words?.length && line.begin !== undefined && !line.words?.length) {
-          merged.begin = undefined;
-          merged.end = undefined;
+        if (line.id === id) {
+          const merged = { ...line, ...updates };
+          if (updates.words?.length && line.begin !== undefined && !line.words?.length) {
+            merged.begin = undefined;
+            merged.end = undefined;
+          }
+          return merged;
         }
-        return merged;
+        if (
+          linkedUpdates !== null &&
+          Object.keys(linkedUpdates).length > 0 &&
+          line.groupId === linkedGroupId &&
+          line.templateLineIdx === linkedTemplateLineIdx &&
+          !line.detached
+        ) {
+          return { ...line, ...linkedUpdates };
+        }
+        return line;
       });
 
       newHistory.push({
@@ -590,6 +611,14 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       }),
     ),
 }));
+
+function extractLinkedFields(updates: Partial<LyricLine>): Partial<LyricLine> {
+  const linked: Partial<LyricLine> = {};
+  if ("text" in updates) linked.text = updates.text;
+  if ("agentId" in updates) linked.agentId = updates.agentId;
+  if ("backgroundText" in updates) linked.backgroundText = updates.backgroundText;
+  return linked;
+}
 
 function commitHistory(
   state: ProjectState,
