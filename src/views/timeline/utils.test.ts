@@ -10,6 +10,7 @@ import {
   getEffectiveRows,
   getLineTiming,
   type GroupHeaderRow,
+  getWordsInInstance,
   instanceTimingBounds,
 } from "./utils";
 
@@ -376,5 +377,54 @@ describe("instanceTimingBounds", () => {
     const bounds = instanceTimingBounds(lines);
     expect(bounds.start).toBe(4);
     expect(bounds.end).toBe(7);
+  });
+});
+
+describe("getWordsInInstance", () => {
+  it("collects all words and bg words across all lines of an instance", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 0, end: 1 },
+          { text: "love", begin: 1, end: 2 },
+        ],
+        backgroundWords: [{ text: "yeah", begin: 0.5, end: 1.5 }],
+      },
+      {
+        id: "b",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 1,
+        words: [{ text: "you", begin: 2, end: 3 }],
+      },
+      // Other instance
+      {
+        id: "c",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "I", begin: 30, end: 31 }],
+      },
+    ];
+
+    const sels = getWordsInInstance(lines, "g1", 0);
+    expect(sels).toHaveLength(4);
+    expect(sels.filter((s) => s.type === "word")).toHaveLength(3);
+    expect(sels.filter((s) => s.type === "bg")).toHaveLength(1);
+    expect(sels.every((s) => s.lineId === "a" || s.lineId === "b")).toBe(true);
+  });
+
+  it("returns empty for unmatched groupId or instanceIdx", () => {
+    expect(getWordsInInstance([], "g1", 0)).toEqual([]);
   });
 });

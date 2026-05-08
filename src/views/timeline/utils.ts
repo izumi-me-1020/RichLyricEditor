@@ -160,6 +160,36 @@ function getEffectiveRows(lines: LyricLine[]): EffectiveRow[] {
   return rows;
 }
 
+interface WordSelectionRef {
+  lineId: string;
+  lineIndex: number;
+  wordIndex: number;
+  type: "word" | "bg";
+}
+
+function getWordsInInstance(
+  lines: LyricLine[],
+  groupId: string,
+  instanceIdx: number,
+): WordSelectionRef[] {
+  const out: WordSelectionRef[] = [];
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    if (line.groupId !== groupId || line.instanceIdx !== instanceIdx) continue;
+    if (line.words?.length) {
+      for (let wordIndex = 0; wordIndex < line.words.length; wordIndex++) {
+        out.push({ lineId: line.id, lineIndex, wordIndex, type: "word" });
+      }
+    }
+    if (line.backgroundWords?.length) {
+      for (let wordIndex = 0; wordIndex < line.backgroundWords.length; wordIndex++) {
+        out.push({ lineId: line.id, lineIndex, wordIndex, type: "bg" });
+      }
+    }
+  }
+  return out;
+}
+
 // -- Exports -------------------------------------------------------------------
 
 export {
@@ -172,5 +202,6 @@ export {
   getEffectiveLines,
   getEffectiveRows,
   instanceTimingBounds,
+  getWordsInInstance,
 };
 export type { EffectiveRow, GroupHeaderRow, LineEffectiveRow };

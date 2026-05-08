@@ -1,8 +1,9 @@
-import type { LinkGroup } from "@/stores/project";
+import { type LinkGroup, useProjectStore } from "@/stores/project";
 import { cn } from "@/utils/cn";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
+import { getWordsInInstance } from "@/views/timeline/utils";
 import { IconChevronDown, IconChevronRight, IconLink } from "@tabler/icons-react";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -36,6 +37,16 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
 }) => {
   const pingingGroupId = useTimelineStore((s) => s.pingingGroupId);
   const isPinging = pingingGroupId === group.id;
+  const setSelectedWords = useTimelineStore((s) => s.setSelectedWords);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const lines = useProjectStore.getState().lines;
+      setSelectedWords(getWordsInInstance(lines, group.id, instanceIdx));
+    },
+    [group.id, instanceIdx, setSelectedWords],
+  );
 
   const left = Math.max(0, instanceStart * zoom - scrollLeft);
   const width = Math.max(BANNER_MIN_WIDTH, (instanceEnd - instanceStart) * zoom);
@@ -52,6 +63,7 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         "transition-[box-shadow,background] duration-150",
         isPinging && "ring-2 ring-offset-0",
       )}
+      onClick={handleClick}
       style={{
         left,
         width,
