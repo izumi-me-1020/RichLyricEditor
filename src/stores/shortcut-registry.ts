@@ -177,6 +177,18 @@ const SHORTCUT_REGISTRY: ShortcutDefinition[] = [
     description: "Import lyrics",
     defaultBinding: { key: "v", mod: true, shift: true },
   },
+  {
+    id: "timeline.nudgeLeft",
+    scope: "timeline",
+    description: "Nudge selected word left",
+    defaultBinding: { key: "ArrowLeft" },
+  },
+  {
+    id: "timeline.nudgeRight",
+    scope: "timeline",
+    description: "Nudge selected word right",
+    defaultBinding: { key: "ArrowRight" },
+  },
 ];
 
 // -- Helpers ------------------------------------------------------------------

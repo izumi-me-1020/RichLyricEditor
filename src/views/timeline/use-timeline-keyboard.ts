@@ -5,7 +5,7 @@ import { convertLineToWord } from "@/utils/sync-helpers";
 import { findMatchingShortcut } from "@/utils/shortcut-matcher";
 import { GUTTER_WIDTH, type WordSelection, useTimelineStore } from "@/views/timeline/timeline-store";
 import { useTimelineClipboard } from "@/views/timeline/use-timeline-clipboard";
-import { findWordAtTime, getLineTiming, isLineSynced } from "@/views/timeline/utils";
+import { findWordAtTime, getLineTiming, isLineSynced, nudgeSelectedWords } from "@/views/timeline/utils";
 import { type RefObject, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -262,6 +262,22 @@ function useTimelineKeyboard(
           e.preventDefault();
           handleSetWordTiming("end");
           break;
+        case "timeline.nudgeLeft":
+        case "timeline.nudgeRight": {
+          const { selectedWords: nudgeSel } = useTimelineStore.getState();
+          if (nudgeSel.length === 0) break;
+          e.preventDefault();
+          const nudgeAmount = useSettingsStore.getState().nudgeAmount;
+          const requestedDelta = matched === "timeline.nudgeLeft" ? -nudgeAmount : nudgeAmount;
+          const result = nudgeSelectedWords(lines, nudgeSel, requestedDelta, duration);
+          if (result.appliedDelta === 0) break;
+          if (result.updates.length === 1) {
+            useProjectStore.getState().updateLineWithHistory(result.updates[0].id, result.updates[0].updates);
+          } else {
+            useProjectStore.getState().updateLinesWithHistory(result.updates);
+          }
+          break;
+        }
         case "timeline.insertLineBelow":
         case "timeline.insertLineAbove": {
           const { selectedWords: nSel } = useTimelineStore.getState();
