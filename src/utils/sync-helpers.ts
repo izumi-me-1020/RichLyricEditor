@@ -24,6 +24,7 @@ interface LineTimingInput {
   begin?: number;
   end?: number;
   words?: WordTiming[];
+  backgroundWords?: WordTiming[];
 }
 
 // -- Constants ----------------------------------------------------------------
@@ -82,15 +83,26 @@ function getSyncedWordCount(lines: { words?: WordTiming[] }[]): number {
 }
 
 function getLineTiming(line: LineTimingInput): LineTiming | null {
+  let begin: number | undefined;
+  let end: number | undefined;
+
   if (line.words?.length) {
-    const firstWord = line.words[0];
-    const lastWord = line.words[line.words.length - 1];
-    return { begin: firstWord.begin, end: lastWord.end };
+    begin = line.words[0].begin;
+    end = line.words[line.words.length - 1].end;
+  } else if (line.begin !== undefined && line.end !== undefined) {
+    begin = line.begin;
+    end = line.end;
   }
-  if (line.begin !== undefined && line.end !== undefined) {
-    return { begin: line.begin, end: line.end };
+
+  if (line.backgroundWords?.length) {
+    if (begin === undefined || end === undefined) return null;
+    const bgBegin = line.backgroundWords[0].begin;
+    const bgEnd = line.backgroundWords[line.backgroundWords.length - 1].end;
+    begin = Math.min(begin, bgBegin);
+    end = Math.max(end, bgEnd);
   }
-  return null;
+
+  return begin !== undefined && end !== undefined ? { begin, end } : null;
 }
 
 function getSyncedLineCount(lines: LineTimingInput[]): number {

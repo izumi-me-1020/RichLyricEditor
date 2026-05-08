@@ -165,6 +165,101 @@ describe("getLineTiming", () => {
 
     expect(timing).toEqual({ begin: 3, end: 7 });
   });
+
+  it("extends end past main words when bg words end later", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      words: [
+        { text: "Hello", begin: 2, end: 5 },
+        { text: "World", begin: 5, end: 8 },
+      ],
+      backgroundText: "echo",
+      backgroundWords: [
+        { text: "ech", begin: 6, end: 9 },
+        { text: "o", begin: 9, end: 12 },
+      ],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toEqual({ begin: 2, end: 12 });
+  });
+
+  it("pulls begin earlier when bg words begin before main words", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      words: [{ text: "Hello", begin: 5, end: 8 }],
+      backgroundText: "ooh",
+      backgroundWords: [{ text: "ooh", begin: 3, end: 6 }],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toEqual({ begin: 3, end: 8 });
+  });
+
+  it("extends line-synced end when bg words extend past it", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      begin: 3,
+      end: 7,
+      backgroundText: "ahh",
+      backgroundWords: [{ text: "ahh", begin: 6, end: 10 }],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toEqual({ begin: 3, end: 10 });
+  });
+
+  it("leaves timing unchanged when bg words sit fully inside main range", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      words: [{ text: "Hello", begin: 2, end: 10 }],
+      backgroundText: "yeah",
+      backgroundWords: [{ text: "yeah", begin: 4, end: 7 }],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toEqual({ begin: 2, end: 10 });
+  });
+
+  it("ignores empty bg words array", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      words: [{ text: "Hello", begin: 2, end: 5 }],
+      backgroundWords: [],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toEqual({ begin: 2, end: 5 });
+  });
+
+  it("returns null when bg words exist but no main timing is set", () => {
+    const line = {
+      id: "1",
+      text: "Hello",
+      agentId: "v1",
+      backgroundText: "ooh",
+      backgroundWords: [{ text: "ooh", begin: 3, end: 6 }],
+    };
+
+    const timing = getLineTiming(line);
+
+    expect(timing).toBeNull();
+  });
 });
 
 // -- formatTime ----------------------------------------------------------------
