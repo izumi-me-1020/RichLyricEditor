@@ -1,4 +1,4 @@
-import type { WordTiming } from "@/stores/project";
+import type { LyricLine, WordTiming } from "@/stores/project";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -14,6 +14,7 @@ interface ClipboardData {
     groupId: string;
     instanceIdx: number;
   };
+  candidateLines?: LyricLine[];
 }
 
 type PasteMode = { status: "idle" } | { status: "preview"; clipboard: ClipboardData };

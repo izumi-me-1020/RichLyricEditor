@@ -1,4 +1,5 @@
 import { type LyricLine, useProjectStore } from "@/stores/project";
+import { buildCandidateLines } from "@/views/timeline/build-candidate-lines";
 import type { ClipboardData, ClipboardEntry } from "@/views/timeline/selection-types";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { getWordsInInstance } from "@/views/timeline/utils";
@@ -35,7 +36,12 @@ function useTimelineClipboard(lines: LyricLine[]) {
 
     const clipboard: ClipboardData = { entries };
     const sourceInstance = detectFullInstance(lines, selectedWords);
-    if (sourceInstance) clipboard.sourceInstance = sourceInstance;
+    if (sourceInstance) {
+      clipboard.sourceInstance = sourceInstance;
+    } else {
+      const candidateLines = buildCandidateLines(lines, selectedWords);
+      if (candidateLines) clipboard.candidateLines = candidateLines;
+    }
 
     useTimelineStore.getState().setClipboard(clipboard);
     toast(

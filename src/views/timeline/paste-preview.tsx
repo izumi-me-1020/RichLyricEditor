@@ -1,9 +1,11 @@
 import { useAudioStore } from "@/stores/audio";
+import { useConfirm } from "@/stores/confirm-store";
 import { type LyricLine, useProjectStore } from "@/stores/project";
 import { cn } from "@/utils/cn";
 import { GROUP_HEADER_HEIGHT } from "@/views/timeline/group-header-row";
 import { instanceToTemplate } from "@/views/timeline/group-ops";
 import type { ClipboardData } from "@/views/timeline/selection-types";
+import { findMatchingTemplate } from "@/views/timeline/structural-match";
 import { GUTTER_WIDTH, useTimelineStore } from "@/views/timeline/timeline-store";
 import { computeRowLayout, type RowLayout } from "@/views/timeline/utils";
 import { type RefObject, useCallback, useEffect, useState } from "react";
@@ -39,6 +41,7 @@ const BG_BORDER = 1;
 
 const PastePreview: React.FC<PastePreviewProps> = ({ clipboard, scrollContainerRef }) => {
   const [mousePos, setMousePos] = useState<{ clientX: number; clientY: number } | null>(null);
+  const confirm = useConfirm();
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -50,7 +53,7 @@ const PastePreview: React.FC<PastePreviewProps> = ({ clipboard, scrollContainerR
   }, []);
 
   const handleClick = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       if (e.button !== 0) return;
 
       const container = scrollContainerRef.current;
@@ -88,6 +91,34 @@ const PastePreview: React.FC<PastePreviewProps> = ({ clipboard, scrollContainerR
         useTimelineStore.getState().clearSelection();
         toast.success("Linked instance added");
         return;
+      }
+
+      if (clipboard.candidateLines && clipboard.candidateLines.length > 0) {
+        const match = findMatchingTemplate(clipboard.candidateLines, lines);
+        if (match) {
+          const group = useProjectStore.getState().groups.find((g) => g.id === match.groupId);
+          const groupLabel = group?.label ?? "group";
+          const instanceCount = countInstances(lines, match.groupId);
+          const ok = await confirm({
+            title: `Link as another ${groupLabel}?`,
+            description: `These ${clipboard.candidateLines.length} lines look like a ${groupLabel} (matches ${instanceCount} instance${instanceCount === 1 ? "" : "s"}). Link as another instance, or paste as plain words?`,
+            confirmLabel: "Link as instance",
+            cancelLabel: "Paste as words",
+          });
+          if (ok) {
+            const template = instanceToTemplate(lines, match.groupId, match.instanceIdx);
+            if (template.length === 0) {
+              toast.error("Could not derive instance template");
+              return;
+            }
+            const insertAt = hoveredLineIndex >= 0 ? hoveredLineIndex : undefined;
+            useProjectStore.getState().addInstance(match.groupId, template, Math.max(0, cursorTime), insertAt);
+            useTimelineStore.getState().setPasteMode({ status: "idle" });
+            useTimelineStore.getState().clearSelection();
+            toast.success(`Linked as another ${groupLabel}`);
+            return;
+          }
+        }
       }
 
       const targetLineIndex = hoveredLineIndex;
@@ -144,7 +175,7 @@ const PastePreview: React.FC<PastePreviewProps> = ({ clipboard, scrollContainerR
         useTimelineStore.getState().clearSelection();
       }
     },
-    [clipboard, scrollContainerRef],
+    [clipboard, scrollContainerRef, confirm],
   );
 
   const container = scrollContainerRef.current;
@@ -213,6 +244,14 @@ const PastePreview: React.FC<PastePreviewProps> = ({ clipboard, scrollContainerR
 };
 
 // -- Helpers -------------------------------------------------------------------
+
+function countInstances(lines: LyricLine[], groupId: string): number {
+  const seen = new Set<number>();
+  for (const line of lines) {
+    if (line.groupId === groupId && line.instanceIdx !== undefined) seen.add(line.instanceIdx);
+  }
+  return seen.size;
+}
 
 function getLineIndexAtY(y: number, lines: LyricLine[], layout: RowLayout): number {
   for (let i = 0; i < lines.length; i++) {
