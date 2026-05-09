@@ -9,6 +9,8 @@ import { cn } from "@/utils/cn";
 import { convertLineToWord, splitIntoWordsWithMeta } from "@/utils/sync-helpers";
 import { MAX_ZOOM, MIN_ZOOM, useTimelineStore } from "@/views/timeline/timeline-store";
 import {
+  IconChevronsDown,
+  IconChevronsUp,
   IconEye,
   IconFocusCentered,
   IconLayoutDistributeHorizontal,
@@ -39,8 +41,30 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics }) => {
   const toggleSelectOnlyMode = useTimelineStore((s) => s.toggleSelectOnlyMode);
   const showHints = useSettingsStore((s) => s.showShortcutHints);
   const lines = useProjectStore((s) => s.lines);
+  const collapsedInstances = useTimelineStore((s) => s.collapsedInstances);
+  const setInstanceCollapsed = useTimelineStore((s) => s.setInstanceCollapsed);
 
   const hasUnexpandedLines = useMemo(() => lines.some((l) => !l.words?.length && l.text.trim().length > 0), [lines]);
+
+  const instanceKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const line of lines) {
+      if (line.groupId !== undefined && line.instanceIdx !== undefined) {
+        keys.add(`${line.groupId}:${line.instanceIdx}`);
+      }
+    }
+    return [...keys];
+  }, [lines]);
+
+  const hasGroups = instanceKeys.length > 0;
+  const anyExpanded = useMemo(
+    () => instanceKeys.some((k) => !collapsedInstances[k]),
+    [instanceKeys, collapsedInstances],
+  );
+
+  const handleToggleAllCollapsed = useCallback(() => {
+    for (const k of instanceKeys) setInstanceCollapsed(k, anyExpanded);
+  }, [instanceKeys, anyExpanded, setInstanceCollapsed]);
 
   const handleExpandAll = useCallback(() => {
     const currentTime = useAudioStore.getState().currentTime;
@@ -156,6 +180,22 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics }) => {
             <IconLayoutDistributeHorizontal size={16} />
             <span>Expand All</span>
             {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.expandAll")} />}
+          </Button>
+        )}
+
+        {/* Collapse / expand all groups */}
+        {hasGroups && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleAllCollapsed}
+            hasIcon
+            className="opacity-60"
+            title={anyExpanded ? "Collapse all groups" : "Expand all groups"}
+          >
+            {anyExpanded ? <IconChevronsUp size={16} /> : <IconChevronsDown size={16} />}
+            <span>{anyExpanded ? "Collapse all" : "Expand all"}</span>
+            {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.toggleAllCollapsed")} />}
           </Button>
         )}
 

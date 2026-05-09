@@ -648,6 +648,41 @@ function useTimelineKeyboard(
           }, 700);
           break;
         }
+        case "timeline.jumpToInstanceStart": {
+          const projectLines = useProjectStore.getState().lines;
+          const inst = currentInstanceFromSelection(projectLines, useTimelineStore.getState().selectedWords);
+          if (!inst) {
+            toast.error("Select words inside one instance first");
+            break;
+          }
+          e.preventDefault();
+          scrollToInstanceHeader(inst.groupId, inst.instanceIdx);
+          break;
+        }
+        case "timeline.shiftInstanceToPlayhead": {
+          const projectLines = useProjectStore.getState().lines;
+          const inst = currentInstanceFromSelection(projectLines, useTimelineStore.getState().selectedWords);
+          if (!inst) {
+            toast.error("Select words inside one instance first");
+            break;
+          }
+          let earliest = Number.POSITIVE_INFINITY;
+          for (const line of projectLines) {
+            if (line.groupId !== inst.groupId || line.instanceIdx !== inst.instanceIdx) continue;
+            if (line.words?.length) {
+              for (const w of line.words) if (w.begin < earliest) earliest = w.begin;
+            }
+            if (line.begin !== undefined && line.begin < earliest) earliest = line.begin;
+          }
+          if (!Number.isFinite(earliest)) break;
+          const audioEl = useAudioStore.getState().audioElement;
+          const playheadTime = audioEl?.currentTime ?? useAudioStore.getState().currentTime;
+          const delta = playheadTime - earliest;
+          if (Math.abs(delta) < 0.001) break;
+          e.preventDefault();
+          useProjectStore.getState().shiftInstance(inst.groupId, inst.instanceIdx, delta);
+          break;
+        }
       }
     };
 

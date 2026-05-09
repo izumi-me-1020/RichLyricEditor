@@ -231,6 +231,18 @@ const SHORTCUT_REGISTRY: ShortcutDefinition[] = [
     description: "Ping sibling instances",
     defaultBinding: { key: "h" },
   },
+  {
+    id: "timeline.shiftInstanceToPlayhead",
+    scope: "timeline",
+    description: "Shift current instance to playhead",
+    defaultBinding: { key: "p", shift: true },
+  },
+  {
+    id: "timeline.jumpToInstanceStart",
+    scope: "timeline",
+    description: "Jump to start of current instance",
+    defaultBinding: { key: "j", shift: true },
+  },
 ];
 
 // -- Helpers ------------------------------------------------------------------

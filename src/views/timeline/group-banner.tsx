@@ -129,21 +129,6 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
     [group.id, instanceIdx, setContextMenu],
   );
 
-  const setRenamingGroupId = useTimelineStore((s) => s.setRenamingGroupId);
-  const handleLabelDoubleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
-        target: { kind: "group-banner", groupId: group.id, instanceIdx, source: "banner" },
-      });
-      setRenamingGroupId(group.id);
-    },
-    [group.id, instanceIdx, setContextMenu, setRenamingGroupId],
-  );
-
   const left = instanceStart * zoom;
   const width = Math.max(BANNER_MIN_WIDTH, (instanceEnd - instanceStart) * zoom);
   const deltaSecondsLive = dragOffsetPx / Math.max(zoom, 1);
@@ -200,15 +185,14 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         aria-label={isCollapsed ? "Expand instance" : "Collapse instance"}
         onClick={handleChevronClick}
         onPointerDown={handleChevronPointerDown}
+        onDoubleClick={(e) => e.stopPropagation()}
         className="shrink-0 cursor-pointer opacity-70 hover:opacity-100 transition-opacity p-0.5 relative before:content-[''] before:absolute before:-inset-2"
       >
         <IconChevronDown
           className={cn("w-3 h-3 transition-transform duration-200 ease-out", isCollapsed && "-rotate-90")}
         />
       </button>
-      <span className="font-semibold whitespace-nowrap" onDoubleClick={handleLabelDoubleClick}>
-        {group.label}
-      </span>
+      <span className="font-semibold whitespace-nowrap">{group.label}</span>
       <span
         className="flex items-center gap-1 text-composer-text-muted tabular-nums whitespace-nowrap ml-auto"
         onMouseEnter={handleBadgeMouseEnter}

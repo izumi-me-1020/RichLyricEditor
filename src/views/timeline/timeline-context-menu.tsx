@@ -700,6 +700,7 @@ const TimelineContextMenu: React.FC = () => {
               />
               <MenuItem
                 label={target.source === "gutter" ? "Jump to group" : "Jump to start"}
+                shortcut={getEffectiveKeysArray("timeline.jumpToInstanceStart")}
                 onClick={handleJumpToGroupFromBanner}
               />
               <MenuItem
@@ -713,7 +714,11 @@ const TimelineContextMenu: React.FC = () => {
                 shortcut={getEffectiveKeysArray("timeline.duplicateAsLinked")}
                 onClick={handleAddInstanceAtPlayhead}
               />
-              <MenuItem label="Shift instance to playhead" onClick={handleShiftToPlayhead} />
+              <MenuItem
+                label="Shift instance to playhead"
+                shortcut={getEffectiveKeysArray("timeline.shiftInstanceToPlayhead")}
+                onClick={handleShiftToPlayhead}
+              />
               <MenuItem
                 label="Jump to previous instance"
                 shortcut={getEffectiveKeysArray("timeline.jumpPrevInstance")}
@@ -725,7 +730,7 @@ const TimelineContextMenu: React.FC = () => {
                 onClick={handleJumpNextInstance}
               />
               <MenuDivider />
-              <MenuItem label="Rename" onClick={handleRenameStart} />
+              <MenuItem label="Rename" shortcut={["Double Click"]} onClick={handleRenameStart} />
               <MenuDivider />
               <p className="px-3 pt-1.5 pb-1 text-xs text-composer-text-muted">Recolor</p>
               <div className="px-3 pb-1.5 grid grid-cols-5 gap-1.5">

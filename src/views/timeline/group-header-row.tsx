@@ -84,6 +84,7 @@ const GroupHeaderRowComponent: React.FC<GroupHeaderRowProps> = ({
       className="relative flex"
       style={{ height: GROUP_HEADER_HEIGHT }}
       data-group-header={`${group.id}:${instanceIdx}`}
+      onDoubleClick={renaming ? undefined : startRename}
     >
       <div
         className="shrink-0 w-12 sticky left-0 z-[60] flex items-center justify-center px-1 select-none overflow-hidden border-r-2"
@@ -114,7 +115,6 @@ const GroupHeaderRowComponent: React.FC<GroupHeaderRowProps> = ({
             type="button"
             onClick={openGroupMenu}
             onContextMenu={openGroupMenu}
-            onDoubleClick={startRename}
             className="w-full h-full flex items-center justify-center cursor-pointer hover:brightness-110 transition-[filter]"
             title={`${group.label} · ${instanceIdx + 1} of ${totalInstances}`}
           >
