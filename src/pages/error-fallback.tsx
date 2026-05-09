@@ -1,4 +1,5 @@
 import { Button } from "@/ui/button";
+import { Scroll } from "@/ui/scroll";
 import {
   IconBug,
   IconChevronDown,
@@ -135,14 +136,18 @@ const ErrorFallback: React.FC = () => {
             {showDetails && (
               <div className="w-full flex flex-col gap-2 text-left">
                 {responseDataString && (
-                  <pre className="p-3 rounded-md bg-composer-button text-[11px] leading-relaxed text-composer-text-secondary overflow-auto max-h-48 select-text font-mono">
-                    {responseDataString}
-                  </pre>
+                  <Scroll className="rounded-md bg-composer-button max-h-48">
+                    <pre className="p-3 text-[11px] leading-relaxed text-composer-text-secondary select-text font-mono">
+                      {responseDataString}
+                    </pre>
+                  </Scroll>
                 )}
                 {details.stack && (
-                  <pre className="p-3 rounded-md bg-composer-button text-[11px] leading-relaxed text-composer-text-secondary overflow-auto max-h-72 select-text font-mono whitespace-pre-wrap">
-                    {details.stack}
-                  </pre>
+                  <Scroll className="rounded-md bg-composer-button max-h-72">
+                    <pre className="p-3 text-[11px] leading-relaxed text-composer-text-secondary select-text font-mono whitespace-pre-wrap">
+                      {details.stack}
+                    </pre>
+                  </Scroll>
                 )}
               </div>
             )}

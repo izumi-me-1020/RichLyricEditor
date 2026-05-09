@@ -1,3 +1,5 @@
+import { useSettingsStore } from "@/stores/settings";
+
 // -- Types --------------------------------------------------------------------
 
 interface SessionResponse {
@@ -60,7 +62,8 @@ function mapError(code: string): string {
 }
 
 function baseUrl(): string {
-  const url = import.meta.env.VITE_COBALT_API_URL;
+  const override = useSettingsStore.getState().customCobaltUrl.trim();
+  const url = override || import.meta.env.VITE_COBALT_API_URL;
   if (!url) {
     throw new Error(`${LOG_PREFIX} VITE_COBALT_API_URL is not configured`);
   }

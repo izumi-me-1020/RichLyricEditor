@@ -3,6 +3,7 @@ import { getAgentColor, useProjectStore } from "@/stores/project";
 import type { LyricLine } from "@/stores/project";
 import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
+import { Scroll } from "@/ui/scroll";
 import { type ParseResult, parseLyricsFile } from "@/utils/lyrics-parsers";
 import { textToLyricLines } from "@/utils/lyrics-text";
 import { stripSplitCharacter } from "@/utils/split-character";
@@ -554,7 +555,7 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto border rounded-lg border-composer-border bg-composer-bg-dark">
+          <Scroll className="flex-1 border rounded-lg border-composer-border bg-composer-bg-dark">
             {parsed.length === 0 || (parsed.length === 1 && parsed[0].isEmpty) ? (
               <div className="flex items-center justify-center h-full text-sm text-composer-text-muted">
                 Lyrics will appear here
@@ -617,7 +618,7 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                 })}
               </div>
             )}
-          </div>
+          </Scroll>
         </div>
       </div>
     </div>

@@ -31,6 +31,8 @@ interface SettingsState {
   confirmResetSettings: boolean;
   confirmResetShortcuts: boolean;
   confirmGroupDissolution: boolean;
+
+  customCobaltUrl: string;
 }
 
 interface SettingsActions {
@@ -67,6 +69,8 @@ const DEFAULTS: SettingsState = {
   confirmResetSettings: true,
   confirmResetShortcuts: true,
   confirmGroupDissolution: true,
+
+  customCobaltUrl: "",
 };
 
 // -- Store --------------------------------------------------------------------

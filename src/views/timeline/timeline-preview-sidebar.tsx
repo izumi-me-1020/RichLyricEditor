@@ -1,6 +1,7 @@
 import { useAudioStore } from "@/stores/audio";
 import { getAgentColor, useProjectStore } from "@/stores/project";
 import type { LyricLine } from "@/stores/project";
+import { Scroll } from "@/ui/scroll";
 import { stripSplitCharacter } from "@/utils/split-character";
 import { splitIntoWords } from "@/utils/sync-helpers";
 import { getLineTiming } from "@/views/timeline/utils";
@@ -236,11 +237,11 @@ const TimelinePreviewSidebar: React.FC = () => {
       <div className="px-3 py-2 border-b border-composer-border text-xs font-medium text-composer-text-muted">
         Preview
       </div>
-      <div ref={containerRef} className="flex-1 overflow-y-auto py-2">
+      <Scroll viewportRef={containerRef} className="flex-1 py-2">
         {lines.map((line, index) => (
           <MiniPreviewLine key={line.id} line={line} lineIndex={index} granularity={granularity} />
         ))}
-      </div>
+      </Scroll>
     </div>
   );
 };

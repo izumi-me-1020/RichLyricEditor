@@ -7,6 +7,7 @@ import { Button } from "@/ui/button";
 import { Modal } from "@/ui/modal";
 import { cn } from "@/utils/cn";
 import { ConfirmationsSettingsSection } from "@/ui/confirmations-settings-section";
+import { Scroll } from "@/ui/scroll";
 import { ShortcutsSettingsSection } from "@/ui/shortcuts-settings-section";
 import {
   IconAlertTriangle,
@@ -535,7 +536,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetT
       bodyClassName="p-0 flex-1 min-h-0 flex flex-col"
     >
       <div className="flex flex-1 min-h-0">
-        <nav className="w-44 shrink-0 border-r border-composer-border p-2 space-y-px overflow-y-auto select-none">
+        <Scroll className="w-44 shrink-0 border-r border-composer-border select-none p-2 space-y-px">
           {SECTIONS.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;
@@ -556,11 +557,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetT
               </button>
             );
           })}
-        </nav>
+        </Scroll>
 
-        <div className="flex-1 overflow-y-auto px-6 py-2">
+        <Scroll className="flex-1 px-6 py-2">
           {Content && <Content onResetTour={onResetTour} onClose={onClose} />}
-        </div>
+        </Scroll>
       </div>
 
       <div className="px-5 py-3 border-t border-composer-border text-xs text-composer-text-muted text-center shrink-0 select-none">

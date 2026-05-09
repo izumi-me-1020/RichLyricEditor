@@ -311,7 +311,11 @@ const TimelinePanel: React.FC = () => {
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div ref={contentRef} className="relative flex-1 flex flex-col overflow-hidden isolate">
+            <div
+              ref={contentRef}
+              data-timeline-scroll-host
+              className="relative flex-1 flex flex-col overflow-hidden isolate"
+            >
               <div
                 ref={scrollContainerRef}
                 data-scroll-container

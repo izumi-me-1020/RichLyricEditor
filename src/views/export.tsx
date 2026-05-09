@@ -4,6 +4,7 @@ import { useConfirm } from "@/stores/confirm-store";
 import { useProjectStore } from "@/stores/project";
 import { Button } from "@/ui/button";
 import { EmptyState } from "@/ui/empty-state";
+import { Scroll } from "@/ui/scroll";
 import { getLineTiming } from "@/utils/sync-helpers";
 import { generateTTML } from "@/utils/ttml";
 import {
@@ -256,7 +257,7 @@ const ExportPanel: React.FC = () => {
       </div>
 
       {/* Preview / Editor */}
-      <div className="flex-1 overflow-auto p-6">
+      <Scroll className="flex-1 p-6">
         {isEditing ? (
           <textarea
             value={editedContent ?? ""}
@@ -287,7 +288,7 @@ const ExportPanel: React.FC = () => {
             )}
           </Highlight>
         )}
-      </div>
+      </Scroll>
     </div>
   );
 };
