@@ -122,6 +122,12 @@ const ImportSection: React.FC = () => (
         <li>The file name auto-fills the project title in metadata.</li>
         <li>To replace audio, just drop a new file on the Import tab.</li>
       </ul>
+      <p className={`${PROSE} mt-3`}>
+        For YouTube imports, audio comes from a Cobalt backend. Composer ships with a default instance that handles
+        verification automatically. If it's slow or unreachable, add or pick a different one in Settings → Advanced.
+        Each custom instance shows a small status icon next to its name reflecting the last attempt, with the actual
+        error in the tooltip if anything went wrong.
+      </p>
     </div>
 
     <div>
@@ -505,7 +511,9 @@ const GroupsSection: React.FC = () => (
           instance, delete group).
         </li>
         <li>
-          <strong>Double-click the label</strong>: jumps straight into rename mode.
+          <strong>Double-click anywhere on the header row</strong>: drops the gutter label into an inline input so you
+          can rename the group. Enter saves, Escape cancels. The Rename item in the right-click menu does the same
+          thing.
         </li>
         <li>
           <strong>Hover the "1 of N" badge</strong>: every sibling instance pings briefly with the group's color so you
@@ -547,8 +555,49 @@ const GroupsSection: React.FC = () => (
         <li>
           <strong>{MOD_KEY} + Shift + G</strong>: delete the current group (asks for confirmation first).
         </li>
+        <li>
+          <strong>Shift + P</strong>: shift the current instance so its first word lands on the playhead.
+        </li>
+        <li>
+          <strong>Shift + J</strong>: scroll the timeline to the start of the current instance without changing the
+          selection.
+        </li>
       </ul>
       <p className={`${PROSE} mt-2`}>All of these are remappable in Settings → Shortcuts.</p>
+    </div>
+
+    <div>
+      <h4 className={HEADING}>Suggestions banner</h4>
+      <p className={PROSE}>
+        When the timeline detects two or more contiguous runs of identical lines that aren't grouped yet, a small bulb
+        banner appears under the toolbar. One suggestion shows inline with a Group them button. Multiple suggestions
+        collapse into a Review N button that opens a modal with each block previewed and a per-row Group / dismiss
+        action, plus a Group all button.
+      </p>
+      <p className={`${PROSE} mt-2`}>
+        Dismissals are per-project and content-based, so adding or removing unrelated lines elsewhere will not bring a
+        suggestion back. Editing the actual text inside a dismissed block does, since the structure has changed.
+      </p>
+    </div>
+
+    <div>
+      <h4 className={HEADING}>Pasting between instances</h4>
+      <p className={PROSE}>Two paste flows can land in an instance, and both behave the same way at the destination:</p>
+      <ul className={`${PROSE} list-disc pl-4 space-y-1`}>
+        <li>
+          Copy every word of an existing instance and paste somewhere. Composer treats the clipboard as a known instance
+          and links the destination automatically.
+        </li>
+        <li>
+          Copy every word of standalone lines whose text and word splits already match an existing template. Composer
+          asks "Link as another [Chorus]?". Yes links, No falls back to a regular word paste.
+        </li>
+      </ul>
+      <p className={`${PROSE} mt-2`}>
+        In both cases the destination is filled in place if there are enough empty rows starting at the cursor. If there
+        aren't, Composer asks before inserting new rows, since that would shift everything below down by N. Add rows in
+        the Edit view first if you want predictable layout.
+      </p>
     </div>
 
     <div>
