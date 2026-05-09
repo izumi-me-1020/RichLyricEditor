@@ -667,7 +667,7 @@ const AdvancedSection: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
-    <div className="py-4">
+    <div className="py-3">
       <div className="flex flex-col gap-0.5 mb-3">
         <span className="text-sm font-medium text-composer-text">Cobalt instance</span>
         <span className="text-xs text-composer-text-muted">

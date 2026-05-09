@@ -46,11 +46,14 @@ const ConfirmationToggle: React.FC<ConfirmationToggleProps> = ({ label, descript
 
 const ConfirmationsSettingsSection: React.FC = () => {
   return (
-    <div className="space-y-4 py-2">
-      <p className="text-xs text-composer-text-muted">
-        Toggle confirmation prompts for actions that can lose work. Turn one off to skip its warning until you re-enable
-        it here.
-      </p>
+    <div className="py-3">
+      <div className="flex flex-col gap-0.5 mb-3">
+        <span className="text-sm font-medium text-composer-text">Confirmation prompts</span>
+        <span className="text-xs text-composer-text-muted">
+          Toggle confirmation prompts for actions that can lose work. Turn one off to skip its warning until you
+          re-enable it here.
+        </span>
+      </div>
       <div className="divide-y divide-composer-border">
         <ConfirmationToggle
           label="Confirm replacing project from URL"
