@@ -16,6 +16,7 @@
   --color-composer-text-muted: rgba(255, 255, 255, 0.5);
   --color-composer-text-disabled: rgba(255, 255, 255, 0.4);
   --color-composer-text-tertiary: #aaa;
+  --color-composer-text-faint: #696b77;
 
   /* Interactive Elements */
   --color-composer-button: hsla(0, 0%, 100%, 0.1);

@@ -4,6 +4,15 @@ import { persist } from "zustand/middleware";
 // -- Types --------------------------------------------------------------------
 
 type GranularityDefault = "word" | "line";
+
+interface CobaltInstance {
+  id: string;
+  label: string;
+  url: string;
+}
+
+const DEFAULT_COBALT_INSTANCE_ID = "default";
+
 interface SettingsState {
   defaultPlaybackRate: number;
   rememberVolume: boolean;
@@ -32,12 +41,17 @@ interface SettingsState {
   confirmResetShortcuts: boolean;
   confirmGroupDissolution: boolean;
 
-  customCobaltUrl: string;
+  cobaltInstances: CobaltInstance[];
+  selectedCobaltInstanceId: string;
 }
 
 interface SettingsActions {
   set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
   resetToDefaults: () => void;
+  addCobaltInstance: (instance: Omit<CobaltInstance, "id">) => void;
+  updateCobaltInstance: (id: string, updates: Partial<Omit<CobaltInstance, "id">>) => void;
+  removeCobaltInstance: (id: string) => void;
+  selectCobaltInstance: (id: string) => void;
 }
 
 // -- Defaults -----------------------------------------------------------------
@@ -70,7 +84,14 @@ const DEFAULTS: SettingsState = {
   confirmResetShortcuts: true,
   confirmGroupDissolution: true,
 
-  customCobaltUrl: "",
+  cobaltInstances: [],
+  selectedCobaltInstanceId: DEFAULT_COBALT_INSTANCE_ID,
+};
+
+const BUILTIN_COBALT_INSTANCE: CobaltInstance = {
+  id: DEFAULT_COBALT_INSTANCE_ID,
+  label: "Composer",
+  url: "https://cobalt.boidu.dev",
 };
 
 // -- Store --------------------------------------------------------------------
@@ -91,13 +112,38 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           confirmResetSettings: state.confirmResetSettings,
           confirmResetShortcuts: state.confirmResetShortcuts,
           confirmGroupDissolution: state.confirmGroupDissolution,
+          cobaltInstances: state.cobaltInstances,
+          selectedCobaltInstanceId: state.selectedCobaltInstanceId,
         })),
+      addCobaltInstance: (instance) =>
+        set((state) => {
+          const id = crypto.randomUUID();
+          return { cobaltInstances: [...state.cobaltInstances, { ...instance, id }] };
+        }),
+      updateCobaltInstance: (id, updates) =>
+        set((state) => ({
+          cobaltInstances: state.cobaltInstances.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })),
+      removeCobaltInstance: (id) =>
+        set((state) => ({
+          cobaltInstances: state.cobaltInstances.filter((i) => i.id !== id),
+          selectedCobaltInstanceId:
+            state.selectedCobaltInstanceId === id ? DEFAULT_COBALT_INSTANCE_ID : state.selectedCobaltInstanceId,
+        })),
+      selectCobaltInstance: (id) => set({ selectedCobaltInstanceId: id }),
     }),
     { name: "composer-settings" },
   ),
 );
 
+function getActiveCobaltInstance(): CobaltInstance {
+  const state = useSettingsStore.getState();
+  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID) return BUILTIN_COBALT_INSTANCE;
+  const found = state.cobaltInstances.find((i) => i.id === state.selectedCobaltInstanceId);
+  return found ?? BUILTIN_COBALT_INSTANCE;
+}
+
 // -- Exports ------------------------------------------------------------------
 
-export { useSettingsStore, DEFAULTS };
-export type { SettingsState };
+export { useSettingsStore, DEFAULTS, BUILTIN_COBALT_INSTANCE, DEFAULT_COBALT_INSTANCE_ID, getActiveCobaltInstance };
+export type { SettingsState, CobaltInstance };

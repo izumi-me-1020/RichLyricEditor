@@ -1,4 +1,4 @@
-import { useSettingsStore } from "@/stores/settings";
+import { getActiveCobaltInstance } from "@/stores/settings";
 
 // -- Types --------------------------------------------------------------------
 
@@ -62,10 +62,9 @@ function mapError(code: string): string {
 }
 
 function baseUrl(): string {
-  const override = useSettingsStore.getState().customCobaltUrl.trim();
-  const url = override || import.meta.env.VITE_COBALT_API_URL;
+  const url = getActiveCobaltInstance().url || import.meta.env.VITE_COBALT_API_URL;
   if (!url) {
-    throw new Error(`${LOG_PREFIX} VITE_COBALT_API_URL is not configured`);
+    throw new Error(`${LOG_PREFIX} no Cobalt instance configured`);
   }
   return url.replace(/\/$/, "");
 }

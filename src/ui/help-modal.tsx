@@ -225,27 +225,29 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       bodyClassName="p-0 flex-1 min-h-0 flex flex-col"
     >
       <div className="flex flex-1 min-h-0">
-        <Scroll className="w-48 shrink-0 border-r border-composer-border select-none p-2 space-y-px">
-          {HELP_SECTIONS.map((section) => {
-            const Icon = section.icon;
-            const isActive = activeSection === section.id;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setActiveSection(section.id)}
-                className={cn(
-                  "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
-                  isActive
-                    ? "bg-composer-button text-composer-text font-medium"
-                    : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
-                )}
-              >
-                <Icon size={16} className="shrink-0" />
-                {section.label}
-              </button>
-            );
-          })}
+        <Scroll className="w-48 shrink-0 border-r border-composer-border select-none">
+          <div className="flex flex-col gap-px p-2">
+            {HELP_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
+                    isActive
+                      ? "bg-composer-button text-composer-text font-medium"
+                      : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
+                  )}
+                >
+                  <Icon size={16} className="shrink-0" />
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
         </Scroll>
 
         <Scroll className="flex-1 p-6">
