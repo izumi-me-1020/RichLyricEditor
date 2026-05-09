@@ -1,11 +1,11 @@
 import { type LinkGroup, useProjectStore } from "@/stores/project";
-import { groupPingVariants } from "@/utils/animationVariants";
+import { buildGroupPingVariants } from "@/utils/animationVariants";
 import { cn } from "@/utils/cn";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { getWordsInInstance } from "@/views/timeline/utils";
 import { IconChevronDown, IconLink } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -38,6 +38,7 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
 }) => {
   const pingingGroupId = useTimelineStore((s) => s.pingingGroupId);
   const isPinging = pingingGroupId === group.id;
+  const pingVariants = useMemo(() => buildGroupPingVariants(group.color), [group.color]);
   const setDraggedGroupShift = useTimelineStore((s) => s.setDraggedGroupShift);
   const setSelectedWords = useTimelineStore((s) => s.setSelectedWords);
 
@@ -174,7 +175,7 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
       data-instance-key={`${group.id}:${instanceIdx}`}
       data-instance-start={instanceStart}
       data-instance-end={instanceEnd}
-      variants={groupPingVariants}
+      variants={pingVariants}
       animate={isPinging ? "ping" : "idle"}
       className={cn(
         "absolute flex items-center gap-1 rounded-md cursor-grab select-none pl-1.5 pr-2.5",

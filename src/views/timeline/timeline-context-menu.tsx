@@ -6,6 +6,7 @@ import { getEffectiveKeysArray } from "@/stores/shortcut-bindings";
 import { useSettingsStore } from "@/stores/settings";
 import { formatKey } from "@/ui/help-modal";
 import { GROUP_COLORS } from "@/utils/group-colors";
+import { showGroupActionToast } from "@/utils/group-toast";
 import { isMac } from "@/utils/platform";
 import { convertLineToWord } from "@/utils/sync-helpers";
 import { findInsertionSlot, normalizeTrailingSpaces } from "@/utils/word-spaces";
@@ -209,7 +210,7 @@ const TimelineContextMenu: React.FC = () => {
   const handleDetachLine = useCallback(() => {
     if (!gutterLineGroupInfo) return;
     useProjectStore.getState().detachLine(gutterLineGroupInfo.lineId);
-    toast.success("Line detached. Cmd+Z to undo.");
+    showGroupActionToast("Line detached");
     clearContextMenu();
   }, [gutterLineGroupInfo, clearContextMenu]);
 
@@ -435,7 +436,7 @@ const TimelineContextMenu: React.FC = () => {
     if (!contextMenu || contextMenu.target.kind !== "group-banner") return;
     const { groupId, instanceIdx } = contextMenu.target;
     useProjectStore.getState().removeInstance(groupId, instanceIdx);
-    toast.success("Instance detached. Cmd+Z to undo.");
+    showGroupActionToast("Instance detached");
     clearContextMenu();
   }, [contextMenu, clearContextMenu]);
 
@@ -504,7 +505,7 @@ const TimelineContextMenu: React.FC = () => {
     });
     if (!ok) return;
     useProjectStore.getState().removeGroup(groupId);
-    toast.success("Group deleted");
+    showGroupActionToast("Group deleted");
   }, [contextMenu, groups, confirm, clearContextMenu]);
 
   const handleRenameStart = useCallback(() => {

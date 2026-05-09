@@ -1,3 +1,4 @@
+import { hexToRgba } from "@/utils/colors";
 import type { Transition, Variants } from "motion/react";
 
 // -- Transitions --------------------------------------------------------------
@@ -111,16 +112,20 @@ const syncPulseVariants: Variants = {
   },
 };
 
-const groupPingVariants: Variants = {
-  idle: {
-    boxShadow: "0 0 0 0 rgba(129, 140, 248, 0)",
-    transition: { duration: 0 },
-  },
-  ping: {
-    boxShadow: ["0 0 0 0 rgba(129, 140, 248, 0.55)", "0 0 0 8px rgba(129, 140, 248, 0)"],
-    transition: { duration: 0.6, ease: "easeOut" },
-  },
-};
+function buildGroupPingVariants(color: string): Variants {
+  const transparent = hexToRgba(color, 0);
+  const visible = hexToRgba(color, 0.55);
+  return {
+    idle: {
+      boxShadow: `0 0 0 0 ${transparent}`,
+      transition: { duration: 0 },
+    },
+    ping: {
+      boxShadow: [`0 0 0 0 ${visible}`, `0 0 0 8px ${transparent}`],
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+}
 
 const shimmerTransition: Transition = {
   type: "spring",
@@ -168,7 +173,7 @@ export {
   syncLineVariants,
   syncContextVariants,
   syncPulseVariants,
-  groupPingVariants,
+  buildGroupPingVariants,
   shimmerTransition,
   shimmerVariants,
 };

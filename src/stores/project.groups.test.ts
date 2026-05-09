@@ -554,4 +554,238 @@ describe("project store · updateLineWithHistory auto-propagation", () => {
 
     expect(useProjectStore.getState().lines[0].text).toBe("edited");
   });
+
+  it("propagates word text edits to siblings while preserving sibling timing", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "I love you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          words: [
+            { text: "I ", begin: 30, end: 30.4 },
+            { text: "love ", begin: 30.4, end: 30.8 },
+            { text: "you", begin: 30.8, end: 31.2 },
+          ],
+        },
+        {
+          id: "a1",
+          text: "I love you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          words: [
+            { text: "I ", begin: 60, end: 60.5 },
+            { text: "love ", begin: 60.5, end: 61.0 },
+            { text: "you", begin: 61.0, end: 61.5 },
+          ],
+        },
+      ],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("a0", {
+      words: [
+        { text: "I ", begin: 30, end: 30.4 },
+        { text: "really ", begin: 30.4, end: 30.8 },
+        { text: "you", begin: 30.8, end: 31.2 },
+      ],
+    });
+
+    const lines = useProjectStore.getState().lines;
+    const a1 = lines.find((l) => l.id === "a1");
+    expect(a1?.words?.[1].text).toBe("really ");
+    expect(a1?.words?.[1].begin).toBe(60.5);
+    expect(a1?.words?.[1].end).toBe(61.0);
+    expect(a1?.words?.[0].begin).toBe(60);
+    expect(a1?.words?.[2].end).toBe(61.5);
+  });
+
+  it("propagates background word text edits to siblings", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "main",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          backgroundText: "ohh ahh",
+          backgroundWords: [
+            { text: "ohh ", begin: 30, end: 30.5 },
+            { text: "ahh", begin: 30.5, end: 31 },
+          ],
+        },
+        {
+          id: "a1",
+          text: "main",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          backgroundText: "ohh ahh",
+          backgroundWords: [
+            { text: "ohh ", begin: 60, end: 60.7 },
+            { text: "ahh", begin: 60.7, end: 61.4 },
+          ],
+        },
+      ],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("a0", {
+      backgroundWords: [
+        { text: "ooh ", begin: 30, end: 30.5 },
+        { text: "yeah", begin: 30.5, end: 31 },
+      ],
+    });
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.backgroundWords?.[0].text).toBe("ooh ");
+    expect(a1?.backgroundWords?.[1].text).toBe("yeah");
+    expect(a1?.backgroundWords?.[0].begin).toBe(60);
+    expect(a1?.backgroundWords?.[1].end).toBe(61.4);
+  });
+
+  it("propagates word splits to siblings, scaling timing to sibling span", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "loving you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          words: [
+            { text: "loving ", begin: 0, end: 1 },
+            { text: "you", begin: 1, end: 2 },
+          ],
+        },
+        {
+          id: "a1",
+          text: "loving you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          words: [
+            { text: "loving ", begin: 10, end: 12 },
+            { text: "you", begin: 12, end: 14 },
+          ],
+        },
+      ],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("a0", {
+      words: [
+        { text: "lov", begin: 0, end: 0.5 },
+        { text: "ing ", begin: 0.5, end: 1 },
+        { text: "you", begin: 1, end: 2 },
+      ],
+    });
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.words?.length).toBe(3);
+    expect(a1?.words?.map((w) => w.text)).toEqual(["lov", "ing ", "you"]);
+    expect(a1?.words?.[0].begin).toBe(10);
+    expect(a1?.words?.[0].end).toBe(11);
+    expect(a1?.words?.[1].begin).toBe(11);
+    expect(a1?.words?.[1].end).toBe(12);
+    expect(a1?.words?.[2].begin).toBe(12);
+    expect(a1?.words?.[2].end).toBe(14);
+  });
+
+  it("propagates word merges (count decreases) to siblings", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "lov ing you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          words: [
+            { text: "lov", begin: 0, end: 0.5 },
+            { text: "ing ", begin: 0.5, end: 1 },
+            { text: "you", begin: 1, end: 2 },
+          ],
+        },
+        {
+          id: "a1",
+          text: "lov ing you",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          words: [
+            { text: "lov", begin: 10, end: 11 },
+            { text: "ing ", begin: 11, end: 12 },
+            { text: "you", begin: 12, end: 14 },
+          ],
+        },
+      ],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("a0", {
+      words: [
+        { text: "loving ", begin: 0, end: 1 },
+        { text: "you", begin: 1, end: 2 },
+      ],
+    });
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.words?.length).toBe(2);
+    expect(a1?.words?.map((w) => w.text)).toEqual(["loving ", "you"]);
+    expect(a1?.words?.[0].begin).toBe(10);
+    expect(a1?.words?.[0].end).toBe(12);
+    expect(a1?.words?.[1].begin).toBe(12);
+    expect(a1?.words?.[1].end).toBe(14);
+  });
+
+  it("does not propagate structural changes to detached siblings", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "a0",
+          text: "hi",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          words: [{ text: "hi", begin: 0, end: 1 }],
+        },
+        {
+          id: "a1",
+          text: "hi",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          detached: true,
+          words: [{ text: "hi", begin: 10, end: 11 }],
+        },
+      ],
+    });
+
+    useProjectStore.getState().updateLineWithHistory("a0", {
+      words: [
+        { text: "h", begin: 0, end: 0.5 },
+        { text: "i", begin: 0.5, end: 1 },
+      ],
+    });
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.words?.length).toBe(1);
+    expect(a1?.words?.[0].text).toBe("hi");
+  });
 });

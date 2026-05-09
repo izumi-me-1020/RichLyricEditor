@@ -210,3 +210,168 @@ describe("cross-track moves and history", () => {
     expect(useProjectStore.getState().historyIndex).toBe(beforeIndex);
   });
 });
+
+// -- linked-instance propagation -----------------------------------------------
+
+describe("moveWordToBg · linked propagation", () => {
+  function seedTwoLinkedInstances() {
+    useProjectStore.getState().addGroup({ id: "g1", label: "Chorus", color: "#f472b6", templateVersion: 1 });
+    useProjectStore.getState().setLines([
+      {
+        id: "a0",
+        text: "hello world goodbye",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "hello ", begin: 0, end: 1 },
+          { text: "world ", begin: 1, end: 2 },
+          { text: "goodbye", begin: 2, end: 3 },
+        ],
+      },
+      {
+        id: "a1",
+        text: "hello world goodbye",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [
+          { text: "hello ", begin: 10, end: 11 },
+          { text: "world ", begin: 11, end: 12 },
+          { text: "goodbye", begin: 12, end: 13 },
+        ],
+      },
+    ]);
+  }
+
+  it("moves the same word to BG in all linked siblings, using each sibling's local timing", () => {
+    seedTwoLinkedInstances();
+
+    useProjectStore.getState().moveWordToBg("a0", [2], 0, DURATION);
+
+    const lines = useProjectStore.getState().lines;
+    const a0 = lines.find((l) => l.id === "a0");
+    const a1 = lines.find((l) => l.id === "a1");
+
+    expect(a0?.words?.map((w) => w.text)).toEqual(["hello ", "world"]);
+    expect(a0?.backgroundWords).toEqual([{ text: "goodbye", begin: 2, end: 3 }]);
+
+    expect(a1?.words?.map((w) => w.text)).toEqual(["hello ", "world"]);
+    expect(a1?.backgroundWords).toEqual([{ text: "goodbye", begin: 12, end: 13 }]);
+  });
+
+  it("does not propagate to detached siblings", () => {
+    seedTwoLinkedInstances();
+    useProjectStore.setState((state) => ({
+      lines: state.lines.map((l) => (l.id === "a1" ? { ...l, detached: true } : l)),
+    }));
+
+    useProjectStore.getState().moveWordToBg("a0", [2], 0, DURATION);
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.backgroundWords).toBeUndefined();
+    expect(a1?.words?.length).toBe(3);
+  });
+
+  it("skips siblings whose word count differs (already out of sync)", () => {
+    seedTwoLinkedInstances();
+    useProjectStore.setState((state) => ({
+      lines: state.lines.map((l) =>
+        l.id === "a1"
+          ? {
+              ...l,
+              words: [
+                { text: "hello ", begin: 10, end: 11 },
+                { text: "goodbye", begin: 12, end: 13 },
+              ],
+            }
+          : l,
+      ),
+    }));
+
+    useProjectStore.getState().moveWordToBg("a0", [2], 0, DURATION);
+
+    const a1 = useProjectStore.getState().lines.find((l) => l.id === "a1");
+    expect(a1?.backgroundWords).toBeUndefined();
+    expect(a1?.words?.length).toBe(2);
+  });
+
+  it("does not affect lines from other groups or standalone lines", () => {
+    seedTwoLinkedInstances();
+    useProjectStore.setState((state) => ({
+      lines: [
+        ...state.lines,
+        {
+          id: "x",
+          text: "hello world goodbye",
+          agentId: "v1",
+          words: [
+            { text: "hello ", begin: 20, end: 21 },
+            { text: "world ", begin: 21, end: 22 },
+            { text: "goodbye", begin: 22, end: 23 },
+          ],
+        },
+      ],
+    }));
+
+    useProjectStore.getState().moveWordToBg("a0", [2], 0, DURATION);
+
+    const x = useProjectStore.getState().lines.find((l) => l.id === "x");
+    expect(x?.backgroundWords).toBeUndefined();
+    expect(x?.words?.length).toBe(3);
+  });
+});
+
+describe("moveWordFromBg · linked propagation", () => {
+  function seedTwoLinkedInstancesWithBg() {
+    useProjectStore.getState().addGroup({ id: "g1", label: "Chorus", color: "#f472b6", templateVersion: 1 });
+    useProjectStore.getState().setLines([
+      {
+        id: "a0",
+        text: "hello world",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "hello ", begin: 0, end: 1 },
+          { text: "world", begin: 1, end: 2 },
+        ],
+        backgroundWords: [{ text: "ooh", begin: 2, end: 3 }],
+        backgroundText: "ooh",
+      },
+      {
+        id: "a1",
+        text: "hello world",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [
+          { text: "hello ", begin: 10, end: 11 },
+          { text: "world", begin: 11, end: 12 },
+        ],
+        backgroundWords: [{ text: "ooh", begin: 12, end: 13 }],
+        backgroundText: "ooh",
+      },
+    ]);
+  }
+
+  it("flips a BG word back to main in all siblings", () => {
+    seedTwoLinkedInstancesWithBg();
+
+    useProjectStore.getState().moveWordFromBg("a0", [0], 0, DURATION);
+
+    const lines = useProjectStore.getState().lines;
+    const a0 = lines.find((l) => l.id === "a0");
+    const a1 = lines.find((l) => l.id === "a1");
+
+    expect(a0?.backgroundWords).toBeUndefined();
+    expect(a0?.words?.find((w) => w.text === "ooh")?.begin).toBe(2);
+
+    expect(a1?.backgroundWords).toBeUndefined();
+    expect(a1?.words?.find((w) => w.text === "ooh")?.begin).toBe(12);
+  });
+});

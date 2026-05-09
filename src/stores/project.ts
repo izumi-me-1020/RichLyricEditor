@@ -241,6 +241,10 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       const linkedUpdates = propagateLinked ? extractLinkedFields(updates) : null;
       const linkedGroupId = propagateLinked ? target.groupId : null;
       const linkedTemplateLineIdx = propagateLinked ? target.templateLineIdx : null;
+      const sourceWordsBefore = target?.words;
+      const sourceWordsAfter = updates.words;
+      const sourceBgWordsBefore = target?.backgroundWords;
+      const sourceBgWordsAfter = updates.backgroundWords;
 
       const newLines = state.lines.map((line) => {
         if (line.id === id) {
@@ -252,13 +256,17 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
           return merged;
         }
         if (
-          linkedUpdates !== null &&
-          Object.keys(linkedUpdates).length > 0 &&
+          propagateLinked &&
           line.groupId === linkedGroupId &&
           line.templateLineIdx === linkedTemplateLineIdx &&
           !line.detached
         ) {
-          return { ...line, ...linkedUpdates };
+          const siblingUpdates: Partial<LyricLine> = { ...(linkedUpdates ?? {}) };
+          const propagatedWords = propagateWordChanges(sourceWordsAfter, sourceWordsBefore, line.words);
+          if (propagatedWords) siblingUpdates.words = propagatedWords;
+          const propagatedBg = propagateWordChanges(sourceBgWordsAfter, sourceBgWordsBefore, line.backgroundWords);
+          if (propagatedBg) siblingUpdates.backgroundWords = propagatedBg;
+          if (Object.keys(siblingUpdates).length > 0) return { ...line, ...siblingUpdates };
         }
         return line;
       });
@@ -294,14 +302,32 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
 
       let newLines = [...state.lines];
       for (const { id, updates: lineUpdates } of updates) {
+        const target = newLines.find((l) => l.id === id);
+        const linkScope = target ? getLinkScope(target) : null;
+        const sourceWordsBefore = target?.words;
+        const sourceWordsAfter = lineUpdates.words;
+        const sourceBgBefore = target?.backgroundWords;
+        const sourceBgAfter = lineUpdates.backgroundWords;
+        const linkedUpdates = linkScope ? extractLinkedFields(lineUpdates) : null;
+
         newLines = newLines.map((line) => {
-          if (line.id !== id) return line;
-          const merged = { ...line, ...lineUpdates };
-          if (lineUpdates.words?.length && line.begin !== undefined && !line.words?.length) {
-            merged.begin = undefined;
-            merged.end = undefined;
+          if (line.id === id) {
+            const merged = { ...line, ...lineUpdates };
+            if (lineUpdates.words?.length && line.begin !== undefined && !line.words?.length) {
+              merged.begin = undefined;
+              merged.end = undefined;
+            }
+            return merged;
           }
-          return merged;
+          if (isLinkedSibling(line, linkScope)) {
+            const siblingUpdates: Partial<LyricLine> = { ...(linkedUpdates ?? {}) };
+            const propagatedWords = propagateWordChanges(sourceWordsAfter, sourceWordsBefore, line.words);
+            if (propagatedWords) siblingUpdates.words = propagatedWords;
+            const propagatedBg = propagateWordChanges(sourceBgAfter, sourceBgBefore, line.backgroundWords);
+            if (propagatedBg) siblingUpdates.backgroundWords = propagatedBg;
+            if (Object.keys(siblingUpdates).length > 0) return { ...line, ...siblingUpdates };
+          }
+          return line;
         });
       }
 
@@ -391,37 +417,27 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
 
   moveWordToBg: (lineId, wordIndices, timeDelta, duration) =>
     set((state) => {
+      const sourceLine = state.lines.find((l) => l.id === lineId);
+      if (!sourceLine?.words || wordIndices.length === 0) return state;
+      const sourceWordCount = sourceLine.words.length;
+      const linkScope = getLinkScope(sourceLine);
+
       let mutated = false;
       const newLines = state.lines.map((line) => {
-        if (line.id !== lineId || !line.words || wordIndices.length === 0) return line;
-
-        const indexSet = new Set(wordIndices);
-        const movedWords = line.words
-          .map((w, i) => ({ word: w, index: i }))
-          .filter(({ index }) => indexSet.has(index))
-          .map(({ word }) => {
-            const dur = word.end - word.begin;
-            const newBegin = Math.max(0, Math.min(duration - dur, word.begin + timeDelta));
-            return { ...word, begin: newBegin, end: newBegin + dur };
-          });
-
-        if (movedWords.length === 0) return line;
-
-        const remainingMain = normalizeTrailingSpaces(line.words.filter((_, i) => !indexSet.has(i)));
-        const mergedBg = normalizeTrailingSpaces(
-          resolveOverlapsForward(
-            [...(line.backgroundWords ?? []), ...movedWords].sort((a, b) => a.begin - b.begin),
-            duration,
-          ),
-        );
-
-        mutated = true;
-        return {
-          ...line,
-          words: remainingMain,
-          backgroundWords: mergedBg,
-          backgroundText: mergedBg.map((w) => w.text).join(""),
-        };
+        if (line.id === lineId) {
+          const updated = applyMoveToBg(line, wordIndices, timeDelta, duration);
+          if (!updated) return line;
+          mutated = true;
+          return updated;
+        }
+        if (isLinkedSibling(line, linkScope) && line.words?.length === sourceWordCount) {
+          const updated = applyMoveToBg(line, wordIndices, timeDelta, duration);
+          if (updated) {
+            mutated = true;
+            return updated;
+          }
+        }
+        return line;
       });
 
       if (!mutated) return state;
@@ -430,38 +446,27 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
 
   moveWordFromBg: (lineId, wordIndices, timeDelta, duration) =>
     set((state) => {
+      const sourceLine = state.lines.find((l) => l.id === lineId);
+      if (!sourceLine?.backgroundWords || wordIndices.length === 0) return state;
+      const sourceBgCount = sourceLine.backgroundWords.length;
+      const linkScope = getLinkScope(sourceLine);
+
       let mutated = false;
       const newLines = state.lines.map((line) => {
-        if (line.id !== lineId || !line.backgroundWords || wordIndices.length === 0) return line;
-
-        const indexSet = new Set(wordIndices);
-        const movedWords = line.backgroundWords
-          .map((w, i) => ({ word: w, index: i }))
-          .filter(({ index }) => indexSet.has(index))
-          .map(({ word }) => {
-            const dur = word.end - word.begin;
-            const newBegin = Math.max(0, Math.min(duration - dur, word.begin + timeDelta));
-            return { ...word, begin: newBegin, end: newBegin + dur };
-          });
-
-        if (movedWords.length === 0) return line;
-
-        const remainingBg = normalizeTrailingSpaces(line.backgroundWords.filter((_, i) => !indexSet.has(i)));
-        const mergedMain = normalizeTrailingSpaces(
-          resolveOverlapsForward(
-            [...(line.words ?? []), ...movedWords].sort((a, b) => a.begin - b.begin),
-            duration,
-          ),
-        );
-
-        const hasBg = remainingBg.length > 0;
-        mutated = true;
-        return {
-          ...line,
-          words: mergedMain,
-          backgroundWords: hasBg ? remainingBg : undefined,
-          backgroundText: hasBg ? remainingBg.map((w) => w.text).join("") : undefined,
-        };
+        if (line.id === lineId) {
+          const updated = applyMoveFromBg(line, wordIndices, timeDelta, duration);
+          if (!updated) return line;
+          mutated = true;
+          return updated;
+        }
+        if (isLinkedSibling(line, linkScope) && line.backgroundWords?.length === sourceBgCount) {
+          const updated = applyMoveFromBg(line, wordIndices, timeDelta, duration);
+          if (updated) {
+            mutated = true;
+            return updated;
+          }
+        }
+        return line;
       });
 
       if (!mutated) return state;
@@ -625,6 +630,124 @@ function extractLinkedFields(updates: Partial<LyricLine>): Partial<LyricLine> {
   if ("agentId" in updates) linked.agentId = updates.agentId;
   if ("backgroundText" in updates) linked.backgroundText = updates.backgroundText;
   return linked;
+}
+
+interface LinkScope {
+  groupId: string;
+  templateLineIdx: number;
+}
+
+function getLinkScope(line: LyricLine): LinkScope | null {
+  if (line.groupId === undefined || line.templateLineIdx === undefined || line.detached) return null;
+  return { groupId: line.groupId, templateLineIdx: line.templateLineIdx };
+}
+
+function isLinkedSibling(line: LyricLine, scope: LinkScope | null): boolean {
+  if (!scope) return false;
+  return line.groupId === scope.groupId && line.templateLineIdx === scope.templateLineIdx && !line.detached;
+}
+
+function applyMoveToBg(line: LyricLine, wordIndices: number[], timeDelta: number, duration: number): LyricLine | null {
+  if (!line.words) return null;
+  const indexSet = new Set(wordIndices);
+  const movedWords = line.words
+    .map((w, i) => ({ word: w, index: i }))
+    .filter(({ index }) => indexSet.has(index))
+    .map(({ word }) => {
+      const dur = word.end - word.begin;
+      const newBegin = Math.max(0, Math.min(duration - dur, word.begin + timeDelta));
+      return { ...word, begin: newBegin, end: newBegin + dur };
+    });
+
+  if (movedWords.length === 0) return null;
+
+  const remainingMain = normalizeTrailingSpaces(line.words.filter((_, i) => !indexSet.has(i)));
+  const mergedBg = normalizeTrailingSpaces(
+    resolveOverlapsForward(
+      [...(line.backgroundWords ?? []), ...movedWords].sort((a, b) => a.begin - b.begin),
+      duration,
+    ),
+  );
+
+  return {
+    ...line,
+    words: remainingMain,
+    backgroundWords: mergedBg,
+    backgroundText: mergedBg.map((w) => w.text).join(""),
+  };
+}
+
+function applyMoveFromBg(
+  line: LyricLine,
+  wordIndices: number[],
+  timeDelta: number,
+  duration: number,
+): LyricLine | null {
+  if (!line.backgroundWords) return null;
+  const indexSet = new Set(wordIndices);
+  const movedWords = line.backgroundWords
+    .map((w, i) => ({ word: w, index: i }))
+    .filter(({ index }) => indexSet.has(index))
+    .map(({ word }) => {
+      const dur = word.end - word.begin;
+      const newBegin = Math.max(0, Math.min(duration - dur, word.begin + timeDelta));
+      return { ...word, begin: newBegin, end: newBegin + dur };
+    });
+
+  if (movedWords.length === 0) return null;
+
+  const remainingBg = normalizeTrailingSpaces(line.backgroundWords.filter((_, i) => !indexSet.has(i)));
+  const mergedMain = normalizeTrailingSpaces(
+    resolveOverlapsForward(
+      [...(line.words ?? []), ...movedWords].sort((a, b) => a.begin - b.begin),
+      duration,
+    ),
+  );
+
+  const hasBg = remainingBg.length > 0;
+  return {
+    ...line,
+    words: mergedMain,
+    backgroundWords: hasBg ? remainingBg : undefined,
+    backgroundText: hasBg ? remainingBg.map((w) => w.text).join("") : undefined,
+  };
+}
+
+function propagateWordChanges(
+  sourceAfter: WordTiming[] | undefined,
+  sourceBefore: WordTiming[] | undefined,
+  siblingWords: WordTiming[] | undefined,
+): WordTiming[] | undefined {
+  if (!sourceAfter || !siblingWords) return undefined;
+
+  if (sourceBefore && sourceAfter.length === sourceBefore.length) {
+    if (sourceAfter.length !== siblingWords.length) return undefined;
+    let changed = false;
+    const next = siblingWords.map((w, i) => {
+      if (w.text === sourceAfter[i].text) return w;
+      changed = true;
+      return { ...w, text: sourceAfter[i].text };
+    });
+    return changed ? next : undefined;
+  }
+
+  if (sourceAfter.length === 0 || siblingWords.length === 0) return undefined;
+
+  const sourceStart = Math.min(...sourceAfter.map((w) => w.begin));
+  const sourceEnd = Math.max(...sourceAfter.map((w) => w.end));
+  const sourceSpan = sourceEnd - sourceStart;
+  if (sourceSpan <= 0) return undefined;
+
+  const siblingStart = Math.min(...siblingWords.map((w) => w.begin));
+  const siblingEnd = Math.max(...siblingWords.map((w) => w.end));
+  const siblingSpan = siblingEnd - siblingStart;
+  if (siblingSpan <= 0) return undefined;
+
+  return sourceAfter.map((w) => ({
+    text: w.text,
+    begin: siblingStart + ((w.begin - sourceStart) / sourceSpan) * siblingSpan,
+    end: siblingStart + ((w.end - sourceStart) / sourceSpan) * siblingSpan,
+  }));
 }
 
 function commitHistory(state: ProjectState, changes: { lines?: LyricLine[]; groups?: LinkGroup[] }) {
