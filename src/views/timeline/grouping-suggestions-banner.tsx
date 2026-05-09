@@ -120,7 +120,7 @@ const SuggestionsModal: React.FC<SuggestionsModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Grouping suggestions" className="max-w-xl" bodyClassName="p-0">
       <div className="px-5 py-3 border-b border-composer-border flex items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-2 text-composer-text-muted min-w-0">
-          <IconBulb className="w-4 h-4 text-composer-accent shrink-0" />
+          <IconBulb className="w-4 h-4 text-composer-text shrink-0 opacity-50" />
           <span className="truncate">
             {suggestions.length} repeating section{suggestions.length === 1 ? "" : "s"} detected
           </span>
