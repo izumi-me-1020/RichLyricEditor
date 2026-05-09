@@ -97,6 +97,7 @@ interface ProjectActions {
   addAgent: (agent: Agent) => void;
   updateAgent: (id: string, updates: Partial<Agent>) => void;
   removeAgent: (id: string) => void;
+  setAgents: (agents: Agent[]) => void;
   setGranularity: (mode: GranularityMode) => void;
   setEditorMode: (mode: EditorMode) => void;
   setActiveTab: (tab: SimpleTab) => void;
@@ -367,6 +368,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       agents: state.agents.filter((a) => a.id !== id),
       isDirty: true,
     })),
+
+  setAgents: (agents) => set({ agents, isDirty: true }),
 
   setGranularity: (granularity) => set({ granularity, isDirty: true }),
 

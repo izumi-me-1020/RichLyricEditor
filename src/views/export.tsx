@@ -32,7 +32,7 @@ const ExportPanel: React.FC = () => {
   const setMetadata = useProjectStore((s) => s.setMetadata);
   const setLines = useProjectStore((s) => s.setLines);
   const setGranularity = useProjectStore((s) => s.setGranularity);
-  const addAgent = useProjectStore((s) => s.addAgent);
+  const setAgents = useProjectStore((s) => s.setAgents);
   const reset = useProjectStore((s) => s.reset);
   const markClean = useProjectStore((s) => s.markClean);
   const confirm = useConfirm();
@@ -137,18 +137,14 @@ const ExportPanel: React.FC = () => {
       setLines(project.lines);
       useProjectStore.getState().setGroups(project.groups ?? []);
       setGranularity(project.granularity);
-      for (const agent of project.agents) {
-        if (!agents.find((a) => a.id === agent.id)) {
-          addAgent(agent);
-        }
-      }
+      setAgents(project.agents);
       markClean();
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     },
-    [agents, setMetadata, setLines, setGranularity, addAgent, markClean, confirm],
+    [setMetadata, setLines, setGranularity, setAgents, markClean, confirm],
   );
 
   const handleClearProject = useCallback(async () => {
