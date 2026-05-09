@@ -126,8 +126,8 @@ const SuggestionsModal: React.FC<SuggestionsModalProps> = ({
           </span>
         </div>
         {suggestions.length > 1 && (
-          <Button size="sm" variant="primary" hasIcon onClick={onAcceptAll}>
-            <IconLink className="w-3.5 h-3.5" />
+          <Button size="sm" variant="primary" hasIcon onClick={onAcceptAll} className="h-6 pl-1.5 pr-2 text-[11px]">
+            <IconLink className="w-3 h-3" />
             Group all
           </Button>
         )}
