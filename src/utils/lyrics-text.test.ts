@@ -114,4 +114,70 @@ describe("textToLyricLines · group attrs preservation", () => {
     expect(result[0].id).toBe("L1");
     expect(result[1].id).toBe("L2");
   });
+
+  it("preserves words on every instance of repeated text (not just the first)", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "chorus",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        begin: 10,
+        end: 11,
+        words: [{ text: "chorus", begin: 10, end: 11 }],
+      },
+      {
+        id: "L2",
+        text: "chorus",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        begin: 30,
+        end: 31,
+        words: [{ text: "chorus", begin: 30, end: 31 }],
+      },
+    ];
+    const result = textToLyricLines("chorus\nchorus", "v1", existing);
+    expect(result[0].words).toEqual(existing[0].words);
+    expect(result[0].begin).toBe(10);
+    expect(result[1].words).toEqual(existing[1].words);
+    expect(result[1].begin).toBe(30);
+  });
+
+  it("typo on first instance preserves the second instance's words", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "chorus",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        begin: 10,
+        end: 11,
+        words: [{ text: "chorus", begin: 10, end: 11 }],
+      },
+      {
+        id: "L2",
+        text: "chorus",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        begin: 30,
+        end: 31,
+        words: [{ text: "chorus", begin: 30, end: 31 }],
+      },
+    ];
+    const result = textToLyricLines("choru\nchorus", "v1", existing);
+    expect(result[0].id).toBe("L1");
+    expect(result[0].text).toBe("choru");
+    expect(result[0].words).toBeUndefined();
+    expect(result[1].id).toBe("L2");
+    expect(result[1].text).toBe("chorus");
+    expect(result[1].words).toEqual(existing[1].words);
+  });
 });
