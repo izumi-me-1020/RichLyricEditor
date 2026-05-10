@@ -211,14 +211,14 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       if (newHistory.length === 0) {
         newHistory.push({
-          lines: JSON.parse(JSON.stringify(state.lines)),
-          groups: JSON.parse(JSON.stringify(state.groups)),
+          lines: structuredClone(state.lines),
+          groups: structuredClone(state.groups),
           timestamp: Date.now(),
         });
       }
       newHistory.push({
-        lines: JSON.parse(JSON.stringify(lines)),
-        groups: JSON.parse(JSON.stringify(state.groups)),
+        lines: structuredClone(lines),
+        groups: structuredClone(state.groups),
         timestamp: Date.now(),
       });
       if (newHistory.length > MAX_HISTORY_SIZE) {
@@ -243,8 +243,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       if (newHistory.length === 0) {
         newHistory.push({
-          lines: JSON.parse(JSON.stringify(state.lines)),
-          groups: JSON.parse(JSON.stringify(state.groups)),
+          lines: structuredClone(state.lines),
+          groups: structuredClone(state.groups),
           timestamp: Date.now(),
         });
       }
@@ -289,8 +289,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       });
 
       newHistory.push({
-        lines: JSON.parse(JSON.stringify(newLines)),
-        groups: JSON.parse(JSON.stringify(state.groups)),
+        lines: structuredClone(newLines),
+        groups: structuredClone(state.groups),
         timestamp: Date.now(),
       });
 
@@ -311,8 +311,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       if (newHistory.length === 0) {
         newHistory.push({
-          lines: JSON.parse(JSON.stringify(state.lines)),
-          groups: JSON.parse(JSON.stringify(state.groups)),
+          lines: structuredClone(state.lines),
+          groups: structuredClone(state.groups),
           timestamp: Date.now(),
         });
       }
@@ -349,8 +349,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       }
 
       newHistory.push({
-        lines: JSON.parse(JSON.stringify(newLines)),
-        groups: JSON.parse(JSON.stringify(state.groups)),
+        lines: structuredClone(newLines),
+        groups: structuredClone(state.groups),
         timestamp: Date.now(),
       });
 
@@ -409,8 +409,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       if (state.historyIndex <= 0) return state;
       const entry = state.history[state.historyIndex - 1];
       return {
-        lines: JSON.parse(JSON.stringify(entry.lines)),
-        groups: JSON.parse(JSON.stringify(entry.groups)),
+        lines: structuredClone(entry.lines),
+        groups: structuredClone(entry.groups),
         historyIndex: state.historyIndex - 1,
         isDirty: true,
       };
@@ -421,8 +421,8 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
       if (state.historyIndex >= state.history.length - 1) return state;
       const entry = state.history[state.historyIndex + 1];
       return {
-        lines: JSON.parse(JSON.stringify(entry.lines)),
-        groups: JSON.parse(JSON.stringify(entry.groups)),
+        lines: structuredClone(entry.lines),
+        groups: structuredClone(entry.groups),
         historyIndex: state.historyIndex + 1,
         isDirty: true,
       };
@@ -876,14 +876,14 @@ function commitHistory(state: ProjectState, changes: { lines?: LyricLine[]; grou
   const newHistory = state.history.slice(0, state.historyIndex + 1);
   if (newHistory.length === 0) {
     newHistory.push({
-      lines: JSON.parse(JSON.stringify(state.lines)),
-      groups: JSON.parse(JSON.stringify(state.groups)),
+      lines: structuredClone(state.lines),
+      groups: structuredClone(state.groups),
       timestamp: Date.now(),
     });
   }
   newHistory.push({
-    lines: JSON.parse(JSON.stringify(nextLines)),
-    groups: JSON.parse(JSON.stringify(nextGroups)),
+    lines: structuredClone(nextLines),
+    groups: structuredClone(nextGroups),
     timestamp: Date.now(),
   });
   if (newHistory.length > MAX_HISTORY_SIZE) newHistory.shift();
