@@ -4,6 +4,7 @@ import { useConfirm } from "@/stores/confirm-store";
 import { useProjectStore } from "@/stores/project";
 import { Button } from "@/ui/button";
 import { EmptyState } from "@/ui/empty-state";
+import { Scroll } from "@/ui/scroll";
 import { getLineTiming } from "@/utils/sync-helpers";
 import { generateTTML } from "@/utils/ttml";
 import {
@@ -25,12 +26,13 @@ const ExportPanel: React.FC = () => {
   const metadata = useProjectStore((s) => s.metadata);
   const agents = useProjectStore((s) => s.agents);
   const lines = useProjectStore((s) => s.lines);
+  const groups = useProjectStore((s) => s.groups);
   const granularity = useProjectStore((s) => s.granularity);
   const duration = useAudioStore((s) => s.duration);
   const setMetadata = useProjectStore((s) => s.setMetadata);
   const setLines = useProjectStore((s) => s.setLines);
   const setGranularity = useProjectStore((s) => s.setGranularity);
-  const addAgent = useProjectStore((s) => s.addAgent);
+  const setAgents = useProjectStore((s) => s.setAgents);
   const reset = useProjectStore((s) => s.reset);
   const markClean = useProjectStore((s) => s.markClean);
   const confirm = useConfirm();
@@ -50,13 +52,13 @@ const ExportPanel: React.FC = () => {
 
   const generatedTtml = useMemo(() => {
     if (!hasSyncedContent) return "";
-    return generateTTML({ metadata, agents, lines, granularity, duration });
-  }, [metadata, agents, lines, granularity, duration, hasSyncedContent]);
+    return generateTTML({ metadata, agents, lines, groups, granularity, duration });
+  }, [metadata, agents, lines, groups, granularity, duration, hasSyncedContent]);
 
   const minifiedTtml = useMemo(() => {
     if (!hasSyncedContent) return "";
-    return generateTTML({ metadata, agents, lines, granularity, minify: true, duration });
-  }, [metadata, agents, lines, granularity, duration, hasSyncedContent]);
+    return generateTTML({ metadata, agents, lines, groups, granularity, minify: true, duration });
+  }, [metadata, agents, lines, groups, granularity, duration, hasSyncedContent]);
 
   // Reset edited content when generated content changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset when generated content changes
@@ -107,8 +109,9 @@ const ExportPanel: React.FC = () => {
   const handleExportProject = useCallback(() => {
     const audioSource = useAudioStore.getState().source;
     const audioFileName = audioSource?.type === "file" ? audioSource.file.name : undefined;
-    exportProjectToFile(metadata, agents, lines, granularity, audioFileName);
-  }, [metadata, agents, lines, granularity]);
+    const dismissed = useProjectStore.getState().dismissedSuggestions;
+    exportProjectToFile(metadata, agents, lines, groups, granularity, dismissed, audioFileName);
+  }, [metadata, agents, lines, groups, granularity]);
 
   const handleImportProject = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,19 +136,17 @@ const ExportPanel: React.FC = () => {
       const project = await importProjectFromFile(file);
       setMetadata(project.metadata);
       setLines(project.lines);
+      useProjectStore.getState().setGroups(project.groups ?? []);
+      useProjectStore.getState().setDismissedSuggestions(project.dismissedSuggestions ?? []);
       setGranularity(project.granularity);
-      for (const agent of project.agents) {
-        if (!agents.find((a) => a.id === agent.id)) {
-          addAgent(agent);
-        }
-      }
+      setAgents(project.agents);
       markClean();
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     },
-    [agents, setMetadata, setLines, setGranularity, addAgent, markClean, confirm],
+    [setMetadata, setLines, setGranularity, setAgents, markClean, confirm],
   );
 
   const handleClearProject = useCallback(async () => {
@@ -254,7 +255,7 @@ const ExportPanel: React.FC = () => {
       </div>
 
       {/* Preview / Editor */}
-      <div className="flex-1 overflow-auto p-6">
+      <Scroll className="flex-1 p-6">
         {isEditing ? (
           <textarea
             value={editedContent ?? ""}
@@ -285,7 +286,7 @@ const ExportPanel: React.FC = () => {
             )}
           </Highlight>
         )}
-      </div>
+      </Scroll>
     </div>
   );
 };

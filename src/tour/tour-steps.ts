@@ -1,6 +1,7 @@
 import type { DriveStep } from "driver.js";
 import { useAudioStore } from "@/stores/audio";
 import { useProjectStore } from "@/stores/project";
+import { MOD_KEY } from "@/utils/platform";
 
 // -- Types --------------------------------------------------------------------
 
@@ -113,8 +114,7 @@ function createTourSteps(): DriveStep[] {
       element: () => document.querySelector('[data-tour="timeline-panel"]') as Element,
       popover: {
         title: "Fine-tune on the timeline",
-        description:
-          "Drag words to adjust timing, or select a word and use the arrow keys to nudge it. Cmd/Ctrl + scroll to zoom, F to toggle playhead follow.",
+        description: `Drag words to adjust timing, or select words and nudge them with the arrow keys. ${MOD_KEY} + scroll to zoom, F to toggle playhead follow. Group repeating sections with ${MOD_KEY}+G, then duplicate them as linked instances with ${MOD_KEY}+D so edits propagate everywhere.`,
         side: "top",
         align: "center",
       },

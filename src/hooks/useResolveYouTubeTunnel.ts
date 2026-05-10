@@ -1,9 +1,15 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useEnsureAuth } from "@/hooks/useEnsureAuth";
-import { useAudioStore } from "@/stores/audio";
+import { type AudioSource, useAudioStore } from "@/stores/audio";
 import { useProjectStore } from "@/stores/project";
-import { CobaltApiError, getAudio } from "@/utils/cobalt-api";
+import {
+  DEFAULT_COBALT_INSTANCE_ID,
+  getActiveCobaltInstance,
+  isUsingDefaultCobaltInstance,
+  useSettingsStore,
+} from "@/stores/settings";
+import { CobaltApiError, formatCobaltErrorForToast, getAudio, getAudioFromStandardCobalt } from "@/utils/cobalt-api";
 
 // -- Constants ----------------------------------------------------------------
 
@@ -29,7 +35,7 @@ function useResolveYouTubeTunnel(): void {
   ensureRef.current = ensureAuth;
 
   useEffect(() => {
-    const handleSourceChange = async (videoId: string) => {
+    const handleSourceChange = async (videoId: string, previousSource: AudioSource) => {
       const existing = inFlight.get(videoId);
       if (existing) return;
 
@@ -37,16 +43,25 @@ function useResolveYouTubeTunnel(): void {
       inFlight.set(videoId, controller);
       useAudioStore.getState().setIsLoading(true);
 
+      const instanceAtStart = getActiveCobaltInstance();
+      const isDefault = isUsingDefaultCobaltInstance();
       try {
-        const jwt = await ensureRef.current();
-        if (controller.signal.aborted) return;
-        const { tunnelUrl, filename } = await getAudio(videoId, jwt);
+        let tunnelUrl: string;
+        let filename: string | undefined;
+        if (isDefault) {
+          const jwt = await ensureRef.current();
+          if (controller.signal.aborted) return;
+          ({ tunnelUrl, filename } = await getAudio(videoId, jwt));
+        } else {
+          ({ tunnelUrl, filename } = await getAudioFromStandardCobalt(videoId));
+        }
         if (controller.signal.aborted) return;
 
         const res = await fetch(tunnelUrl, { signal: controller.signal });
         if (!res.ok) throw new CobaltApiError("cobalt_failed", res.status);
         const buffer = await res.arrayBuffer();
         if (controller.signal.aborted) return;
+        if (buffer.byteLength === 0) throw new CobaltApiError("empty_audio", res.status);
 
         const current = useAudioStore.getState().source;
         if (current?.type !== "youtube" || current.videoId !== videoId) return;
@@ -61,15 +76,25 @@ function useResolveYouTubeTunnel(): void {
             project.setMetadata({ title: filename });
           }
         }
+
+        if (!isDefault && instanceAtStart.id !== DEFAULT_COBALT_INSTANCE_ID) {
+          useSettingsStore.getState().recordCobaltInstanceResult(instanceAtStart.id, "success");
+        }
       } catch (err) {
         if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
         console.error(LOG_PREFIX, "tunnel fetch failed", err);
-        const message = err instanceof CobaltApiError ? err.message : "Couldn't load YouTube audio";
+        const message = formatCobaltErrorForToast(err, {
+          isDefault,
+          instanceLabel: instanceAtStart.label,
+        });
         toast.error(message);
+        if (!isDefault && instanceAtStart.id !== DEFAULT_COBALT_INSTANCE_ID) {
+          useSettingsStore.getState().recordCobaltInstanceResult(instanceAtStart.id, "error", message);
+        }
         const current = useAudioStore.getState().source;
         if (current?.type === "youtube" && current.videoId === videoId) {
-          useAudioStore.getState().setSource(null);
+          useAudioStore.getState().setSource(previousSource);
         }
       } finally {
         if (inFlight.get(videoId) === controller) inFlight.delete(videoId);
@@ -79,7 +104,7 @@ function useResolveYouTubeTunnel(): void {
 
     const initial = useAudioStore.getState().source;
     if (initial?.type === "youtube" && !initial.file) {
-      handleSourceChange(initial.videoId);
+      handleSourceChange(initial.videoId, null);
     }
 
     const unsubscribe = useAudioStore.subscribe((state, prev) => {
@@ -95,7 +120,7 @@ function useResolveYouTubeTunnel(): void {
 
       if (state.source?.type !== "youtube") return;
       if (state.source.file) return;
-      handleSourceChange(state.source.videoId);
+      handleSourceChange(state.source.videoId, prev.source);
     });
 
     return () => {

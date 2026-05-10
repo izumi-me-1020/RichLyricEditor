@@ -4,6 +4,22 @@ import { persist } from "zustand/middleware";
 // -- Types --------------------------------------------------------------------
 
 type GranularityDefault = "word" | "line";
+type LinkedDivergenceAction = "ask" | "apply" | "detach";
+
+interface CobaltInstance {
+  id: string;
+  label: string;
+  url: string;
+}
+
+interface CobaltInstanceStatus {
+  status: "success" | "error";
+  errorMessage?: string;
+  at: number;
+}
+
+const DEFAULT_COBALT_INSTANCE_ID = "default";
+
 interface SettingsState {
   defaultPlaybackRate: number;
   rememberVolume: boolean;
@@ -30,11 +46,22 @@ interface SettingsState {
   confirmClearProject: boolean;
   confirmResetSettings: boolean;
   confirmResetShortcuts: boolean;
+  confirmGroupDissolution: boolean;
+  linkedDivergenceAction: LinkedDivergenceAction;
+
+  cobaltInstances: CobaltInstance[];
+  selectedCobaltInstanceId: string;
+  cobaltInstanceStatus: Record<string, CobaltInstanceStatus>;
 }
 
 interface SettingsActions {
   set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
   resetToDefaults: () => void;
+  addCobaltInstance: (instance: Omit<CobaltInstance, "id">) => void;
+  updateCobaltInstance: (id: string, updates: Partial<Omit<CobaltInstance, "id">>) => void;
+  removeCobaltInstance: (id: string) => void;
+  selectCobaltInstance: (id: string) => void;
+  recordCobaltInstanceResult: (id: string, status: "success" | "error", errorMessage?: string) => void;
 }
 
 // -- Defaults -----------------------------------------------------------------
@@ -65,6 +92,18 @@ const DEFAULTS: SettingsState = {
   confirmClearProject: true,
   confirmResetSettings: true,
   confirmResetShortcuts: true,
+  confirmGroupDissolution: true,
+  linkedDivergenceAction: "ask",
+
+  cobaltInstances: [],
+  selectedCobaltInstanceId: DEFAULT_COBALT_INSTANCE_ID,
+  cobaltInstanceStatus: {},
+};
+
+const BUILTIN_COBALT_INSTANCE: CobaltInstance = {
+  id: DEFAULT_COBALT_INSTANCE_ID,
+  label: "Composer",
+  url: "https://cobalt.boidu.dev",
 };
 
 // -- Store --------------------------------------------------------------------
@@ -84,13 +123,66 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           confirmClearProject: state.confirmClearProject,
           confirmResetSettings: state.confirmResetSettings,
           confirmResetShortcuts: state.confirmResetShortcuts,
+          confirmGroupDissolution: state.confirmGroupDissolution,
+          linkedDivergenceAction: state.linkedDivergenceAction,
+          cobaltInstances: state.cobaltInstances,
+          selectedCobaltInstanceId: state.selectedCobaltInstanceId,
+          cobaltInstanceStatus: state.cobaltInstanceStatus,
+        })),
+      addCobaltInstance: (instance) =>
+        set((state) => {
+          const id = crypto.randomUUID();
+          return { cobaltInstances: [...state.cobaltInstances, { ...instance, id }] };
+        }),
+      updateCobaltInstance: (id, updates) =>
+        set((state) => ({
+          cobaltInstances: state.cobaltInstances.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })),
+      removeCobaltInstance: (id) =>
+        set((state) => {
+          const nextStatus = { ...state.cobaltInstanceStatus };
+          delete nextStatus[id];
+          return {
+            cobaltInstances: state.cobaltInstances.filter((i) => i.id !== id),
+            selectedCobaltInstanceId:
+              state.selectedCobaltInstanceId === id ? DEFAULT_COBALT_INSTANCE_ID : state.selectedCobaltInstanceId,
+            cobaltInstanceStatus: nextStatus,
+          };
+        }),
+      selectCobaltInstance: (id) => set({ selectedCobaltInstanceId: id }),
+      recordCobaltInstanceResult: (id, status, errorMessage) =>
+        set((state) => ({
+          cobaltInstanceStatus: {
+            ...state.cobaltInstanceStatus,
+            [id]: { status, errorMessage, at: Date.now() },
+          },
         })),
     }),
     { name: "composer-settings" },
   ),
 );
 
+function getActiveCobaltInstance(): CobaltInstance {
+  const state = useSettingsStore.getState();
+  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID) return BUILTIN_COBALT_INSTANCE;
+  const found = state.cobaltInstances.find((i) => i.id === state.selectedCobaltInstanceId);
+  return found ?? BUILTIN_COBALT_INSTANCE;
+}
+
+function isUsingDefaultCobaltInstance(): boolean {
+  const state = useSettingsStore.getState();
+  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID) return true;
+  return !state.cobaltInstances.some((i) => i.id === state.selectedCobaltInstanceId);
+}
+
 // -- Exports ------------------------------------------------------------------
 
-export { useSettingsStore, DEFAULTS };
-export type { SettingsState };
+export {
+  useSettingsStore,
+  DEFAULTS,
+  BUILTIN_COBALT_INSTANCE,
+  DEFAULT_COBALT_INSTANCE_ID,
+  getActiveCobaltInstance,
+  isUsingDefaultCobaltInstance,
+};
+export type { SettingsState, CobaltInstance, CobaltInstanceStatus, LinkedDivergenceAction };

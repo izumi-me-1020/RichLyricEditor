@@ -18,10 +18,16 @@ interface ConfirmOptions {
   recoverable?: boolean;
 }
 
+interface QueuedConfirm {
+  options: ConfirmOptions;
+  resolve: (value: boolean) => void;
+}
+
 interface ConfirmStore {
   isOpen: boolean;
   options: ConfirmOptions | null;
   resolve: ((value: boolean) => void) | null;
+  queue: QueuedConfirm[];
   open: (options: ConfirmOptions) => Promise<boolean>;
   resolveAndClose: (value: boolean, dontAskAgain: boolean) => void;
 }
@@ -32,16 +38,18 @@ const useConfirmStore = create<ConfirmStore>((set, get) => ({
   isOpen: false,
   options: null,
   resolve: null,
+  queue: [],
 
   open: (options) => {
     if (options.settingsKey && useSettingsStore.getState()[options.settingsKey] === false) {
       return Promise.resolve(true);
     }
-    if (get().isOpen) {
-      console.warn("[Composer] confirm() called while a modal is already open; auto-cancelling the second call");
-      return Promise.resolve(false);
-    }
     return new Promise<boolean>((resolve) => {
+      if (get().isOpen) {
+        // Queue the request; it will open after the active modal closes.
+        set((state) => ({ queue: [...state.queue, { options, resolve }] }));
+        return;
+      }
       set({ isOpen: true, options, resolve });
     });
   },
@@ -52,9 +60,27 @@ const useConfirmStore = create<ConfirmStore>((set, get) => ({
       useSettingsStore.getState().set(options.settingsKey, false);
     }
     resolve?.(value);
-    set({ isOpen: false, options: null, resolve: null });
+    drainQueue(set, get);
   },
 }));
+
+function drainQueue(set: ConfirmSet, get: () => ConfirmStore) {
+  let queue = get().queue;
+  while (queue.length > 0) {
+    const [next, ...rest] = queue;
+    const settingsKey = next.options.settingsKey;
+    if (settingsKey && useSettingsStore.getState()[settingsKey] === false) {
+      next.resolve(true);
+      queue = rest;
+      continue;
+    }
+    set({ isOpen: true, options: next.options, resolve: next.resolve, queue: rest });
+    return;
+  }
+  set({ isOpen: false, options: null, resolve: null, queue: [] });
+}
+
+type ConfirmSet = (partial: Partial<ConfirmStore> | ((state: ConfirmStore) => Partial<ConfirmStore>)) => void;
 
 function useConfirm(): (options: ConfirmOptions) => Promise<boolean> {
   return useConfirmStore.getState().open;

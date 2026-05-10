@@ -1,5 +1,6 @@
 import { useSyncHandlers } from "@/hooks/useSyncHandlers";
 import { useAudioStore } from "@/stores/audio";
+import { isAnyModalOpen } from "@/stores/modal-stack";
 import { useProjectStore } from "@/stores/project";
 import { getEffectiveKeysArray } from "@/stores/shortcut-bindings";
 import { Button } from "@/ui/button";
@@ -33,6 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SyncPanel: React.FC = () => {
   const lines = useProjectStore((s) => s.lines);
+  const groups = useProjectStore((s) => s.groups);
   const setLinesWithHistory = useProjectStore((s) => s.setLinesWithHistory);
   const undo = useProjectStore((s) => s.undo);
   const redo = useProjectStore((s) => s.redo);
@@ -43,6 +45,23 @@ const SyncPanel: React.FC = () => {
   const currentTime = useAudioStore((s) => s.currentTime);
   const isPlaying = useAudioStore((s) => s.isPlaying);
   const setIsPlaying = useAudioStore((s) => s.setIsPlaying);
+
+  const instanceCountByGroup = useMemo(() => {
+    const indices = new Map<string, Set<number>>();
+    for (const l of lines) {
+      if (l.groupId !== undefined && l.instanceIdx !== undefined) {
+        let set = indices.get(l.groupId);
+        if (!set) {
+          set = new Set();
+          indices.set(l.groupId, set);
+        }
+        set.add(l.instanceIdx);
+      }
+    }
+    const counts = new Map<string, number>();
+    for (const [k, v] of indices) counts.set(k, v.size);
+    return counts;
+  }, [lines]);
 
   const [syncState, setSyncState] = useState<SyncState>({
     position: { lineIndex: 0, wordIndex: 0 },
@@ -90,7 +109,6 @@ const SyncPanel: React.FC = () => {
 
   const updateLine = useProjectStore((s) => s.updateLine);
 
-  // Auto-initialize BG word timing for lines that have BG text and line timing but no BG words
   useEffect(() => {
     for (const line of lines) {
       if (line.backgroundText && !line.backgroundWords?.length) {
@@ -211,6 +229,7 @@ const SyncPanel: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeTab !== "sync") return;
+      if (isAnyModalOpen()) return;
 
       if (e.code === "KeyZ" && (e.metaKey || e.ctrlKey) && !e.repeat) {
         e.preventDefault();
@@ -265,6 +284,7 @@ const SyncPanel: React.FC = () => {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (activeTab !== "sync" || !isHolding) return;
+      if (isAnyModalOpen()) return;
 
       if (e.code === heldKeyCodeRef.current) {
         e.preventDefault();
@@ -388,6 +408,17 @@ const SyncPanel: React.FC = () => {
           <div className="py-2">
             {lines.map((line, index) => {
               const timing = getLineTiming(line);
+              const linkedGroup = line.groupId ? groups.find((g) => g.id === line.groupId) : undefined;
+              const totalInstances = linkedGroup ? (instanceCountByGroup.get(linkedGroup.id) ?? 0) : 0;
+              const linkInfo =
+                linkedGroup && line.instanceIdx !== undefined
+                  ? {
+                      color: linkedGroup.color,
+                      label: linkedGroup.label,
+                      instanceIdx: line.instanceIdx,
+                      totalInstances,
+                    }
+                  : undefined;
               return (
                 <ScrollableLine
                   key={line.id}
@@ -403,6 +434,7 @@ const SyncPanel: React.FC = () => {
                   granularity={granularity}
                   currentTime={currentTime}
                   editMode={editMode}
+                  linkInfo={linkInfo}
                   onClick={() => handleJumpToLine(index)}
                   onNudgeWord={(wordIdx, delta) => handleNudgeWord(index, wordIdx, delta)}
                   onSetWordTime={(wordIdx, newBegin) => handleSetWordTime(index, wordIdx, newBegin)}

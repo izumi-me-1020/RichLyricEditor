@@ -1,4 +1,4 @@
-import type { Agent, GranularityMode, LyricLine, ProjectMetadata } from "@/stores/project";
+import type { Agent, GranularityMode, LinkGroup, LyricLine, ProjectMetadata } from "@/stores/project";
 import { useSettingsStore } from "@/stores/settings";
 
 // -- Types --------------------------------------------------------------------
@@ -11,9 +11,11 @@ interface SavedProject {
   metadata: ProjectMetadata;
   agents: Agent[];
   lines: LyricLine[];
+  groups?: LinkGroup[];
   granularity: GranularityMode;
   audioFileName?: string;
   audioSource?: SavedAudioSource;
+  dismissedSuggestions?: string[];
 }
 
 // -- Constants ----------------------------------------------------------------
@@ -91,8 +93,10 @@ async function saveCurrentProject(
   metadata: ProjectMetadata,
   agents: Agent[],
   lines: LyricLine[],
+  groups: LinkGroup[],
   granularity: GranularityMode,
-  audioSource?: SavedAudioSource,
+  audioSource: SavedAudioSource | undefined,
+  dismissedSuggestions: string[],
 ): Promise<void> {
   const audioFileName = audioSource?.kind === "file" ? audioSource.name : undefined;
   const project: SavedProject = {
@@ -101,9 +105,11 @@ async function saveCurrentProject(
     metadata,
     agents,
     lines,
+    groups,
     granularity,
     audioFileName,
     audioSource,
+    dismissedSuggestions,
   };
   await setInStore(CURRENT_PROJECT_KEY, project);
 }
@@ -148,7 +154,9 @@ function exportProjectToFile(
   metadata: ProjectMetadata,
   agents: Agent[],
   lines: LyricLine[],
+  groups: LinkGroup[],
   granularity: GranularityMode,
+  dismissedSuggestions: string[],
   audioFileName?: string,
 ): void {
   const project: SavedProject = {
@@ -157,8 +165,10 @@ function exportProjectToFile(
     metadata,
     agents,
     lines,
+    groups,
     granularity,
     audioFileName,
+    dismissedSuggestions,
   };
 
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
@@ -186,16 +196,20 @@ async function importProjectFromFile(file: File): Promise<SavedProject> {
 // -- Debounced Auto-save ------------------------------------------------------
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-let pendingSaveArgs: [ProjectMetadata, Agent[], LyricLine[], GranularityMode, SavedAudioSource?] | null = null;
+let pendingSaveArgs:
+  | [ProjectMetadata, Agent[], LyricLine[], LinkGroup[], GranularityMode, SavedAudioSource | undefined, string[]]
+  | null = null;
 
 function debouncedSave(
   metadata: ProjectMetadata,
   agents: Agent[],
   lines: LyricLine[],
+  groups: LinkGroup[],
   granularity: GranularityMode,
-  audioSource?: SavedAudioSource,
+  audioSource: SavedAudioSource | undefined,
+  dismissedSuggestions: string[],
 ): void {
-  pendingSaveArgs = [metadata, agents, lines, granularity, audioSource];
+  pendingSaveArgs = [metadata, agents, lines, groups, granularity, audioSource, dismissedSuggestions];
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }

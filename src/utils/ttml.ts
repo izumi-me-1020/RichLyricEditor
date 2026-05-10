@@ -1,4 +1,4 @@
-import type { Agent, LyricLine, ProjectMetadata } from "@/stores/project";
+import type { Agent, LinkGroup, LyricLine, ProjectMetadata } from "@/stores/project";
 import { formatTime } from "@/utils/format-time";
 import { stripSplitCharacter } from "@/utils/split-character";
 import { getLineTiming } from "@/utils/sync-helpers";
@@ -15,16 +15,17 @@ interface TTMLOptions {
   metadata: ProjectMetadata;
   agents: Agent[];
   lines: LyricLine[];
+  groups?: LinkGroup[];
   granularity: "line" | "word";
   minify?: boolean;
   duration?: number;
 }
 
-function generateTTML({ metadata, agents, lines, granularity, minify = false, duration }: TTMLOptions): string {
+function generateTTML({ metadata, agents, lines, groups, granularity, minify = false, duration }: TTMLOptions): string {
   const nl = minify ? "" : "\n";
   const ind = (n: number) => (minify ? "" : "  ".repeat(n));
 
-  const effectiveGranularity = granularity === "word" && lines.some((l) => l.words?.length) ? "word" : "line";
+  const effectiveGranularity = lines.some((l) => l.words?.length) ? "word" : "line";
 
   const parts: string[] = [];
 
@@ -48,6 +49,15 @@ function generateTTML({ metadata, agents, lines, granularity, minify = false, du
       parts.push(`${ind(3)}<ttm:agent xml:id="${escapeXml(agent.id)}" type="${agent.type}"/>`);
     }
   }
+  if (groups && groups.length > 0) {
+    parts.push(`${ind(3)}<composer:groups>`);
+    for (const g of groups) {
+      parts.push(
+        `${ind(4)}<composer:group id="${escapeXml(g.id)}" label="${escapeXml(g.label)}" color="${escapeXml(g.color)}" templateVersion="${g.templateVersion}"/>`,
+      );
+    }
+    parts.push(`${ind(3)}</composer:groups>`);
+  }
   parts.push(`${ind(2)}</metadata>`);
   parts.push(`${ind(1)}</head>`);
 
@@ -61,6 +71,9 @@ function generateTTML({ metadata, agents, lines, granularity, minify = false, du
     if (!timing) continue;
 
     const agentAttr = line.agentId ? ` ttm:agent="${escapeXml(line.agentId)}"` : "";
+    const groupAttr = line.groupId
+      ? ` composer:groupId="${escapeXml(line.groupId)}" composer:instanceIdx="${line.instanceIdx ?? 0}" composer:templateLineIdx="${line.templateLineIdx ?? 0}"${line.detached ? ' composer:detached="true"' : ""}`
+      : "";
     let content = "";
 
     if (granularity === "word" && line.words?.length) {
@@ -90,7 +103,7 @@ function generateTTML({ metadata, agents, lines, granularity, minify = false, du
     }
 
     parts.push(
-      `${ind(3)}<p begin="${formatTime(timing.begin)}" end="${formatTime(timing.end)}"${agentAttr}>${content}</p>`,
+      `${ind(3)}<p begin="${formatTime(timing.begin)}" end="${formatTime(timing.end)}"${agentAttr}${groupAttr}>${content}</p>`,
     );
   }
 

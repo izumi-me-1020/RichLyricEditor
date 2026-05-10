@@ -1,23 +1,32 @@
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
-import { DEFAULTS, useSettingsStore } from "@/stores/settings";
+import { BUILTIN_COBALT_INSTANCE, DEFAULT_COBALT_INSTANCE_ID, DEFAULTS, useSettingsStore } from "@/stores/settings";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
-import type { SettingsState } from "@/stores/settings";
+import type { CobaltInstanceStatus, SettingsState } from "@/stores/settings";
 import { Button } from "@/ui/button";
 import { Modal } from "@/ui/modal";
 import { cn } from "@/utils/cn";
 import { ConfirmationsSettingsSection } from "@/ui/confirmations-settings-section";
+import { Scroll } from "@/ui/scroll";
+import { displayHostFromUrl, ensureHttpScheme, isValidHttpUrl } from "@/utils/url";
 import { ShortcutsSettingsSection } from "@/ui/shortcuts-settings-section";
 import {
   IconAlertTriangle,
   IconClock,
+  IconDeviceFloppy,
+  IconExternalLink,
   IconKeyboard,
+  IconLayoutRows,
+  IconLock,
+  IconMoodCheck,
+  IconMoodHappy,
+  IconMoodSadDizzy,
   IconPlayerPlay,
+  IconPlugConnected,
   IconRefresh,
   IconRoute,
-  IconLayoutRows,
   IconSettings,
-  IconDeviceFloppy,
+  IconTrash,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -38,13 +47,14 @@ interface SectionDef {
 // -- Sections -----------------------------------------------------------------
 
 const SECTIONS: SectionDef[] = [
+  { id: "general", label: "General", icon: IconSettings },
   { id: "playback", label: "Playback", icon: IconPlayerPlay },
   { id: "timeline", label: "Timeline", icon: IconLayoutRows },
   { id: "sync", label: "Sync & Timing", icon: IconClock },
   { id: "shortcuts", label: "Shortcuts", icon: IconKeyboard },
   { id: "confirmations", label: "Confirmations", icon: IconAlertTriangle },
   { id: "storage", label: "Save & Storage", icon: IconDeviceFloppy },
-  { id: "general", label: "General", icon: IconSettings },
+  { id: "advanced", label: "Advanced", icon: IconPlugConnected },
 ];
 
 // -- Setting Controls ---------------------------------------------------------
@@ -443,6 +453,317 @@ const StorageSection: React.FC = () => (
   </div>
 );
 
+const CobaltDirectoryLink: React.FC = () => (
+  <div className="flex flex-col gap-0.5 mt-4 pt-3 border-t border-composer-border">
+    <a
+      href="https://cobalt.directory/service"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-xs text-composer-text-secondary hover:text-composer-text transition-colors w-fit"
+    >
+      <IconExternalLink size={12} />
+      Find more on cobalt.directory
+    </a>
+    <span className="text-[11px] text-composer-text-muted">
+      Set the Service filter to <strong>YouTube Music</strong> when browsing.
+    </span>
+  </div>
+);
+
+const CobaltInstanceRow: React.FC<{
+  instance: { id: string; label: string; url: string };
+  isSelected: boolean;
+  onSelect: () => void;
+  onRemove?: () => void;
+  onEdit?: () => void;
+  status?: CobaltInstanceStatus;
+}> = ({ instance, isSelected, onSelect, onRemove, onEdit, status }) => (
+  <button
+    type="button"
+    onClick={() => {
+      if (isSelected && onEdit) onEdit();
+      else onSelect();
+    }}
+    onDoubleClick={
+      onEdit
+        ? (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit();
+          }
+        : undefined
+    }
+    className={cn(
+      "group flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors cursor-pointer text-left min-w-0",
+      isSelected
+        ? "bg-composer-accent/15 border-composer-accent/50"
+        : "bg-composer-input border-transparent hover:bg-composer-button",
+    )}
+  >
+    <span
+      className={cn(
+        "w-3.5 h-3.5 rounded-full border-[1.5px] shrink-0 relative transition-colors",
+        isSelected ? "border-composer-accent" : "border-composer-text opacity-50",
+      )}
+    >
+      {isSelected && <span className="absolute inset-[2.5px] rounded-full bg-composer-accent" />}
+    </span>
+    <span className="flex items-center gap-1.5 min-w-0 max-w-[50%]">
+      <span className="text-sm font-medium text-composer-text truncate">{instance.label}</span>
+      {!onRemove ? (
+        <span
+          aria-label="Composer's default instance"
+          title="Composer's default instance"
+          className="inline-flex items-center justify-center shrink-0 text-composer-text-faint"
+        >
+          <IconMoodHappy size={14} />
+        </span>
+      ) : status ? (
+        <CobaltInstanceStatusIcon status={status} />
+      ) : null}
+    </span>
+    <span className="text-[11px] text-composer-text-muted font-mono truncate ml-auto text-right min-w-0">
+      {displayHostFromUrl(instance.url)}
+    </span>
+    {onRemove ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Remove instance"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="w-6 h-6 rounded text-composer-text-faint hover:text-composer-error hover:bg-transparent shrink-0"
+      >
+        <IconTrash size={14} />
+      </Button>
+    ) : (
+      <span aria-hidden className="w-6 h-6 shrink-0 flex items-center justify-center text-composer-text-faint">
+        <IconLock size={13} />
+      </span>
+    )}
+  </button>
+);
+
+const CobaltInstanceStatusIcon: React.FC<{ status: CobaltInstanceStatus }> = ({ status }) => {
+  const tooltip =
+    status.status === "success"
+      ? `Last attempt worked (${formatRelativeTime(status.at)})`
+      : `Last attempt failed: ${status.errorMessage ?? "unknown error"} (${formatRelativeTime(status.at)})`;
+  return (
+    <span
+      title={tooltip}
+      aria-label={tooltip}
+      className={cn(
+        "inline-flex items-center justify-center shrink-0",
+        status.status === "success" ? "text-emerald-400" : "text-amber-400",
+      )}
+    >
+      {status.status === "success" ? <IconMoodCheck size={14} /> : <IconMoodSadDizzy size={14} />}
+    </span>
+  );
+};
+
+function formatRelativeTime(timestamp: number): string {
+  const diffSec = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}h ago`;
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay}d ago`;
+}
+
+const CobaltInstanceEditRow: React.FC<{
+  initialLabel: string;
+  initialUrl: string;
+  onSave: (label: string, url: string) => void;
+  onCancel: () => void;
+}> = ({ initialLabel, initialUrl, onSave, onCancel }) => {
+  const [label, setLabel] = useState(initialLabel);
+  const [url, setUrl] = useState(displayHostFromUrl(initialUrl));
+
+  const trimmedLabel = label.trim();
+  const trimmedUrl = url.trim();
+  const urlValid = trimmedUrl.length > 0 && isValidHttpUrl(trimmedUrl);
+  const showUrlError = trimmedUrl.length > 0 && !urlValid;
+  const canSave = trimmedLabel.length > 0 && urlValid;
+
+  const submit = () => {
+    if (!canSave) return;
+    onSave(trimmedLabel, ensureHttpScheme(url));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 p-2 rounded-lg border border-composer-accent/50 bg-composer-accent/10">
+      <div className="flex items-center gap-2">
+        <input
+          // biome-ignore lint/a11y/noAutofocus: edit mode is opt-in via double-click
+          autoFocus
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="w-32 h-6 px-2 text-xs rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent text-composer-text"
+        />
+        <input
+          type="url"
+          inputMode="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value.replace(/\s+/g, ""))}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            "flex-1 h-6 px-2 text-xs rounded-md bg-composer-input border focus:outline-none text-composer-text font-mono",
+            showUrlError ? "border-composer-error" : "border-composer-border focus:border-composer-accent",
+          )}
+        />
+        <Button size="sm" variant="primary" onClick={submit} disabled={!canSave} className="h-6 px-2.5">
+          Save
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onCancel} className="h-6 px-2.5">
+          Cancel
+        </Button>
+      </div>
+      {showUrlError && <span className="text-[11px] text-composer-error-text">Enter a valid http(s) URL.</span>}
+    </div>
+  );
+};
+
+const CobaltInstanceAddForm: React.FC<{
+  onAdd: (label: string, url: string) => void;
+}> = ({ onAdd }) => {
+  const [label, setLabel] = useState("");
+  const [url, setUrl] = useState("");
+
+  const trimmedLabel = label.trim();
+  const trimmedUrl = url.trim();
+  const urlValid = trimmedUrl.length > 0 && isValidHttpUrl(trimmedUrl);
+  const showUrlError = trimmedUrl.length > 0 && !urlValid;
+  const canAdd = trimmedLabel.length > 0 && urlValid;
+
+  const submit = () => {
+    if (!canAdd) return;
+    onAdd(trimmedLabel, ensureHttpScheme(url));
+    setLabel("");
+    setUrl("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Strip whitespace as it's typed/pasted; URLs can never contain spaces
+    setUrl(e.target.value.replace(/\s+/g, ""));
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 mt-4">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Name"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className="w-32 h-7 px-2 text-xs rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent text-composer-text placeholder:text-composer-text-muted"
+        />
+        <input
+          type="url"
+          inputMode="url"
+          placeholder="https://your-cobalt-instance"
+          value={url}
+          onChange={handleUrlChange}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            "flex-1 h-7 px-2 text-xs rounded-md bg-composer-input border focus:outline-none text-composer-text placeholder:text-composer-text-muted font-mono",
+            showUrlError ? "border-composer-error" : "border-composer-border focus:border-composer-accent",
+          )}
+        />
+        <Button size="sm" variant="primary" onClick={submit} disabled={!canAdd}>
+          Add
+        </Button>
+      </div>
+      {showUrlError && <span className="text-[11px] text-composer-error-text">Enter a valid http(s) URL.</span>}
+    </div>
+  );
+};
+
+const AdvancedSection: React.FC = () => {
+  const cobaltInstances = useSettingsStore((s) => s.cobaltInstances);
+  const selectedCobaltInstanceId = useSettingsStore((s) => s.selectedCobaltInstanceId);
+  const cobaltInstanceStatus = useSettingsStore((s) => s.cobaltInstanceStatus);
+  const addCobaltInstance = useSettingsStore((s) => s.addCobaltInstance);
+  const updateCobaltInstance = useSettingsStore((s) => s.updateCobaltInstance);
+  const removeCobaltInstance = useSettingsStore((s) => s.removeCobaltInstance);
+  const selectCobaltInstance = useSettingsStore((s) => s.selectCobaltInstance);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  return (
+    <div className="py-3">
+      <div className="flex flex-col gap-0.5 mb-3">
+        <span className="text-sm font-medium text-composer-text">Cobalt instance</span>
+        <span className="text-xs text-composer-text-muted">
+          Composer uses a Cobalt backend to fetch YouTube audio. Switch instances if the default is slow or unreachable.
+          Self-hosting is encouraged for serious use.
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <CobaltInstanceRow
+          instance={BUILTIN_COBALT_INSTANCE}
+          isSelected={selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID}
+          onSelect={() => selectCobaltInstance(DEFAULT_COBALT_INSTANCE_ID)}
+        />
+        {cobaltInstances.map((inst) =>
+          editingId === inst.id ? (
+            <CobaltInstanceEditRow
+              key={inst.id}
+              initialLabel={inst.label}
+              initialUrl={inst.url}
+              onSave={(label, url) => {
+                updateCobaltInstance(inst.id, { label, url });
+                setEditingId(null);
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          ) : (
+            <CobaltInstanceRow
+              key={inst.id}
+              instance={inst}
+              isSelected={selectedCobaltInstanceId === inst.id}
+              onSelect={() => selectCobaltInstance(inst.id)}
+              onRemove={() => removeCobaltInstance(inst.id)}
+              onEdit={() => setEditingId(inst.id)}
+              status={cobaltInstanceStatus[inst.id]}
+            />
+          ),
+        )}
+      </div>
+
+      <CobaltInstanceAddForm onAdd={(label, url) => addCobaltInstance({ label, url })} />
+
+      <CobaltDirectoryLink />
+    </div>
+  );
+};
+
 const GeneralSection: React.FC<{
   onResetTour: () => void;
   onClose: () => void;
@@ -516,13 +837,14 @@ const SECTION_CONTENT: Record<string, React.FC<{ onResetTour: () => void; onClos
   shortcuts: ShortcutsSettingsSection,
   confirmations: ConfirmationsSettingsSection,
   storage: StorageSection,
+  advanced: AdvancedSection,
   general: GeneralSection,
 };
 
 // -- Settings Modal -----------------------------------------------------------
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetTour }) => {
-  const [activeSection, setActiveSection] = useState("playback");
+  const [activeSection, setActiveSection] = useState("general");
 
   const Content = SECTION_CONTENT[activeSection];
 
@@ -535,32 +857,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetT
       bodyClassName="p-0 flex-1 min-h-0 flex flex-col"
     >
       <div className="flex flex-1 min-h-0">
-        <nav className="w-44 shrink-0 border-r border-composer-border p-2 space-y-px overflow-y-auto select-none">
-          {SECTIONS.map((section) => {
-            const Icon = section.icon;
-            const isActive = activeSection === section.id;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setActiveSection(section.id)}
-                className={cn(
-                  "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
-                  isActive
-                    ? "bg-composer-button text-composer-text font-medium"
-                    : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
-                )}
-              >
-                <Icon size={16} className="shrink-0" />
-                {section.label}
-              </button>
-            );
-          })}
-        </nav>
+        <Scroll className="w-44 shrink-0 border-r border-composer-border select-none">
+          <div className="flex flex-col gap-px p-2">
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
+                    isActive
+                      ? "bg-composer-button text-composer-text font-medium"
+                      : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
+                  )}
+                >
+                  <Icon size={16} className="shrink-0" />
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+        </Scroll>
 
-        <div className="flex-1 overflow-y-auto px-6 py-2">
+        <Scroll className="flex-1 px-6 py-2">
           {Content && <Content onResetTour={onResetTour} onClose={onClose} />}
-        </div>
+        </Scroll>
       </div>
 
       <div className="px-5 py-3 border-t border-composer-border text-xs text-composer-text-muted text-center shrink-0 select-none">

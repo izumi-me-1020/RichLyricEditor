@@ -3,10 +3,13 @@ import { getAgentColor, useProjectStore } from "@/stores/project";
 import type { LyricLine } from "@/stores/project";
 import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
+import { Scroll } from "@/ui/scroll";
 import { type ParseResult, parseLyricsFile } from "@/utils/lyrics-parsers";
-import { textToLyricLines } from "@/utils/lyrics-text";
+import { remapWordTextsPreservingTiming } from "@/utils/lyrics-text";
 import { stripSplitCharacter } from "@/utils/split-character";
 import { AgentManager } from "@/views/edit/agent-manager";
+import { decideEditTextAction } from "@/views/edit/decide-edit-text-action";
+import { detachInstancesFromLines } from "@/views/edit/diff-edit-text";
 import { IconAlertTriangle, IconFileImport, IconMicrophone, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -21,6 +24,9 @@ interface ParsedLine {
   hasTiming: boolean;
   agentId: string;
   backgroundText?: string;
+  groupId?: string;
+  instanceIdx?: number;
+  templateLineIdx?: number;
 }
 
 // -- Helpers ------------------------------------------------------------------
@@ -46,6 +52,9 @@ function parseLyrics(text: string, lines: LyricLine[], defaultAgentId: string): 
       hasTiming,
       agentId: lyricLine?.agentId ?? defaultAgentId,
       backgroundText: lyricLine?.backgroundText,
+      groupId: lyricLine?.groupId,
+      instanceIdx: lyricLine?.instanceIdx,
+      templateLineIdx: lyricLine?.templateLineIdx,
     };
   });
 }
@@ -97,6 +106,8 @@ const LinePreview: React.FC<{
   agents: { id: string; name?: string }[];
   isSelected: boolean;
   hasMultipleSelected: boolean;
+  groupColor?: string;
+  groupTooltip?: string;
   onSelect: (lineNumber: number, shiftKey: boolean) => void;
   onAgentChange: (lineId: string, agentId: string) => void;
   onBulkAgentChange: (agentId: string) => void;
@@ -109,6 +120,8 @@ const LinePreview: React.FC<{
   agents,
   isSelected,
   hasMultipleSelected,
+  groupColor,
+  groupTooltip,
   onSelect,
   onAgentChange,
   onBulkAgentChange,
@@ -167,12 +180,20 @@ const LinePreview: React.FC<{
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-0.5 group cursor-pointer ${
+      className={`relative flex items-center gap-2 px-3 py-0.5 group cursor-pointer ${
         isSelected ? "bg-composer-accent/15" : line.hasBrackets ? "bg-composer-error/5" : "hover:bg-composer-button/30"
       }`}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
+      title={groupTooltip}
     >
+      {groupColor && (
+        <span
+          aria-hidden
+          className="absolute top-0 bottom-0 left-0 w-0.5 pointer-events-none"
+          style={{ backgroundColor: groupColor }}
+        />
+      )}
       <span
         className="w-8 font-mono text-xs text-right shrink-0 text-composer-text-muted tabular-nums select-none cursor-pointer"
         onMouseDown={(e) => onGutterMouseDown(line.lineNumber, e)}
@@ -262,14 +283,17 @@ const EditPanel: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const agents = useProjectStore((s) => s.agents);
   const lines = useProjectStore((s) => s.lines);
+  const groups = useProjectStore((s) => s.groups);
   const setLines = useProjectStore((s) => s.setLines);
   const setMetadata = useProjectStore((s) => s.setMetadata);
-  const updateLine = useProjectStore((s) => s.updateLine);
   const addAgent = useProjectStore((s) => s.addAgent);
   const confirm = useConfirm();
 
   const [rawText, setRawText] = useState(() => (lines.length > 0 ? lines.map((l) => l.text).join("\n") : ""));
+  const rawTextRef = useRef(rawText);
+  rawTextRef.current = rawText;
   const linesSetByUs = useRef<LyricLine[] | null>(null);
+  const modalPendingRef = useRef(false);
   const [importResult, setImportResult] = useState<{
     result: ParseResult;
     filename: string;
@@ -292,17 +316,42 @@ const EditPanel: React.FC = () => {
   const parsed = useMemo(() => parseLyrics(rawText, lines, defaultAgentId), [rawText, lines, defaultAgentId]);
   const bracketCount = useMemo(() => parsed.filter((p) => p.hasBrackets).length, [parsed]);
   const nonEmptyCount = useMemo(() => parsed.filter((p) => !p.isEmpty).length, [parsed]);
+  const instanceCountByGroup = useMemo(() => {
+    const indices = new Map<string, Set<number>>();
+    for (const l of lines) {
+      if (l.groupId !== undefined && l.instanceIdx !== undefined) {
+        let set = indices.get(l.groupId);
+        if (!set) {
+          set = new Set();
+          indices.set(l.groupId, set);
+        }
+        set.add(l.instanceIdx);
+      }
+    }
+    const counts = new Map<string, number>();
+    for (const [k, v] of indices) counts.set(k, v.size);
+    return counts;
+  }, [lines]);
 
   const handleAgentChange = useCallback((lineId: string, agentId: string) => {
     useProjectStore.getState().updateLineWithHistory(lineId, { agentId });
   }, []);
 
-  const handleBackgroundChange = useCallback(
-    (lineId: string, text: string) => {
-      updateLine(lineId, { backgroundText: text || undefined });
-    },
-    [updateLine],
-  );
+  const handleBackgroundChange = useCallback((lineId: string, text: string) => {
+    const newBgText = text || undefined;
+    const target = useProjectStore.getState().lines.find((l) => l.id === lineId);
+
+    const updates: Partial<LyricLine> = { backgroundText: newBgText };
+    if (newBgText && target?.backgroundWords?.length) {
+      const remapped = remapWordTextsPreservingTiming(target.backgroundWords, newBgText);
+      if (remapped) updates.backgroundWords = remapped;
+      else updates.backgroundWords = undefined;
+    } else if (!newBgText) {
+      updates.backgroundWords = undefined;
+    }
+
+    useProjectStore.getState().updateLineWithHistory(lineId, updates);
+  }, []);
 
   const handleLineSelect = useCallback(
     (lineNumber: number, shiftKey: boolean) => {
@@ -374,14 +423,72 @@ const EditPanel: React.FC = () => {
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const text = e.target.value;
-      setRawText(text);
+      const action = decideEditTextAction({
+        text,
+        defaultAgentId,
+        lines,
+        groups,
+        modalPending: modalPendingRef.current,
+      });
 
-      const lyricLines = textToLyricLines(text, defaultAgentId, lines);
-      linesSetByUs.current = lyricLines;
-      setLines(lyricLines);
+      // Snap the controlled DOM input back to the source-of-truth rawText whenever
+      // we choose not to setRawText. Without this, React skips reconciling the
+      // textarea on a state-less return path and the user's keystrokes persist
+      // visually even though the store rejected them.
+      const snapBack = () => {
+        if (e.target.value !== rawTextRef.current) {
+          e.target.value = rawTextRef.current;
+        }
+      };
+
+      if (action.kind === "ignore-modal-pending") {
+        snapBack();
+        return;
+      }
+
+      if (action.kind === "needs-confirm") {
+        snapBack();
+        modalPendingRef.current = true;
+        const labelText =
+          action.labels.length === 0
+            ? `${action.impacted.length} instance${action.impacted.length === 1 ? "" : "s"}`
+            : action.labels.length === 1
+              ? `[${action.labels[0]}]`
+              : action.labels.map((l) => `[${l}]`).join(", ");
+
+        confirm({
+          title: `Detach ${labelText} to apply this edit?`,
+          description: `Adding or removing rows inside ${
+            action.labels.length === 1 ? `the ${labelText} group` : "these groups"
+          } will detach ${action.impacted.length === 1 ? "this instance" : "these instances"} from the link. Other instances stay linked.`,
+          confirmLabel: "Detach and apply",
+          variant: "destructive",
+          recoverable: true,
+        }).then((ok) => {
+          modalPendingRef.current = false;
+          if (!ok) return;
+          const detached = detachInstancesFromLines(action.lyricLines, action.impacted);
+          const remainingGroupIds = new Set(detached.map((l) => l.groupId).filter(Boolean) as string[]);
+          const nextGroups = groups.filter((g) => remainingGroupIds.has(g.id));
+          linesSetByUs.current = detached;
+          setLines(detached);
+          if (nextGroups.length !== groups.length) {
+            useProjectStore.getState().setGroups(nextGroups);
+          }
+          setRawText(detached.map((l) => l.text).join("\n"));
+        });
+        return;
+      }
+
+      setRawText(text);
       setImportResult(null);
+
+      if (action.kind === "noop") return;
+
+      linesSetByUs.current = action.finalLines;
+      setLines(action.finalLines);
     },
-    [defaultAgentId, lines, setLines],
+    [confirm, defaultAgentId, groups, lines, setLines],
   );
 
   const handleFileImport = useCallback(
@@ -405,15 +512,20 @@ const EditPanel: React.FC = () => {
         linesSetByUs.current = result.lines;
         setLines(result.lines);
         setRawText(result.lines.map((l) => l.text).join("\n"));
+        useProjectStore.getState().setGroups(result.groups ?? []);
 
         if (Object.keys(result.metadata).length > 0) {
           setMetadata(result.metadata);
         }
 
-        // Add imported agents (skip duplicates)
+        // Reconcile imported agents: update name/type on matching id, add otherwise
         if (result.agents?.length) {
+          const updateAgent = useProjectStore.getState().updateAgent;
           for (const agent of result.agents) {
-            if (!agents.find((a) => a.id === agent.id)) {
+            const existing = agents.find((a) => a.id === agent.id);
+            if (existing) {
+              updateAgent(agent.id, { name: agent.name, type: agent.type });
+            } else {
               addAgent(agent);
             }
           }
@@ -546,32 +658,70 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto border rounded-lg border-composer-border bg-composer-bg-dark">
+          <Scroll className="flex-1 border rounded-lg border-composer-border bg-composer-bg-dark">
             {parsed.length === 0 || (parsed.length === 1 && parsed[0].isEmpty) ? (
               <div className="flex items-center justify-center h-full text-sm text-composer-text-muted">
                 Lyrics will appear here
               </div>
             ) : (
               <div className="py-2">
-                {parsed.map((line) => (
-                  <LinePreview
-                    key={line.lineNumber}
-                    line={line}
-                    agents={agents}
-                    isSelected={selectedLines.has(line.lineNumber)}
-                    hasMultipleSelected={selectedLines.size > 1}
-                    onSelect={handleLineSelect}
-                    onAgentChange={handleAgentChange}
-                    onBulkAgentChange={handleBulkAgentChange}
-                    onBackgroundChange={handleBackgroundChange}
-                    onGutterMouseDown={handleGutterMouseDown}
-                    onGutterMouseEnter={handleGutterMouseEnter}
-                    didDragRef={didDragRef}
-                  />
-                ))}
+                {parsed.map((line, index) => {
+                  const prev = index > 0 ? parsed[index - 1] : null;
+                  const next = index < parsed.length - 1 ? parsed[index + 1] : null;
+                  const isFirstOfInstance =
+                    line.groupId !== undefined &&
+                    line.instanceIdx !== undefined &&
+                    (prev?.groupId !== line.groupId || prev?.instanceIdx !== line.instanceIdx);
+                  const isLastOfInstance =
+                    line.groupId !== undefined &&
+                    line.instanceIdx !== undefined &&
+                    (next?.groupId !== line.groupId || next?.instanceIdx !== line.instanceIdx);
+                  const group = line.groupId ? groups.find((g) => g.id === line.groupId) : undefined;
+                  const totalInstances = group ? (instanceCountByGroup.get(group.id) ?? 0) : 0;
+                  const groupTooltip =
+                    group && totalInstances > 1
+                      ? `Part of ${group.label} · linked to ${totalInstances - 1} other instance${totalInstances - 1 === 1 ? "" : "s"}. Edits propagate.`
+                      : undefined;
+                  return (
+                    <div key={line.lineNumber}>
+                      {isFirstOfInstance && group && (
+                        <div
+                          className="mx-3 mt-2 mb-1 flex items-center gap-2 text-xs text-composer-text-muted select-none"
+                          aria-hidden
+                        >
+                          <span className="font-medium text-composer-text">{group.label}</span>
+                          <span className="tabular-nums">
+                            · {(line.instanceIdx ?? 0) + 1} of {totalInstances}
+                          </span>
+                          <span className="flex-1 h-px" style={{ backgroundColor: group.color, opacity: 0.4 }} />
+                        </div>
+                      )}
+                      <LinePreview
+                        line={line}
+                        agents={agents}
+                        isSelected={selectedLines.has(line.lineNumber)}
+                        hasMultipleSelected={selectedLines.size > 1}
+                        groupColor={group?.color}
+                        groupTooltip={groupTooltip}
+                        onSelect={handleLineSelect}
+                        onAgentChange={handleAgentChange}
+                        onBulkAgentChange={handleBulkAgentChange}
+                        onBackgroundChange={handleBackgroundChange}
+                        onGutterMouseDown={handleGutterMouseDown}
+                        onGutterMouseEnter={handleGutterMouseEnter}
+                        didDragRef={didDragRef}
+                      />
+                      {isLastOfInstance && group && (
+                        <div className="mx-3 mt-1 mb-2 flex items-center select-none" aria-hidden>
+                          <span className="flex-1 h-px" style={{ backgroundColor: group.color, opacity: 0.4 }} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </div>
+          </Scroll>
         </div>
       </div>
     </div>

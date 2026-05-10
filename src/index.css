@@ -16,6 +16,7 @@
   --color-composer-text-muted: rgba(255, 255, 255, 0.5);
   --color-composer-text-disabled: rgba(255, 255, 255, 0.4);
   --color-composer-text-tertiary: #aaa;
+  --color-composer-text-faint: #696b77;
 
   /* Interactive Elements */
   --color-composer-button: hsla(0, 0%, 100%, 0.1);
@@ -159,13 +160,13 @@ input[type="range"].settings-slider::-moz-range-progress {
   z-index: 200;
 }
 
-/* Offset scrollbars to account for gutter (48px) and waveform (80px) */
-.os-scrollbar-horizontal {
+/* Timeline-specific: offset scrollbars to account for gutter (48px) and waveform (80px) */
+[data-timeline-scroll-host] .os-scrollbar-horizontal {
   left: 48px !important;
   width: calc(100% - 48px) !important;
 }
 
-.os-scrollbar-vertical {
+[data-timeline-scroll-host] .os-scrollbar-vertical {
   top: 80px !important;
   height: calc(100% - 80px) !important;
 }

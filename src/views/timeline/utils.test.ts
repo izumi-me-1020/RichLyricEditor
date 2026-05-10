@@ -3,7 +3,20 @@
  */
 import type { LyricLine } from "@/stores/project";
 import { describe, expect, it } from "vitest";
-import { distributeLinesTiming, distributeWordsInLine, formatTime, getLineTiming, nudgeSelectedWords } from "./utils";
+import {
+  distributeLinesTiming,
+  distributeWordsInLine,
+  formatTime,
+  getEffectiveRows,
+  nudgeSelectedWords,
+  getLineTiming,
+  type GroupHeaderRow,
+  getWordsInInstance,
+  instanceTimingBounds,
+  partitionNudgeSelections,
+  shiftLineSyncedRows,
+  shiftSelectionsTogether,
+} from "./utils";
 
 // -- distributeWordsInLine -----------------------------------------------------
 
@@ -291,6 +304,254 @@ describe("formatTime", () => {
   });
 });
 
+// -- getEffectiveRows ---------------------------------------------------------
+
+describe("getEffectiveRows", () => {
+  function l(id: string, extras: Partial<LyricLine> = {}): LyricLine {
+    return { id, text: "x", agentId: "v1", ...extras };
+  }
+
+  it("interleaves a header before each instance run", () => {
+    const lines: LyricLine[] = [
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0, words: [{ text: "I", begin: 0, end: 1 }] }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1, words: [{ text: "you", begin: 1, end: 2 }] }),
+      l("c"),
+      l("d", { groupId: "g1", instanceIdx: 1, templateLineIdx: 0, words: [{ text: "I", begin: 30, end: 31 }] }),
+      l("e", { groupId: "g1", instanceIdx: 1, templateLineIdx: 1, words: [{ text: "you", begin: 31, end: 32 }] }),
+    ];
+
+    const rows = getEffectiveRows(lines);
+    expect(rows.map((r) => r.kind)).toEqual(["group-header", "line", "line", "line", "group-header", "line", "line"]);
+
+    const h0 = rows[0] as GroupHeaderRow;
+    expect(h0.groupId).toBe("g1");
+    expect(h0.instanceIdx).toBe(0);
+    expect(h0.lineCount).toBe(2);
+    expect(h0.instanceStart).toBe(0);
+    expect(h0.instanceEnd).toBe(2);
+
+    const h1 = rows[4] as GroupHeaderRow;
+    expect(h1.instanceIdx).toBe(1);
+    expect(h1.instanceStart).toBe(30);
+    expect(h1.instanceEnd).toBe(32);
+  });
+
+  it("returns standalone-only rows for projects with no groups", () => {
+    const lines: LyricLine[] = [l("a"), l("b"), l("c")];
+    const rows = getEffectiveRows(lines);
+    expect(rows.every((r) => r.kind === "line")).toBe(true);
+    expect(rows).toHaveLength(3);
+  });
+
+  it("preserves lineIndex pointers into the original lines array", () => {
+    const lines: LyricLine[] = [
+      l("a"),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0 }),
+      l("c", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+      l("d"),
+    ];
+    const rows = getEffectiveRows(lines);
+    const lineRows = rows.filter((r) => r.kind === "line");
+    expect(lineRows.map((r) => (r.kind === "line" ? r.lineIndex : -1))).toEqual([0, 1, 2, 3]);
+  });
+
+  it("does NOT emit a header for an instance with no timed content (no words, bg words, begin, or end)", () => {
+    // Without this guard the banner renders at x=0 with min-width because
+    // instanceTimingBounds returns its { 0, 0 } no-finite-value fallback.
+    const lines: LyricLine[] = [
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0 }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+    ];
+    const rows = getEffectiveRows(lines);
+    // Both lines still appear; the header is suppressed
+    expect(rows.map((r) => r.kind)).toEqual(["line", "line"]);
+  });
+
+  it("emits a header for a line-synced instance (begin/end set, no words), that's real timing", () => {
+    const lines: LyricLine[] = [l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0, begin: 5, end: 7 })];
+    const rows = getEffectiveRows(lines);
+    expect(rows[0].kind).toBe("group-header");
+    const header = rows[0] as GroupHeaderRow;
+    expect(header.instanceStart).toBe(5);
+    expect(header.instanceEnd).toBe(7);
+  });
+
+  it("emits a header for an instance whose only timed content is bg words", () => {
+    const lines: LyricLine[] = [
+      l("a", {
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        backgroundWords: [{ text: "ah", begin: 4, end: 5 }],
+      }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows[0].kind).toBe("group-header");
+    const header = rows[0] as GroupHeaderRow;
+    expect(header.instanceStart).toBe(4);
+    expect(header.instanceEnd).toBe(5);
+  });
+
+  it("suppresses header on an empty instance but emits header on a sibling timed instance", () => {
+    const lines: LyricLine[] = [
+      // Empty instance 0
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0 }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+      // Timed instance 1
+      l("c", { groupId: "g1", instanceIdx: 1, templateLineIdx: 0, words: [{ text: "x", begin: 30, end: 31 }] }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows.map((r) => r.kind)).toEqual(["line", "line", "group-header", "line"]);
+  });
+
+  it("suppresses header for partially-empty instance only when ALL of its lines have no timing", () => {
+    // Instance has line A timed and line B empty: header still appears (instance is partially alive)
+    const lines: LyricLine[] = [
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0, words: [{ text: "x", begin: 5, end: 6 }] }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows.map((r) => r.kind)).toEqual(["group-header", "line", "line"]);
+    expect((rows[0] as GroupHeaderRow).instanceStart).toBe(5);
+    expect((rows[0] as GroupHeaderRow).instanceEnd).toBe(6);
+  });
+});
+
+describe("instanceTimingBounds", () => {
+  it("uses min/max across word and bg word timings", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        words: [
+          { text: "hello ", begin: 5, end: 6 },
+          { text: "world", begin: 6, end: 7 },
+        ],
+        backgroundWords: [{ text: "yeah", begin: 4, end: 4.5 }],
+      },
+    ];
+    const bounds = instanceTimingBounds(lines);
+    expect(bounds.start).toBe(4);
+    expect(bounds.end).toBe(7);
+  });
+
+  it("ignores stale line.begin/end when words are present (header bounds track word edits, not line-level cache)", () => {
+    // The user-reported regression: nudging all words in an instance left
+    // shifts every word, but the header's right edge stays affixed because
+    // line.begin/end were left stale. Header should follow the word array,
+    // not a leftover line-level value from import.
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        // Stale line-level timing (e.g. from TTML import that populated both)
+        begin: 10,
+        end: 20,
+        words: [
+          { text: "hello", begin: 5, end: 6 },
+          { text: "world", begin: 6, end: 7 },
+        ],
+      },
+    ];
+    const bounds = instanceTimingBounds(lines);
+    expect(bounds.start).toBe(5);
+    expect(bounds.end).toBe(7);
+  });
+
+  it("ignores stale line.begin/end when only bg words are present", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        begin: 10,
+        end: 20,
+        backgroundWords: [{ text: "ah", begin: 5, end: 6 }],
+      },
+    ];
+    const bounds = instanceTimingBounds(lines);
+    expect(bounds.start).toBe(5);
+    expect(bounds.end).toBe(6);
+  });
+
+  it("falls back to line.begin/end ONLY when the line is truly line-synced (no words and no bg words)", () => {
+    const lines: LyricLine[] = [{ id: "a", text: "x", agentId: "v1", begin: 5, end: 7 }];
+    const bounds = instanceTimingBounds(lines);
+    expect(bounds.start).toBe(5);
+    expect(bounds.end).toBe(7);
+  });
+
+  it("mixes correctly across multiple lines: word-synced lines use words, line-synced uses begin/end", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        // Stale line-level should be IGNORED; words win
+        begin: 100,
+        end: 200,
+        words: [{ text: "hello", begin: 5, end: 6 }],
+      },
+      // Truly line-synced: no words, line.begin/end is the source of truth
+      { id: "b", text: "y", agentId: "v1", begin: 10, end: 12 },
+    ];
+    const bounds = instanceTimingBounds(lines);
+    expect(bounds.start).toBe(5);
+    expect(bounds.end).toBe(12);
+  });
+});
+
+describe("getWordsInInstance", () => {
+  it("collects all words and bg words across all lines of an instance", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "a",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 0, end: 1 },
+          { text: "love", begin: 1, end: 2 },
+        ],
+        backgroundWords: [{ text: "yeah", begin: 0.5, end: 1.5 }],
+      },
+      {
+        id: "b",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 1,
+        words: [{ text: "you", begin: 2, end: 3 }],
+      },
+      // Other instance
+      {
+        id: "c",
+        text: "x",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "I", begin: 30, end: 31 }],
+      },
+    ];
+
+    const sels = getWordsInInstance(lines, "g1", 0);
+    expect(sels).toHaveLength(4);
+    expect(sels.filter((s) => s.type === "word")).toHaveLength(3);
+    expect(sels.filter((s) => s.type === "bg")).toHaveLength(1);
+    expect(sels.every((s) => s.lineId === "a" || s.lineId === "b")).toBe(true);
+  });
+
+  it("returns empty for unmatched groupId or instanceIdx", () => {
+    expect(getWordsInInstance([], "g1", 0)).toEqual([]);
+  });
+});
+
 // -- nudgeSelectedWords --------------------------------------------------------
 
 function makeLine(id: string, words: { text: string; begin: number; end: number }[]): LyricLine {
@@ -483,5 +744,331 @@ describe("nudgeSelectedWords", () => {
     const result = nudgeSelectedWords(lines, [{ lineId: "L", type: "word", wordIndex: 0 }], 0, 10);
     expect(result.appliedDelta).toBe(0);
     expect(result.updates).toEqual([]);
+  });
+});
+
+// -- nudgeSelectedWords as instance shift -------------------------------------
+
+describe("nudgeSelectedWords as instance shift", () => {
+  it("shifts every word in an instance by the same delta when all words are selected", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "A",
+        text: "I love",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 10, end: 10.3 },
+          { text: "love", begin: 10.3, end: 10.8 },
+        ],
+      },
+      {
+        id: "B",
+        text: "all night",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 1,
+        words: [
+          { text: "all ", begin: 11, end: 11.4 },
+          { text: "night", begin: 11.4, end: 12 },
+        ],
+      },
+      // Standalone line OUTSIDE the instance, must NOT be touched
+      { id: "C", text: "outside", agentId: "v1", words: [{ text: "outside", begin: 30, end: 31 }] },
+    ];
+    const allInstanceSelections = [
+      { lineId: "A", type: "word" as const, wordIndex: 0 },
+      { lineId: "A", type: "word" as const, wordIndex: 1 },
+      { lineId: "B", type: "word" as const, wordIndex: 0 },
+      { lineId: "B", type: "word" as const, wordIndex: 1 },
+    ];
+    const result = nudgeSelectedWords(lines, allInstanceSelections, 0.5, 60);
+    expect(result.appliedDelta).toBe(0.5);
+    const aWords = (result.updates.find((u) => u.id === "A")?.updates.words ?? []) as { begin: number; end: number }[];
+    const bWords = (result.updates.find((u) => u.id === "B")?.updates.words ?? []) as { begin: number; end: number }[];
+    expect(aWords[0].begin).toBeCloseTo(10.5);
+    expect(aWords[1].end).toBeCloseTo(11.3);
+    expect(bWords[0].begin).toBeCloseTo(11.5);
+    expect(bWords[1].end).toBeCloseTo(12.5);
+    expect(result.updates.find((u) => u.id === "C")).toBeUndefined();
+  });
+
+  it("clamps shift to song duration when selection touches the end", () => {
+    const lines: LyricLine[] = [{ id: "A", text: "x", agentId: "v1", words: [{ text: "x", begin: 59.7, end: 60 }] }];
+    const result = nudgeSelectedWords(lines, [{ lineId: "A", type: "word", wordIndex: 0 }], 0.5, 60);
+    expect(result.appliedDelta).toBe(0);
+  });
+});
+
+// -- partitionNudgeSelections -------------------------------------------------
+
+describe("partitionNudgeSelections", () => {
+  it("classifies word-synced lines as wordSynced", () => {
+    const lines: LyricLine[] = [
+      { id: "L1", text: "hello", agentId: "v1", words: [{ text: "hello", begin: 0, end: 1 }] },
+    ];
+    const sels = [{ lineId: "L1", type: "word" as const, wordIndex: 0 }];
+    const result = partitionNudgeSelections(lines, sels);
+    expect(result.wordSynced).toEqual(sels);
+    expect(result.lineSynced).toEqual([]);
+  });
+
+  it("classifies line-synced lines as lineSynced", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "verse", agentId: "v1", begin: 5, end: 7 }];
+    const sels = [{ lineId: "L1", type: "word" as const, wordIndex: 0 }];
+    const result = partitionNudgeSelections(lines, sels);
+    expect(result.lineSynced).toEqual(sels);
+    expect(result.wordSynced).toEqual([]);
+  });
+
+  it("dedupes line-synced selections so the same line shifts only once", () => {
+    // Effective lines synthesize a single 'word' for line-synced rows. If a user marquee-selected
+    // a line-synced row from a viewport that briefly produced multiple synthetic indices,
+    // we should still only shift the line once.
+    const lines: LyricLine[] = [{ id: "L1", text: "verse", agentId: "v1", begin: 5, end: 7 }];
+    const sels = [
+      { lineId: "L1", type: "word" as const, wordIndex: 0 },
+      { lineId: "L1", type: "word" as const, wordIndex: 0 },
+    ];
+    const result = partitionNudgeSelections(lines, sels);
+    expect(result.lineSynced).toHaveLength(1);
+  });
+
+  it("treats backgroundWords selections as wordSynced regardless of line-sync state", () => {
+    // BG words always have explicit timing even on otherwise line-synced rows
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "main",
+        agentId: "v1",
+        begin: 5,
+        end: 7,
+        backgroundWords: [{ text: "ah", begin: 5.2, end: 5.6 }],
+      },
+    ];
+    const sels = [{ lineId: "L1", type: "bg" as const, wordIndex: 0 }];
+    const result = partitionNudgeSelections(lines, sels);
+    expect(result.wordSynced).toEqual(sels);
+    expect(result.lineSynced).toEqual([]);
+  });
+
+  it("handles mixed selections across line-synced and word-synced rows", () => {
+    const lines: LyricLine[] = [
+      { id: "A", text: "synced", agentId: "v1", begin: 0, end: 1 },
+      { id: "B", text: "with words", agentId: "v1", words: [{ text: "with words", begin: 1, end: 2 }] },
+    ];
+    const sels = [
+      { lineId: "A", type: "word" as const, wordIndex: 0 },
+      { lineId: "B", type: "word" as const, wordIndex: 0 },
+    ];
+    const result = partitionNudgeSelections(lines, sels);
+    expect(result.lineSynced.map((s) => s.lineId)).toEqual(["A"]);
+    expect(result.wordSynced.map((s) => s.lineId)).toEqual(["B"]);
+  });
+
+  it("drops selections referencing missing lines", () => {
+    const result = partitionNudgeSelections([], [{ lineId: "ghost", type: "word", wordIndex: 0 }]);
+    expect(result.wordSynced).toEqual([]);
+    expect(result.lineSynced).toEqual([]);
+  });
+
+  it("treats lines with no words and no begin/end as neither (skipped)", () => {
+    const lines: LyricLine[] = [{ id: "empty", text: "", agentId: "v1" }];
+    const result = partitionNudgeSelections(lines, [{ lineId: "empty", type: "word", wordIndex: 0 }]);
+    expect(result.wordSynced).toEqual([]);
+    expect(result.lineSynced).toEqual([]);
+  });
+});
+
+// -- shiftLineSyncedRows ------------------------------------------------------
+
+describe("shiftLineSyncedRows", () => {
+  it("shifts begin and end by the requested delta and preserves line-sync (no words written)", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "verse", agentId: "v1", begin: 5, end: 7 }];
+    const result = shiftLineSyncedRows(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }], 0.5, 60);
+    expect(result.appliedDelta).toBe(0.5);
+    expect(result.updates).toHaveLength(1);
+    expect(result.updates[0].id).toBe("L1");
+    expect(result.updates[0].updates).toEqual({ begin: 5.5, end: 7.5 });
+    // Critical: no `words` key in the update payload
+    expect("words" in result.updates[0].updates).toBe(false);
+  });
+
+  it("shifts multiple line-synced rows together by the smallest allowed delta", () => {
+    const lines: LyricLine[] = [
+      { id: "A", text: "a", agentId: "v1", begin: 0.1, end: 1 },
+      { id: "B", text: "b", agentId: "v1", begin: 5, end: 6 },
+    ];
+    // Request -0.5s shift; A only has 0.1s headroom on the left, so applied delta is -0.1
+    const result = shiftLineSyncedRows(
+      lines,
+      [
+        { lineId: "A", type: "word", wordIndex: 0 },
+        { lineId: "B", type: "word", wordIndex: 0 },
+      ],
+      -0.5,
+      60,
+    );
+    expect(result.appliedDelta).toBeCloseTo(-0.1);
+    expect((result.updates.find((u) => u.id === "A")?.updates as { begin: number }).begin).toBeCloseTo(0);
+    expect((result.updates.find((u) => u.id === "B")?.updates as { begin: number }).begin).toBeCloseTo(4.9);
+  });
+
+  it("returns no-op when shift would push past 0 or duration", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "x", agentId: "v1", begin: 0, end: 1 }];
+    const r1 = shiftLineSyncedRows(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }], -0.5, 60);
+    expect(r1.appliedDelta).toBe(0);
+    const lines2: LyricLine[] = [{ id: "L1", text: "x", agentId: "v1", begin: 59, end: 60 }];
+    const r2 = shiftLineSyncedRows(lines2, [{ lineId: "L1", type: "word", wordIndex: 0 }], 0.5, 60);
+    expect(r2.appliedDelta).toBe(0);
+  });
+
+  it("returns no-op for zero delta", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "x", agentId: "v1", begin: 5, end: 6 }];
+    const result = shiftLineSyncedRows(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }], 0, 60);
+    expect(result.appliedDelta).toBe(0);
+    expect(result.updates).toEqual([]);
+  });
+
+  it("returns no-op for empty selection", () => {
+    const result = shiftLineSyncedRows([], [], 0.5, 60);
+    expect(result.appliedDelta).toBe(0);
+    expect(result.updates).toEqual([]);
+  });
+
+  it("skips selections where line is missing or has no begin/end", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "x", agentId: "v1" }];
+    const result = shiftLineSyncedRows(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }], 0.5, 60);
+    expect(result.appliedDelta).toBe(0);
+    expect(result.updates).toEqual([]);
+  });
+});
+
+// -- shiftSelectionsTogether (unified clamp) ----------------------------------
+
+describe("shiftSelectionsTogether", () => {
+  it("uses a single clamp across word-synced and line-synced partitions so a mixed instance moves uniformly", () => {
+    // The bug this prevents: nudgeSelectedWords clamps based on word-synced
+    // headroom, shiftLineSyncedRows clamps based on line-synced headroom.
+    // If they apply different deltas, the group banner stretches asymmetrically.
+    const lines: LyricLine[] = [
+      // Word-synced row whose first word starts at 0.05 → max left shift = 0.05
+      { id: "A", text: "x", agentId: "v1", words: [{ text: "x", begin: 0.05, end: 1 }] },
+      // Line-synced row with much more left headroom (begin=10)
+      { id: "B", text: "y", agentId: "v1", begin: 10, end: 11 },
+    ];
+    const partitioned = partitionNudgeSelections(lines, [
+      { lineId: "A", type: "word", wordIndex: 0 },
+      { lineId: "B", type: "word", wordIndex: 0 },
+    ]);
+    const result = shiftSelectionsTogether(lines, partitioned, -0.5, 60);
+    // Without the unified clamp: A shifts by -0.05, B shifts by -0.5 → asymmetric.
+    // With unified clamp: both shift by -0.05.
+    expect(result.appliedDelta).toBeCloseTo(-0.05);
+    const aUpdate = result.updates.find((u) => u.id === "A");
+    const bUpdate = result.updates.find((u) => u.id === "B");
+    expect((aUpdate?.updates.words as { begin: number }[])?.[0].begin).toBeCloseTo(0);
+    expect((bUpdate?.updates as { begin: number }).begin).toBeCloseTo(9.95);
+  });
+
+  it("works when only the line-synced partition has selections", () => {
+    const lines: LyricLine[] = [{ id: "A", text: "x", agentId: "v1", begin: 5, end: 6 }];
+    const partitioned = partitionNudgeSelections(lines, [{ lineId: "A", type: "word", wordIndex: 0 }]);
+    const result = shiftSelectionsTogether(lines, partitioned, 0.1, 60);
+    expect(result.appliedDelta).toBeCloseTo(0.1);
+    expect((result.updates[0].updates as { begin: number }).begin).toBeCloseTo(5.1);
+  });
+
+  it("works when only the word-synced partition has selections", () => {
+    const lines: LyricLine[] = [{ id: "A", text: "x", agentId: "v1", words: [{ text: "x", begin: 5, end: 6 }] }];
+    const partitioned = partitionNudgeSelections(lines, [{ lineId: "A", type: "word", wordIndex: 0 }]);
+    const result = shiftSelectionsTogether(lines, partitioned, 0.1, 60);
+    expect(result.appliedDelta).toBeCloseTo(0.1);
+    expect((result.updates[0].updates.words as { begin: number }[])[0].begin).toBeCloseTo(5.1);
+  });
+
+  it("returns empty when both partitions are empty", () => {
+    const result = shiftSelectionsTogether([], { wordSynced: [], lineSynced: [] }, 0.5, 60);
+    expect(result.appliedDelta).toBe(0);
+    expect(result.updates).toEqual([]);
+  });
+
+  it("clamps to the smaller of word-synced and line-synced headroom (line-synced wins)", () => {
+    const lines: LyricLine[] = [
+      // Word-synced row with tons of headroom on both sides
+      { id: "A", text: "x", agentId: "v1", words: [{ text: "x", begin: 30, end: 31 }] },
+      // Line-synced row with only 0.01s headroom on the right (close to duration=60)
+      { id: "B", text: "y", agentId: "v1", begin: 58.99, end: 59.99 },
+    ];
+    const partitioned = partitionNudgeSelections(lines, [
+      { lineId: "A", type: "word", wordIndex: 0 },
+      { lineId: "B", type: "word", wordIndex: 0 },
+    ]);
+    const result = shiftSelectionsTogether(lines, partitioned, 0.5, 60);
+    expect(result.appliedDelta).toBeCloseTo(0.01);
+  });
+
+  it("preserves direction when clamping (negative requestedDelta yields negative applied)", () => {
+    const lines: LyricLine[] = [{ id: "A", text: "x", agentId: "v1", words: [{ text: "x", begin: 0.05, end: 1 }] }];
+    const partitioned = partitionNudgeSelections(lines, [{ lineId: "A", type: "word", wordIndex: 0 }]);
+    const result = shiftSelectionsTogether(lines, partitioned, -0.5, 60);
+    expect(result.appliedDelta).toBeLessThan(0);
+    expect(result.appliedDelta).toBeCloseTo(-0.05);
+  });
+
+  it("yields a fully symmetric instance shift across all selected rows in a multi-line instance", () => {
+    // The user-reported bug: instance with all members selected, nudge left,
+    // header right edge stays affixed while left edge moves. Unified clamp prevents.
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 10, end: 10.3 },
+          { text: "love", begin: 10.3, end: 10.8 },
+        ],
+      },
+      {
+        id: "L2",
+        text: "all night",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 1,
+        words: [
+          { text: "all ", begin: 11, end: 11.4 },
+          { text: "night", begin: 11.4, end: 12 },
+        ],
+      },
+    ];
+    const partitioned = partitionNudgeSelections(lines, [
+      { lineId: "L1", type: "word", wordIndex: 0 },
+      { lineId: "L1", type: "word", wordIndex: 1 },
+      { lineId: "L2", type: "word", wordIndex: 0 },
+      { lineId: "L2", type: "word", wordIndex: 1 },
+    ]);
+    const result = shiftSelectionsTogether(lines, partitioned, -0.5, 60);
+    expect(result.appliedDelta).toBeCloseTo(-0.5);
+    const l1Words = (result.updates.find((u) => u.id === "L1")?.updates.words ?? []) as {
+      begin: number;
+      end: number;
+    }[];
+    const l2Words = (result.updates.find((u) => u.id === "L2")?.updates.words ?? []) as {
+      begin: number;
+      end: number;
+    }[];
+    // Min begin shifts by exactly -0.5 (10 → 9.5)
+    expect(l1Words[0].begin).toBeCloseTo(9.5);
+    // Max end shifts by exactly -0.5 (12 → 11.5)
+    expect(l2Words[1].end).toBeCloseTo(11.5);
+    // Width preserved exactly
+    expect(l2Words[1].end - l1Words[0].begin).toBeCloseTo(2);
   });
 });

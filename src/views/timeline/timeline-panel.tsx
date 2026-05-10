@@ -1,6 +1,7 @@
 import { FileDropZone } from "@/audio/file-drop-zone";
 import { useAudioStore } from "@/stores/audio";
 import { getAgentColor, useProjectStore } from "@/stores/project";
+import { GroupingSuggestionsBanner } from "@/views/timeline/grouping-suggestions-banner";
 import { LyricsImportModal } from "@/views/timeline/lyrics-import-modal";
 import { MarqueeSelection } from "@/views/timeline/marquee-selection";
 import { PastePreview } from "@/views/timeline/paste-preview";
@@ -18,7 +19,8 @@ import { useMarquee } from "@/views/timeline/use-marquee";
 import { useTimelineDnd } from "@/views/timeline/use-timeline-dnd";
 import { useTimelineKeyboard } from "@/views/timeline/use-timeline-keyboard";
 import { useTimelinePan } from "@/views/timeline/use-timeline-pan";
-import { distributeLinesTiming, getEffectiveLines } from "@/views/timeline/utils";
+import { computeRowLayout, distributeLinesTiming, getEffectiveLines } from "@/views/timeline/utils";
+import { GROUP_HEADER_HEIGHT } from "@/views/timeline/group-header-row";
 import { Button } from "@/ui/button";
 import { IconFileImport, IconFileMusic, IconMusic } from "@tabler/icons-react";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
@@ -195,26 +197,36 @@ const TimelinePanel: React.FC = () => {
 
   const dragCells = useMemo(() => {
     if (!activeDrag) return null;
-    const { selectedWords, rowHeights, defaultRowHeight } = useTimelineStore.getState();
+    const { selectedWords, rowHeights, defaultRowHeight, collapsedInstances } = useTimelineStore.getState();
     const inSelection = isWordSelected(selectedWords, activeDrag.lineId, activeDrag.wordIndex, activeDrag.trackType);
 
     const WAVEFORM_HEIGHT = 80;
     const BG_DROP_ZONE_HEIGHT = 24;
 
+    const layout = computeRowLayout({
+      lines: effectiveLines,
+      rowHeights,
+      defaultRowHeight,
+      collapsedInstances,
+      waveformHeight: WAVEFORM_HEIGHT,
+      bgDropZoneHeight: BG_DROP_ZONE_HEIGHT,
+      groupHeaderHeight: GROUP_HEADER_HEIGHT,
+    });
+
     const rowTops: Record<string, number> = {};
     const rowMainHeights: Record<string, number> = {};
     const rowBgTops: Record<string, number> = {};
     const rowBgHeights: Record<string, number> = {};
-    let top = WAVEFORM_HEIGHT;
     for (const line of effectiveLines) {
-      rowTops[line.id] = top;
+      const pos = layout.lineTops.get(line.id);
+      if (!pos) continue;
       const mainH = rowHeights[line.id] ?? defaultRowHeight;
-      rowMainHeights[line.id] = mainH;
       const hasBg = line.backgroundWords && line.backgroundWords.length > 0;
       const bgH = hasBg ? mainH : BG_DROP_ZONE_HEIGHT;
-      rowBgTops[line.id] = top + mainH;
+      rowTops[line.id] = pos.top;
+      rowMainHeights[line.id] = mainH;
+      rowBgTops[line.id] = pos.top + mainH;
       rowBgHeights[line.id] = bgH;
-      top += mainH + bgH + 1;
     }
 
     const anchorLeft = activeDrag.begin * zoom;
@@ -308,10 +320,15 @@ const TimelinePanel: React.FC = () => {
     >
       <div data-tour="timeline-panel" className="flex flex-col flex-1 overflow-hidden select-none">
         <TimelineHeader onImportLyrics={() => setLyricsModalOpen(true)} />
+        <GroupingSuggestionsBanner />
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div ref={contentRef} className="relative flex-1 flex flex-col overflow-hidden isolate">
+            <div
+              ref={contentRef}
+              data-timeline-scroll-host
+              className="relative flex-1 flex flex-col overflow-hidden isolate"
+            >
               <div
                 ref={scrollContainerRef}
                 data-scroll-container

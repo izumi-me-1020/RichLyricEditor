@@ -14,7 +14,8 @@ interface WordSelection {
 type ContextMenuTarget =
   | { kind: "word"; lineId: string; lineIndex: number; wordIndex: number; type: "word" | "bg" }
   | { kind: "track"; lineId: string; lineIndex: number; time: number; type: "word" | "bg" }
-  | { kind: "gutter"; lineId: string; lineIndex: number };
+  | { kind: "gutter"; lineId: string; lineIndex: number }
+  | { kind: "group-banner"; groupId: string; instanceIdx: number; source: "gutter" | "banner" };
 
 interface ContextMenuState {
   x: number;
@@ -44,6 +45,11 @@ interface TimelineState {
   contextMenu: ContextMenuState | null;
   editingWord: EditingWord | null;
   selectOnlyMode: boolean;
+  collapsedInstances: Record<string, boolean>;
+  pingingGroupId: string | null;
+  renamingGroupId: string | null;
+  renamingInstanceIdx: number | null;
+  draggedGroupShift: { groupId: string; instanceIdx: number; offsetPx: number } | null;
 }
 
 interface TimelineActions {
@@ -67,6 +73,11 @@ interface TimelineActions {
   setEditingWord: (editing: EditingWord | null) => void;
   clearEditingWord: () => void;
   toggleSelectOnlyMode: () => void;
+  setInstanceCollapsed: (key: string, isCollapsed: boolean) => void;
+  toggleInstanceCollapsed: (key: string) => void;
+  setPingingGroupId: (groupId: string | null) => void;
+  setRenamingGroupId: (groupId: string | null, instanceIdx?: number | null) => void;
+  setDraggedGroupShift: (shift: { groupId: string; instanceIdx: number; offsetPx: number } | null) => void;
 }
 
 // -- Constants -----------------------------------------------------------------
@@ -99,6 +110,11 @@ const useTimelineStore = create<TimelineState & TimelineActions>((set, get) => {
     contextMenu: null,
     editingWord: null,
     selectOnlyMode: false,
+    collapsedInstances: {},
+    pingingGroupId: null,
+    renamingGroupId: null,
+    renamingInstanceIdx: null,
+    draggedGroupShift: null,
 
     setZoom: (zoom) => set({ zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom)) }),
     zoomIn: () => set((s) => ({ zoom: Math.min(MAX_ZOOM, s.zoom + ZOOM_STEP) })),
@@ -140,6 +156,14 @@ const useTimelineStore = create<TimelineState & TimelineActions>((set, get) => {
     setEditingWord: (editingWord) => set({ editingWord }),
     clearEditingWord: () => set({ editingWord: null }),
     toggleSelectOnlyMode: () => set((s) => ({ selectOnlyMode: !s.selectOnlyMode })),
+    setInstanceCollapsed: (key, isCollapsed) =>
+      set((s) => ({ collapsedInstances: { ...s.collapsedInstances, [key]: isCollapsed } })),
+    toggleInstanceCollapsed: (key) =>
+      set((s) => ({ collapsedInstances: { ...s.collapsedInstances, [key]: !s.collapsedInstances[key] } })),
+    setPingingGroupId: (pingingGroupId) => set({ pingingGroupId }),
+    setRenamingGroupId: (renamingGroupId, renamingInstanceIdx = null) =>
+      set({ renamingGroupId, renamingInstanceIdx: renamingGroupId === null ? null : renamingInstanceIdx }),
+    setDraggedGroupShift: (draggedGroupShift) => set({ draggedGroupShift }),
   };
 });
 
@@ -147,7 +171,11 @@ function isWordSelected(selectedWords: WordSelection[], lineId: string, wordInde
   return selectedWords.some((w) => w.lineId === lineId && w.wordIndex === wordIndex && w.type === type);
 }
 
+function instanceKey(groupId: string, instanceIdx: number): string {
+  return `${groupId}:${instanceIdx}`;
+}
+
 // -- Exports -------------------------------------------------------------------
 
-export { useTimelineStore, isWordSelected, GUTTER_WIDTH, MIN_ZOOM, MAX_ZOOM, DEFAULT_ROW_HEIGHT };
+export { useTimelineStore, isWordSelected, instanceKey, GUTTER_WIDTH, MIN_ZOOM, MAX_ZOOM, DEFAULT_ROW_HEIGHT };
 export type { WordSelection, ContextMenuTarget, ContextMenuState, EditingWord };

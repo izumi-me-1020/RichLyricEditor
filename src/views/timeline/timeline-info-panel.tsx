@@ -4,7 +4,7 @@ import { Button } from "@/ui/button";
 import { createBgWordsFromLine } from "@/utils/sync-helpers";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { formatTime, getEffectiveLines, isLineSynced } from "@/views/timeline/utils";
-import { IconBracketsContainEnd, IconBracketsContainStart } from "@tabler/icons-react";
+import { IconBracketsContainEnd, IconBracketsContainStart, IconLink } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // -- Components ----------------------------------------------------------------
@@ -67,12 +67,55 @@ const BackgroundTextEditor: React.FC<{ lineId: string; backgroundText?: string }
 
 const TimelineInfoPanel: React.FC = () => {
   const rawLines = useProjectStore((s) => s.lines);
+  const groups = useProjectStore((s) => s.groups);
   const updateLineWithHistory = useProjectStore((s) => s.updateLineWithHistory);
   const duration = useAudioStore((s) => s.duration);
   const selectedWords = useTimelineStore((s) => s.selectedWords);
   const selectedWord = selectedWords[0] ?? null;
 
   const lines = useMemo(() => getEffectiveLines(rawLines), [rawLines]);
+
+  const groupContext = useMemo(() => {
+    if (selectedWords.length === 0) return null;
+    const instanceKeys = new Set<string>();
+    let firstGroupId: string | undefined;
+    let firstInstanceIdx: number | undefined;
+    for (const sel of selectedWords) {
+      const realLine = rawLines.find((l) => l.id === sel.lineId);
+      if (!realLine?.groupId || realLine.instanceIdx === undefined) return null;
+      if (firstGroupId === undefined) {
+        firstGroupId = realLine.groupId;
+        firstInstanceIdx = realLine.instanceIdx;
+      } else if (realLine.groupId !== firstGroupId) {
+        return null;
+      }
+      instanceKeys.add(`${realLine.groupId}:${realLine.instanceIdx}`);
+    }
+    if (firstGroupId === undefined) return null;
+    const group = groups.find((g) => g.id === firstGroupId);
+    if (!group) return null;
+    const sameInstance = instanceKeys.size === 1;
+    const totalInstances = new Set(
+      rawLines.filter((l) => l.groupId === firstGroupId && l.instanceIdx !== undefined).map((l) => l.instanceIdx),
+    ).size;
+    return {
+      group,
+      sameInstance,
+      instanceIdx: sameInstance ? firstInstanceIdx : undefined,
+      totalInstances,
+      instanceCount: instanceKeys.size,
+    };
+  }, [selectedWords, rawLines, groups]);
+
+  const groupHighlight = groupContext
+    ? {
+        accentColor: groupContext.group.color,
+        label:
+          groupContext.sameInstance && groupContext.instanceIdx !== undefined
+            ? `${groupContext.group.label} · ${groupContext.instanceIdx + 1} of ${groupContext.totalInstances}`
+            : `${groupContext.group.label} · ${groupContext.instanceCount} instances`,
+      }
+    : null;
 
   const selectedItem = useMemo(() => {
     if (!selectedWord) return null;
@@ -175,7 +218,20 @@ const TimelineInfoPanel: React.FC = () => {
   if (multiSelectionInfo) {
     const spanDuration = multiSelectionInfo.end - multiSelectionInfo.begin;
     return (
-      <div className="flex items-center gap-6 px-6 h-[54px] border-t border-composer-border bg-composer-bg-elevated">
+      <div className="relative flex items-center gap-6 px-6 h-[54px] border-t border-composer-border bg-composer-bg-elevated">
+        {groupHighlight && (
+          <span
+            className="flex items-center gap-1 px-2 h-5 rounded-md text-[11px] font-medium select-none"
+            style={{
+              background: `color-mix(in srgb, ${groupHighlight.accentColor} 22%, transparent)`,
+              color: groupHighlight.accentColor,
+            }}
+            title="Selected words belong to this linked group"
+          >
+            <IconLink className="w-3 h-3" />
+            <span className="tabular-nums">{groupHighlight.label}</span>
+          </span>
+        )}
         <span className="text-sm font-medium text-composer-text">
           {multiSelectionInfo.lineCount > 0 && multiSelectionInfo.wordCount > 0
             ? `${multiSelectionInfo.wordCount} words, ${multiSelectionInfo.lineCount} lines selected`
@@ -208,7 +264,20 @@ const TimelineInfoPanel: React.FC = () => {
   const itemDuration = selectedItem.end - selectedItem.begin;
 
   return (
-    <div className="flex items-center gap-6 px-6 py-3 border-t border-composer-border bg-composer-bg-elevated">
+    <div className="relative flex items-center gap-6 px-6 py-3 border-t border-composer-border bg-composer-bg-elevated">
+      {groupHighlight && (
+        <span
+          className="flex items-center gap-1 px-2 h-5 rounded-md text-[11px] font-medium select-none"
+          style={{
+            background: `color-mix(in srgb, ${groupHighlight.accentColor} 22%, transparent)`,
+            color: groupHighlight.accentColor,
+          }}
+          title="This word belongs to a linked group"
+        >
+          <IconLink className="w-3 h-3" />
+          <span className="tabular-nums">{groupHighlight.label}</span>
+        </span>
+      )}
       <div className="flex items-center gap-2">
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
         <span className="text-sm text-composer-text-muted">Line {selectedWord.lineIndex + 1}</span>

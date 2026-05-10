@@ -1,4 +1,4 @@
-import type { Agent, AgentType, LyricLine, ProjectMetadata, WordTiming } from "@/stores/project";
+import type { Agent, AgentType, LinkGroup, LyricLine, ProjectMetadata, WordTiming } from "@/stores/project";
 import { cleanSplitCharacters, getSplitCharacter } from "@/utils/split-character";
 
 // -- Types --------------------------------------------------------------------
@@ -8,7 +8,10 @@ interface ParseResult {
   metadata: Partial<ProjectMetadata>;
   hasTimingData: boolean;
   agents?: Agent[];
+  groups?: LinkGroup[];
 }
+
+const COMPOSER_NS = "https://composer.boidu.dev/ttml";
 
 type LyricsFileType = "txt" | "lrc" | "srt" | "ttml" | "unknown";
 
@@ -399,6 +402,23 @@ function parseTtml(content: string): ParseResult {
     }
   }
 
+  // Parse composer:groups registry
+  const groups: LinkGroup[] = [];
+  const groupEls = Array.from(doc.getElementsByTagName("composer:group")).concat(
+    Array.from(doc.getElementsByTagNameNS(COMPOSER_NS, "group")),
+  );
+  const seenGroupIds = new Set<string>();
+  for (const el of groupEls) {
+    const id = el.getAttribute("id");
+    if (!id || seenGroupIds.has(id)) continue;
+    seenGroupIds.add(id);
+    const label = el.getAttribute("label") ?? "Group";
+    const color = el.getAttribute("color") ?? "#9ca3af";
+    const versionStr = el.getAttribute("templateVersion");
+    const templateVersion = versionStr ? Number.parseInt(versionStr, 10) || 1 : 1;
+    groups.push({ id, label, color, templateVersion });
+  }
+
   // Parse lyrics - look for <p> elements with timing
   const paragraphs = doc.getElementsByTagName("p");
 
@@ -406,6 +426,27 @@ function parseTtml(content: string): ParseResult {
     const begin = parseTtmlTimestamp(p.getAttribute("begin") ?? "");
     const end = parseTtmlTimestamp(p.getAttribute("end") ?? "");
     const agentId = p.getAttribute("ttm:agent")?.replace("#", "") ?? "v1";
+
+    // Extract composer: group attrs (try plain attribute first, then namespaced lookup)
+    const rawGroupId = p.getAttribute("composer:groupId") ?? p.getAttributeNS(COMPOSER_NS, "groupId") ?? null;
+    const knownGroupId = rawGroupId && seenGroupIds.has(rawGroupId) ? rawGroupId : null;
+    if (rawGroupId && !knownGroupId) {
+      console.warn(`[Composer] TTML <p> references unknown groupId="${rawGroupId}"; treating line as standalone.`);
+    }
+    const instanceIdxStr =
+      p.getAttribute("composer:instanceIdx") ?? p.getAttributeNS(COMPOSER_NS, "instanceIdx") ?? null;
+    const templateLineIdxStr =
+      p.getAttribute("composer:templateLineIdx") ?? p.getAttributeNS(COMPOSER_NS, "templateLineIdx") ?? null;
+    const detachedStr = p.getAttribute("composer:detached") ?? p.getAttributeNS(COMPOSER_NS, "detached") ?? null;
+
+    const groupFields = knownGroupId
+      ? {
+          groupId: knownGroupId,
+          instanceIdx: instanceIdxStr ? Number.parseInt(instanceIdxStr, 10) || 0 : 0,
+          templateLineIdx: templateLineIdxStr ? Number.parseInt(templateLineIdxStr, 10) || 0 : 0,
+          ...(detachedStr === "true" ? { detached: true } : {}),
+        }
+      : {};
 
     // Find background vocal container (x-bg role)
     // Note: use getElementsByTagName for namespace compatibility
@@ -445,6 +486,7 @@ function parseTtml(content: string): ParseResult {
         words,
         backgroundText,
         backgroundWords,
+        ...groupFields,
       });
     } else {
       // Line-level timing only - extract text without bg content
@@ -471,6 +513,7 @@ function parseTtml(content: string): ParseResult {
           end: end || undefined,
           backgroundText,
           backgroundWords,
+          ...groupFields,
         });
       }
     }
@@ -481,6 +524,7 @@ function parseTtml(content: string): ParseResult {
     metadata,
     hasTimingData: lines.some((l) => l.begin !== undefined || l.words?.length),
     agents: agents.length > 0 ? agents : undefined,
+    groups: groups.length > 0 ? groups : undefined,
   };
 }
 

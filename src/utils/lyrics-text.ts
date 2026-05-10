@@ -1,34 +1,44 @@
-import type { LyricLine } from "@/stores/project";
+import type { LyricLine, WordTiming } from "@/stores/project";
 import { cleanSplitCharacters, getSplitCharacter, stripSplitCharacter } from "@/utils/split-character";
+import { splitIntoWordsWithMeta } from "@/utils/sync-helpers";
+
+function remapWordTextsPreservingTiming(oldWords: WordTiming[], newText: string): WordTiming[] | null {
+  const { parts, trailingSpace } = splitIntoWordsWithMeta(newText);
+  if (parts.length !== oldWords.length) return null;
+  return oldWords.map((oldWord, i) => ({ ...oldWord, text: parts[i] + (trailingSpace[i] ? " " : "") }));
+}
 
 // -- Helpers ------------------------------------------------------------------
 
 function textToLyricLines(text: string, defaultAgentId: string, existingLines: LyricLine[] = []): LyricLine[] {
-  // Build a map of text -> line data for exact matching
-  const textToLine = new Map<string, LyricLine>();
+  const textToCandidates = new Map<string, LyricLine[]>();
   for (const line of existingLines) {
     const key = stripSplitCharacter(line.text);
-    if (!textToLine.has(key)) {
-      textToLine.set(key, line);
+    let bucket = textToCandidates.get(key);
+    if (!bucket) {
+      bucket = [];
+      textToCandidates.set(key, bucket);
     }
+    bucket.push(line);
   }
 
   const usedExistingIds = new Set<string>();
   const newLines = text.split("\n").filter((line) => line.trim() !== "");
+  // Position-based fallback only makes sense when the user is editing-in-place
+  // (same number of typed lines as existing lines). If the count changed, the
+  // user inserted or deleted rows: position-match would silently overwrite the
+  // wrong existing line, so we generate a fresh id for any unmatched typed line.
+  const allowPositionMatch = newLines.length === existingLines.length;
 
   return newLines.map((lineText, index) => {
     const trimmed = lineText.trim();
-
-    // Clean pipe syntax (strip leading/trailing/consecutive pipes per token)
     const cleanedText = cleanSplitCharacters(trimmed);
-    // Strip pipes entirely for matching against existing lines
     const matchText = stripSplitCharacter(cleanedText);
 
-    // Try exact text match first (match against pipe-stripped text or original)
-    const exactMatch = textToLine.get(matchText);
-    if (exactMatch && !usedExistingIds.has(exactMatch.id)) {
+    const candidates = textToCandidates.get(matchText);
+    const exactMatch = candidates?.find((line) => !usedExistingIds.has(line.id));
+    if (exactMatch) {
       usedExistingIds.add(exactMatch.id);
-      // If text has pipes, update the text and clear timing (structure changed)
       if (cleanedText.includes(getSplitCharacter())) {
         return {
           ...exactMatch,
@@ -41,19 +51,28 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
       return { ...exactMatch };
     }
 
-    // Try position-based match (for typo fixes) - preserve agent but not timing
-    const positionMatch = existingLines[index];
-    if (positionMatch && !usedExistingIds.has(positionMatch.id)) {
-      usedExistingIds.add(positionMatch.id);
-      return {
-        id: crypto.randomUUID(),
-        text: cleanedText,
-        agentId: positionMatch.agentId,
-        backgroundText: positionMatch.backgroundText,
-      };
+    if (allowPositionMatch) {
+      const positionMatch = existingLines[index];
+      if (positionMatch && !usedExistingIds.has(positionMatch.id)) {
+        usedExistingIds.add(positionMatch.id);
+
+        if (positionMatch.words?.length) {
+          const remapped = remapWordTextsPreservingTiming(positionMatch.words, cleanedText);
+          if (remapped) {
+            return { ...positionMatch, text: cleanedText, words: remapped };
+          }
+        }
+
+        return {
+          ...positionMatch,
+          text: cleanedText,
+          words: undefined,
+          begin: undefined,
+          end: undefined,
+        };
+      }
     }
 
-    // New line - use defaults
     return {
       id: crypto.randomUUID(),
       text: cleanedText,
@@ -64,4 +83,4 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
 
 // -- Exports ------------------------------------------------------------------
 
-export { textToLyricLines };
+export { remapWordTextsPreservingTiming, textToLyricLines };
