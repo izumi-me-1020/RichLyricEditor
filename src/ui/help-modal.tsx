@@ -5,6 +5,7 @@ import { Scroll } from "@/ui/scroll";
 import { cn } from "@/utils/cn";
 import { isMac } from "@/utils/platform";
 import {
+  IconAward,
   IconCommand,
   IconDownload,
   IconEye,
@@ -179,6 +180,7 @@ const HELP_SECTIONS: HelpSectionDef[] = [
   { id: "groups", label: "Linked groups", icon: IconLink },
   { id: "preview", label: "Preview", icon: IconEye },
   { id: "exporting", label: "Exporting", icon: IconDownload },
+  { id: "ttml-standards", label: "TTML & standards", icon: IconAward },
 ];
 
 // -- Shared Components --------------------------------------------------------
