@@ -671,7 +671,7 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
     set((state) =>
       commitHistory(state, {
         lines: state.lines.map((line) => {
-          if (line.groupId !== groupId || line.instanceIdx !== instanceIdx) return line;
+          if (line.groupId !== groupId || line.instanceIdx !== instanceIdx || line.detached) return line;
           return {
             ...line,
             begin: line.begin !== undefined ? line.begin + deltaSeconds : undefined,
@@ -702,9 +702,23 @@ const useProjectStore = create<ProjectState & ProjectActions>((set, get) => ({
 
       if (resolution === "detach") {
         return commitHistory(state, {
-          lines: state.lines.map((line) =>
-            line.id === lineId ? { ...line, ...extraUpdates, [field]: newWords, detached: true } : line,
-          ),
+          lines: state.lines.map((line) => {
+            if (line.id !== lineId) return line;
+            const detached: LyricLine = {
+              ...line,
+              ...extraUpdates,
+              [field]: newWords,
+              groupId: undefined,
+              instanceIdx: undefined,
+              templateLineIdx: undefined,
+              detached: undefined,
+            };
+            if (field === "words" && newWords.length > 0 && line.begin !== undefined && !line.words?.length) {
+              detached.begin = undefined;
+              detached.end = undefined;
+            }
+            return detached;
+          }),
         });
       }
 

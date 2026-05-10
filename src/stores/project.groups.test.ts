@@ -481,6 +481,39 @@ describe("project store · shiftInstance", () => {
     useProjectStore.getState().undo();
     expect(useProjectStore.getState().lines[0].begin).toBeCloseTo(10);
   });
+
+  it("does not shift a line whose link metadata still matches but detached=true (defense-in-depth)", () => {
+    useProjectStore.getState().addGroup(seedGroup("g1"));
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "live",
+          text: "x",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          words: [{ text: "x", begin: 10, end: 11 }],
+        },
+        {
+          id: "stale-detached",
+          text: "y",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 1,
+          detached: true,
+          words: [{ text: "y", begin: 10, end: 11 }],
+        },
+      ],
+    });
+    useProjectStore.getState().clearHistory();
+
+    useProjectStore.getState().shiftInstance("g1", 0, 0.5);
+    const after = useProjectStore.getState().lines;
+    expect(after.find((l) => l.id === "live")?.words?.[0].begin).toBeCloseTo(10.5);
+    expect(after.find((l) => l.id === "stale-detached")?.words?.[0].begin).toBeCloseTo(10);
+  });
 });
 
 describe("project store · updateLineWithHistory auto-propagation", () => {
@@ -1248,16 +1281,53 @@ describe("applyWordCountChange · resolutions", () => {
     expect(b?.detached).toBeUndefined();
   });
 
-  it("'detach' marks source detached and leaves siblings untouched", () => {
+  it("'detach' fully unlinks source (clears groupId/instanceIdx/templateLineIdx) and leaves siblings untouched", () => {
     setupChorus();
     useProjectStore.getState().applyWordCountChange("A", splitWords, "words", "detach");
     const after = useProjectStore.getState().lines;
     const a = after.find((l) => l.id === "A");
     const b = after.find((l) => l.id === "B");
-    expect(a?.detached).toBe(true);
+    expect(a?.groupId).toBeUndefined();
+    expect(a?.instanceIdx).toBeUndefined();
+    expect(a?.templateLineIdx).toBeUndefined();
+    expect(a?.detached).toBeUndefined();
     expect(a?.words).toHaveLength(4);
     expect(b?.words).toHaveLength(3);
     expect(b?.words?.[0]).toEqual({ text: "I ", begin: 30, end: 30.4 });
+  });
+
+  it("'detach' clears stale begin/end when promoting a line-synced row to word-synced", () => {
+    useProjectStore.setState({
+      lines: [
+        {
+          id: "L1",
+          text: "verse",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 0,
+          templateLineIdx: 0,
+          begin: 5,
+          end: 7,
+        },
+        {
+          id: "L2",
+          text: "verse",
+          agentId: "v1",
+          groupId: "g1",
+          instanceIdx: 1,
+          templateLineIdx: 0,
+          begin: 30,
+          end: 32,
+        },
+      ],
+      groups: [{ id: "g1", label: "Verse", color: "#aaa", templateVersion: 1 }],
+    });
+    const newWords = [{ text: "verse", begin: 5, end: 7 }];
+    useProjectStore.getState().applyWordCountChange("L1", newWords, "words", "detach");
+    const after = useProjectStore.getState().lines.find((l) => l.id === "L1");
+    expect(after?.words).toEqual(newWords);
+    expect(after?.begin).toBeUndefined();
+    expect(after?.end).toBeUndefined();
   });
 
   it("'cancel' is a no-op", () => {
