@@ -29,6 +29,7 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
     if (exactMatch && !usedExistingIds.has(exactMatch.id)) {
       usedExistingIds.add(exactMatch.id);
       // If text has pipes, update the text and clear timing (structure changed)
+      // but preserve group attrs so propagation can fix things up downstream.
       if (cleanedText.includes(getSplitCharacter())) {
         return {
           ...exactMatch,
@@ -41,15 +42,18 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
       return { ...exactMatch };
     }
 
-    // Try position-based match (for typo fixes) - preserve agent but not timing
+    // Position-based match (for typo fixes) - preserve every field except text/words/timing.
+    // KEEP the same id so downstream diffs can route this through updateLineWithHistory
+    // and propagate the text change to linked siblings.
     const positionMatch = existingLines[index];
     if (positionMatch && !usedExistingIds.has(positionMatch.id)) {
       usedExistingIds.add(positionMatch.id);
       return {
-        id: crypto.randomUUID(),
+        ...positionMatch,
         text: cleanedText,
-        agentId: positionMatch.agentId,
-        backgroundText: positionMatch.backgroundText,
+        words: undefined,
+        begin: undefined,
+        end: undefined,
       };
     }
 

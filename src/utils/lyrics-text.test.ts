@@ -1,0 +1,117 @@
+/**
+ * @vitest-environment node
+ */
+import type { LyricLine } from "@/stores/project";
+import { describe, expect, it } from "vitest";
+import { textToLyricLines } from "./lyrics-text";
+
+describe("textToLyricLines · group attrs preservation", () => {
+  it("keeps groupId/instanceIdx/templateLineIdx on exact-text match", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love you",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 0, end: 0.3 },
+          { text: "love ", begin: 0.3, end: 0.6 },
+          { text: "you", begin: 0.6, end: 1 },
+        ],
+      },
+    ];
+    const result = textToLyricLines("I love you", "v1", existing);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("L1");
+    expect(result[0].groupId).toBe("g1");
+    expect(result[0].instanceIdx).toBe(0);
+    expect(result[0].templateLineIdx).toBe(0);
+  });
+
+  it("keeps the same id and group attrs on a position-based typo fix", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love you",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 0, end: 0.3 },
+          { text: "love ", begin: 0.3, end: 0.6 },
+          { text: "you", begin: 0.6, end: 1 },
+        ],
+      },
+    ];
+    const result = textToLyricLines("I luv you", "v1", existing);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("L1");
+    expect(result[0].text).toBe("I luv you");
+    expect(result[0].groupId).toBe("g1");
+    expect(result[0].instanceIdx).toBe(0);
+    expect(result[0].templateLineIdx).toBe(0);
+  });
+
+  it("preserves the detached flag on a position-based typo fix", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love you",
+        agentId: "v1",
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        detached: true,
+      },
+    ];
+    const result = textToLyricLines("I luv you", "v1", existing);
+    expect(result[0].detached).toBe(true);
+  });
+
+  it("clears words/begin/end on position-based typo fix (timing is invalid for new text)", () => {
+    const existing: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love",
+        agentId: "v1",
+        begin: 0,
+        end: 1,
+        words: [{ text: "I love", begin: 0, end: 1 }],
+      },
+    ];
+    const result = textToLyricLines("I luv", "v1", existing);
+    expect(result[0].words).toBeUndefined();
+    expect(result[0].begin).toBeUndefined();
+    expect(result[0].end).toBeUndefined();
+  });
+
+  it("keeps backgroundText on a position-based typo fix", () => {
+    const existing: LyricLine[] = [{ id: "L1", text: "main", agentId: "v1", backgroundText: "ah ah" }];
+    const result = textToLyricLines("main edit", "v1", existing);
+    expect(result[0].backgroundText).toBe("ah ah");
+  });
+
+  it("returns brand-new lines (new ids, no group attrs) for genuinely new text", () => {
+    const existing: LyricLine[] = [
+      { id: "L1", text: "first", agentId: "v1", groupId: "g1", instanceIdx: 0, templateLineIdx: 0 },
+    ];
+    const result = textToLyricLines("first\nsecond", "v1", existing);
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe("L1");
+    expect(result[1].id).not.toBe("L1");
+    expect(result[1].groupId).toBeUndefined();
+  });
+
+  it("does not steal an exact-match line that's already used by an earlier position", () => {
+    const existing: LyricLine[] = [
+      { id: "L1", text: "chorus", agentId: "v1", groupId: "g1", instanceIdx: 0, templateLineIdx: 0 },
+      { id: "L2", text: "chorus", agentId: "v1", groupId: "g1", instanceIdx: 1, templateLineIdx: 0 },
+    ];
+    const result = textToLyricLines("chorus\nchorus", "v1", existing);
+    expect(result[0].id).toBe("L1");
+    expect(result[1].id).toBe("L2");
+  });
+});
