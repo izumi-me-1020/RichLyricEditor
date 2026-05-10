@@ -135,16 +135,29 @@ function getEffectiveRows(lines: LyricLine[]): EffectiveRow[] {
     const first = slice[0];
 
     if (first.groupId !== undefined && first.instanceIdx !== undefined) {
-      const { start, end } = instanceTimingBounds(slice);
-      rows.push({
-        kind: "group-header",
-        groupId: first.groupId,
-        instanceIdx: first.instanceIdx,
-        lineCount: slice.length,
-        instanceStart: start,
-        instanceEnd: end,
-        firstLineId: first.id,
-      });
+      // Skip the header for instances with no timed content. Without this
+      // guard, instanceTimingBounds returns its { 0, 0 } no-finite-value
+      // fallback and the banner renders at x=0 with min-width — confusing
+      // because there's nothing actually placed at time 0.
+      const hasAnyTiming = slice.some(
+        (line) =>
+          (line.words?.length ?? 0) > 0 ||
+          (line.backgroundWords?.length ?? 0) > 0 ||
+          line.begin !== undefined ||
+          line.end !== undefined,
+      );
+      if (hasAnyTiming) {
+        const { start, end } = instanceTimingBounds(slice);
+        rows.push({
+          kind: "group-header",
+          groupId: first.groupId,
+          instanceIdx: first.instanceIdx,
+          lineCount: slice.length,
+          instanceStart: start,
+          instanceEnd: end,
+          firstLineId: first.id,
+        });
+      }
     }
     for (let i = 0; i < slice.length; i++) {
       rows.push({ kind: "line", line: slice[i], lineIndex: bufferStart + i });

@@ -354,6 +354,67 @@ describe("getEffectiveRows", () => {
     const lineRows = rows.filter((r) => r.kind === "line");
     expect(lineRows.map((r) => (r.kind === "line" ? r.lineIndex : -1))).toEqual([0, 1, 2, 3]);
   });
+
+  it("does NOT emit a header for an instance with no timed content (no words, bg words, begin, or end)", () => {
+    // Without this guard the banner renders at x=0 with min-width because
+    // instanceTimingBounds returns its { 0, 0 } no-finite-value fallback.
+    const lines: LyricLine[] = [
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0 }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+    ];
+    const rows = getEffectiveRows(lines);
+    // Both lines still appear; the header is suppressed
+    expect(rows.map((r) => r.kind)).toEqual(["line", "line"]);
+  });
+
+  it("emits a header for a line-synced instance (begin/end set, no words) — that's real timing", () => {
+    const lines: LyricLine[] = [l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0, begin: 5, end: 7 })];
+    const rows = getEffectiveRows(lines);
+    expect(rows[0].kind).toBe("group-header");
+    const header = rows[0] as GroupHeaderRow;
+    expect(header.instanceStart).toBe(5);
+    expect(header.instanceEnd).toBe(7);
+  });
+
+  it("emits a header for an instance whose only timed content is bg words", () => {
+    const lines: LyricLine[] = [
+      l("a", {
+        groupId: "g1",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        backgroundWords: [{ text: "ah", begin: 4, end: 5 }],
+      }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows[0].kind).toBe("group-header");
+    const header = rows[0] as GroupHeaderRow;
+    expect(header.instanceStart).toBe(4);
+    expect(header.instanceEnd).toBe(5);
+  });
+
+  it("suppresses header on an empty instance but emits header on a sibling timed instance", () => {
+    const lines: LyricLine[] = [
+      // Empty instance 0
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0 }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+      // Timed instance 1
+      l("c", { groupId: "g1", instanceIdx: 1, templateLineIdx: 0, words: [{ text: "x", begin: 30, end: 31 }] }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows.map((r) => r.kind)).toEqual(["line", "line", "group-header", "line"]);
+  });
+
+  it("suppresses header for partially-empty instance only when ALL of its lines have no timing", () => {
+    // Instance has line A timed and line B empty — header still appears (instance is partially alive)
+    const lines: LyricLine[] = [
+      l("a", { groupId: "g1", instanceIdx: 0, templateLineIdx: 0, words: [{ text: "x", begin: 5, end: 6 }] }),
+      l("b", { groupId: "g1", instanceIdx: 0, templateLineIdx: 1 }),
+    ];
+    const rows = getEffectiveRows(lines);
+    expect(rows.map((r) => r.kind)).toEqual(["group-header", "line", "line"]);
+    expect((rows[0] as GroupHeaderRow).instanceStart).toBe(5);
+    expect((rows[0] as GroupHeaderRow).instanceEnd).toBe(6);
+  });
 });
 
 describe("instanceTimingBounds", () => {

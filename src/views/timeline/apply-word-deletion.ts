@@ -6,6 +6,15 @@ interface DeletionSelection {
   wordIndex: number;
 }
 
+function isLineFullyEmpty(line: LyricLine): boolean {
+  return (
+    (line.words?.length ?? 0) === 0 &&
+    (line.backgroundWords?.length ?? 0) === 0 &&
+    line.begin === undefined &&
+    line.end === undefined
+  );
+}
+
 function applyWordDeletion(lines: LyricLine[], selectedWords: ReadonlyArray<DeletionSelection>): LyricLine[] {
   if (selectedWords.length === 0) return lines;
 
@@ -62,8 +71,37 @@ function applyWordDeletion(lines: LyricLine[], selectedWords: ReadonlyArray<Dele
     updatedById.set(lineId, updatedLine);
   }
 
-  return lines.map((line) => updatedById.get(line.id) ?? line);
+  let result = lines.map((line) => updatedById.get(line.id) ?? line);
+
+  // Auto-cleanup: when every line in a touched instance is now fully empty
+  // (no words, no bg words, no begin/end), strip the group attrs so the rows
+  // become standalone placeholders. The instance disappears from the group
+  // registry visually (no orphan banner at x=0). The rows remain so the
+  // existing Cmd+D / paste-as-instance fill flow can repopulate them.
+  const affectedInstanceKeys = new Set<string>();
+  for (const sel of selectedWords) {
+    const updated = updatedById.get(sel.lineId);
+    if (updated?.groupId !== undefined && updated.instanceIdx !== undefined) {
+      affectedInstanceKeys.add(`${updated.groupId}:${updated.instanceIdx}`);
+    }
+  }
+
+  for (const key of affectedInstanceKeys) {
+    const sepIdx = key.indexOf(":");
+    const groupId = key.slice(0, sepIdx);
+    const instanceIdx = Number.parseInt(key.slice(sepIdx + 1), 10);
+    const instanceLines = result.filter((l) => l.groupId === groupId && l.instanceIdx === instanceIdx);
+    if (instanceLines.length === 0) continue;
+    if (!instanceLines.every(isLineFullyEmpty)) continue;
+    result = result.map((line) =>
+      line.groupId === groupId && line.instanceIdx === instanceIdx
+        ? { ...line, groupId: undefined, instanceIdx: undefined, templateLineIdx: undefined, detached: undefined }
+        : line,
+    );
+  }
+
+  return result;
 }
 
-export { applyWordDeletion };
+export { applyWordDeletion, isLineFullyEmpty };
 export type { DeletionSelection };

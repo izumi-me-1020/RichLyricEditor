@@ -203,3 +203,270 @@ describe("applyWordDeletion", () => {
     expect(result).toEqual(lines);
   });
 });
+
+// -- Auto-cleanup of fully-empty instances ------------------------------------
+//
+// When every line of an instance is emptied of all timed content (no words,
+// no bg words, no begin/end), strip the group attrs from those lines. The
+// rows remain as standalone empty placeholders for the existing Cmd+D / paste
+// fill flow to repopulate later. Without this, the instance lingered in the
+// data model and rendered a confusing zero-bounds banner at x=0.
+
+describe("applyWordDeletion · auto-cleanup of fully-empty grouped instances", () => {
+  it("strips group attrs when a single-line instance has its only word deleted", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "x",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "x", begin: 5, end: 6 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }]);
+    expect(result[0].groupId).toBeUndefined();
+    expect(result[0].instanceIdx).toBeUndefined();
+    expect(result[0].templateLineIdx).toBeUndefined();
+    // Row remains as an empty placeholder (text and id preserved)
+    expect(result[0].id).toBe("L1");
+    expect(result[0].text).toBe("x");
+    // Existing applyWordDeletion contract: words becomes [] after deleting all words
+    expect(result[0].words).toEqual([]);
+    expect(result[0].begin).toBeUndefined();
+    expect(result[0].end).toBeUndefined();
+  });
+
+  it("strips group attrs from ALL lines of a multi-line instance when every line is emptied", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "A1",
+        text: "I love",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 5, end: 5.5 },
+          { text: "love", begin: 5.5, end: 6 },
+        ],
+      },
+      {
+        id: "A2",
+        text: "you",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 1,
+        words: [{ text: "you", begin: 6, end: 7 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [
+      { lineId: "A1", type: "word", wordIndex: 0 },
+      { lineId: "A1", type: "word", wordIndex: 1 },
+      { lineId: "A2", type: "word", wordIndex: 0 },
+    ]);
+    expect(result.every((l) => l.groupId === undefined)).toBe(true);
+    expect(result.every((l) => l.instanceIdx === undefined)).toBe(true);
+    expect(result.every((l) => l.templateLineIdx === undefined)).toBe(true);
+  });
+
+  it("keeps group attrs intact when only SOME lines of a multi-line instance are emptied", () => {
+    // A1 gets emptied, A2 still has words. Instance is not fully empty → keep linked.
+    const lines: LyricLine[] = [
+      {
+        id: "A1",
+        text: "I love",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "I love", begin: 5, end: 6 }],
+      },
+      {
+        id: "A2",
+        text: "you",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 1,
+        words: [{ text: "you", begin: 6, end: 7 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [{ lineId: "A1", type: "word", wordIndex: 0 }]);
+    // A1 is now empty but A2 still has words → instance stays alive
+    expect(result.find((l) => l.id === "A1")?.groupId).toBe("cannon");
+    expect(result.find((l) => l.id === "A2")?.groupId).toBe("cannon");
+    expect(result.find((l) => l.id === "A1")?.words).toEqual([]);
+    expect(result.find((l) => l.id === "A2")?.words).toEqual([{ text: "you", begin: 6, end: 7 }]);
+  });
+
+  it("strips group attrs when a single-line instance has only BG words and they all get deleted", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "main",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        backgroundText: "ah ah",
+        backgroundWords: [
+          { text: "ah ", begin: 5, end: 5.5 },
+          { text: "ah", begin: 5.5, end: 6 },
+        ],
+      },
+    ];
+    const result = applyWordDeletion(lines, [
+      { lineId: "L1", type: "bg", wordIndex: 0 },
+      { lineId: "L1", type: "bg", wordIndex: 1 },
+    ]);
+    expect(result[0].groupId).toBeUndefined();
+    expect(result[0].backgroundWords).toBeUndefined();
+  });
+
+  it("keeps group attrs when a line has main + bg and only one track is emptied (other still has content)", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "main",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "main", begin: 5, end: 6 }],
+        backgroundText: "ah",
+        backgroundWords: [{ text: "ah", begin: 5, end: 5.5 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }]);
+    // Main words gone but bg still present → not fully empty → instance stays
+    expect(result[0].groupId).toBe("cannon");
+    expect(result[0].words).toEqual([]);
+    expect(result[0].backgroundWords?.length).toBe(1);
+  });
+
+  it("strips group attrs from a line-synced (no words, has begin/end) instance when its single line is deleted", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "verse",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        begin: 5,
+        end: 7,
+      },
+    ];
+    // Selecting wordIndex 0 on a line-synced row deletes the synthetic word AND clears begin/end
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }]);
+    expect(result[0].groupId).toBeUndefined();
+    expect(result[0].begin).toBeUndefined();
+    expect(result[0].end).toBeUndefined();
+  });
+
+  it("handles two separate instances both becoming empty in one deletion call", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "A1",
+        text: "x",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [{ text: "x", begin: 5, end: 6 }],
+      },
+      {
+        id: "B1",
+        text: "y",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "y", begin: 10, end: 11 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [
+      { lineId: "A1", type: "word", wordIndex: 0 },
+      { lineId: "B1", type: "word", wordIndex: 0 },
+    ]);
+    expect(result.every((l) => l.groupId === undefined)).toBe(true);
+  });
+
+  it("does NOT touch instances that weren't part of the deletion selection", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "A1",
+        text: "x",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 0,
+        templateLineIdx: 0,
+        words: [{ text: "x", begin: 5, end: 6 }],
+      },
+      {
+        id: "B1",
+        text: "y",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [{ text: "y", begin: 10, end: 11 }],
+      },
+    ];
+    // Only delete A1's word, not B1's
+    const result = applyWordDeletion(lines, [{ lineId: "A1", type: "word", wordIndex: 0 }]);
+    expect(result.find((l) => l.id === "A1")?.groupId).toBeUndefined();
+    expect(result.find((l) => l.id === "B1")?.groupId).toBe("cannon");
+  });
+
+  it("non-grouped lines that get fully emptied: nothing to strip, just left as empty rows", () => {
+    const lines: LyricLine[] = [{ id: "L1", text: "x", agentId: "v1", words: [{ text: "x", begin: 5, end: 6 }] }];
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }]);
+    expect(result[0].groupId).toBeUndefined();
+    expect(result[0].words).toEqual([]);
+    expect(result[0].id).toBe("L1");
+    expect(result[0].text).toBe("x");
+  });
+
+  it("preserves the detached flag's semantics when stripping (detached lines also clear it)", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "x",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        detached: true,
+        words: [{ text: "x", begin: 5, end: 6 }],
+      },
+    ];
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 0 }]);
+    expect(result[0].groupId).toBeUndefined();
+    expect(result[0].detached).toBeUndefined();
+  });
+
+  it("partial deletion (some words remain): instance stays linked", () => {
+    const lines: LyricLine[] = [
+      {
+        id: "L1",
+        text: "I love you",
+        agentId: "v1",
+        groupId: "cannon",
+        instanceIdx: 1,
+        templateLineIdx: 0,
+        words: [
+          { text: "I ", begin: 5, end: 5.3 },
+          { text: "love ", begin: 5.3, end: 5.6 },
+          { text: "you", begin: 5.6, end: 6 },
+        ],
+      },
+    ];
+    const result = applyWordDeletion(lines, [{ lineId: "L1", type: "word", wordIndex: 1 }]);
+    expect(result[0].groupId).toBe("cannon");
+    expect(result[0].words?.length).toBe(2);
+  });
+});
