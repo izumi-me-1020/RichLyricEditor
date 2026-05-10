@@ -5,12 +5,15 @@
 <h1 align="center">Composer</h1>
 
 <p align="center">
-  The lyrics editor for <a href="https://better-lyrics.boidu.dev">Better Lyrics</a>.<br/>
+  The lyrics editor for <a href="https://betterlyrics.org">Better Lyrics</a>.<br/>
   Create word-synced TTML lyrics with a visual timeline, tap-to-sync, and live preview.
 </p>
 
 <p align="center">
-  <a href="https://composer.boidu.dev">Try it here</a>
+  <a href="https://composer.boidu.dev"><img src="https://img.shields.io/badge/Open-composer.boidu.dev-F50032?style=flat-square" alt="Open Composer" /></a>
+  <a href="https://www.w3.org/TR/2018/REC-ttml1-20181108/"><img src="https://img.shields.io/badge/TTML%201-W3C%20Compliant-4caf50?style=flat-square" alt="TTML 1 W3C Compliant" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%203.0-2196f3?style=flat-square" alt="AGPL 3.0 License" /></a>
+  <a href="https://betterlyrics.org"><img src="https://img.shields.io/badge/Built%20for-Better%20Lyrics-F50032?style=flat-square" alt="Built for Better Lyrics" /></a>
 </p>
 
 ---
@@ -36,6 +39,8 @@ Four-step workflow:
 
 ## Features
 
+- **W3C TTML 1 compliant** - Standard XML output, works in any TTML 1 parser
+- **Linked groups** - Group repeating sections (choruses, hooks). Edit one instance, every linked instance updates.
 - **Tap-to-sync** - Press Space in time with the music to stamp each word
 - **YouTube import** - Paste a video URL to pull the audio straight in, no manual download needed
 - **Timeline editor** - DAW-style view with draggable word blocks on a waveform
@@ -47,6 +52,12 @@ Four-step workflow:
 - **Project files** - Save and share your work as JSON
 - **Keyboard-driven** - Comprehensive shortcuts for every action
 - **Client-side only** - No uploads, no accounts, your audio never leaves your machine
+
+## Standards
+
+Composer emits **TTML 1** ([W3C Recommendation, Nov 2018](https://www.w3.org/TR/2018/REC-ttml1-20181108/)) compliant XML. Linked groups and per-instance metadata are exposed via foreign-namespace extensions the spec explicitly permits, so files round-trip through any TTML 1 parser.
+
+For the full breakdown, see **Help → TTML & standards** in-app.
 
 ## Self-hosting
 
