@@ -183,8 +183,39 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
             />
           ) : (
             <div
-              className="flex items-center gap-2 px-3 text-xs text-composer-text-muted italic truncate"
-              style={{ height: rowHeight }}
+              className="sticky left-0 z-10 flex items-center gap-2 px-3 text-xs text-composer-text-muted italic truncate bg-composer-bg/80 backdrop-blur-sm"
+              style={{ height: rowHeight, width: "fit-content" }}
+              onDoubleClick={(e) => {
+                if (useTimelineStore.getState().selectOnlyMode) return;
+                const zoom = useTimelineStore.getState().zoom;
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const time = (e.clientX - rect.left) / zoom;
+                const audioDuration = useAudioStore.getState().duration;
+                const wordDuration = useSettingsStore.getState().defaultWordDuration;
+                const slot = findInsertionSlot([], time, wordDuration, audioDuration);
+                if (!slot) return;
+                const newWord: WordTiming = {
+                  text: displayText.slice(0, 60) || "...",
+                  begin: slot.begin,
+                  end: slot.end,
+                };
+                useProjectStore.getState().updateLineWithHistory(line.id, {
+                  words: [newWord],
+                  text: newWord.text,
+                });
+                useTimelineStore.getState().setEditingWord({ lineId: line.id, wordIndex: 0, type: "word" });
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const zoom = useTimelineStore.getState().zoom;
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const time = (e.clientX - rect.left) / zoom;
+                useTimelineStore.getState().setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  target: { kind: "track", lineId: line.id, lineIndex, time, type: "word" },
+                });
+              }}
             >
               <span className="truncate">
                 {displayText.slice(0, 60)}
