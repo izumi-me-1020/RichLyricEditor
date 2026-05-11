@@ -79,6 +79,7 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
   const rowHeight = useTimelineStore((s) => s.rowHeights[line.id] ?? s.defaultRowHeight);
   const defaultRowHeight = useTimelineStore((s) => s.defaultRowHeight);
   const setRowHeight = useTimelineStore((s) => s.setRowHeight);
+  const zoom = useTimelineStore((s) => s.zoom);
   const dragShiftPx = useTimelineStore((s) =>
     s.draggedGroupShift &&
     line.groupId !== undefined &&
@@ -148,7 +149,7 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
         <GutterAgentPicker lineId={line.id} lineIndex={lineIndex} agentId={line.agentId} />
       </div>
 
-      <div className="flex-1 overflow-hidden border-b border-composer-border relative">
+      <div className={cn("flex-1 border-b border-composer-border relative", hasMainWords && "overflow-hidden")}>
         <div
           className="absolute inset-0"
           style={{ transform: dragShiftPx !== 0 ? `translateX(${dragShiftPx}px)` : undefined }}
@@ -183,13 +184,13 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
             />
           ) : (
             <div
-              className="sticky left-0 z-10 flex items-center gap-2 px-3 text-xs text-composer-text-muted italic truncate bg-composer-bg/80 backdrop-blur-sm"
-              style={{ height: rowHeight, width: "fit-content" }}
+              className="relative cursor-pointer"
+              style={{ width: duration * zoom, height: rowHeight }}
               onDoubleClick={(e) => {
                 if (useTimelineStore.getState().selectOnlyMode) return;
-                const zoom = useTimelineStore.getState().zoom;
+                const zoomPx = useTimelineStore.getState().zoom;
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const time = (e.clientX - rect.left) / zoom;
+                const time = (e.clientX - rect.left) / zoomPx;
                 const audioDuration = useAudioStore.getState().duration;
                 const wordDuration = useSettingsStore.getState().defaultWordDuration;
                 const slot = findInsertionSlot([], time, wordDuration, audioDuration);
@@ -207,9 +208,9 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
               }}
               onContextMenu={(e) => {
                 e.preventDefault();
-                const zoom = useTimelineStore.getState().zoom;
+                const zoomPx = useTimelineStore.getState().zoom;
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const time = (e.clientX - rect.left) / zoom;
+                const time = (e.clientX - rect.left) / zoomPx;
                 useTimelineStore.getState().setContextMenu({
                   x: e.clientX,
                   y: e.clientY,
@@ -217,13 +218,18 @@ const LineRow: React.FC<LineRowProps> = ({ line, lineIndex, duration, onUpdateWo
                 });
               }}
             >
-              <span className="truncate">
-                {displayText.slice(0, 60)}
-                {displayText.length > 60 ? "..." : ""}
-              </span>
-              {displayText.length > 0 && (
-                <SyncLineButton lineId={line.id} wordCount={splitIntoWordsWithMeta(line.text).parts.length} />
-              )}
+              <div
+                className="sticky left-[48px] z-10 inline-flex items-center gap-2 px-3 text-xs text-composer-text-muted italic bg-composer-bg/80 backdrop-blur-sm"
+                style={{ height: rowHeight, maxWidth: "calc(100% - 48px)" }}
+              >
+                <span className="truncate">
+                  {displayText.slice(0, 60)}
+                  {displayText.length > 60 ? "..." : ""}
+                </span>
+                {displayText.length > 0 && (
+                  <SyncLineButton lineId={line.id} wordCount={splitIntoWordsWithMeta(line.text).parts.length} />
+                )}
+              </div>
             </div>
           )}
         </div>
