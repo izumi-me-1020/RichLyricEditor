@@ -41,6 +41,14 @@ const AudioEngine: React.FC = () => {
     const audio = new Audio();
     audio.id = "composer-audio";
     audio.src = createdObjectUrl;
+    const {
+      playbackRate: initialPlaybackRate,
+      volume: initialVolume,
+      isMuted: initialIsMuted,
+    } = useAudioStore.getState();
+    audio.playbackRate = initialPlaybackRate;
+    audio.volume = initialVolume;
+    audio.muted = initialIsMuted;
     audio.style.display = "none";
     document.body.appendChild(audio);
     audioRef.current = audio;
