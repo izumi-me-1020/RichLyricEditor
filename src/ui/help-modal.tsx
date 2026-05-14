@@ -10,6 +10,7 @@ import {
   IconDownload,
   IconEye,
   IconHandClick,
+  IconInfoHexagon,
   IconKeyboard,
   IconLayoutRows,
   IconLink,
@@ -181,6 +182,7 @@ const HELP_SECTIONS: HelpSectionDef[] = [
   { id: "preview", label: "Preview", icon: IconEye },
   { id: "exporting", label: "Exporting", icon: IconDownload },
   { id: "ttml-standards", label: "TTML & standards", icon: IconAward },
+  { id: "about", label: "About", icon: IconInfoHexagon },
 ];
 
 // -- Shared Components --------------------------------------------------------
@@ -266,7 +268,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         </Scroll>
 
         <Scroll className="flex-1 p-6">
-          <HelpSectionContent section={activeSection} />
+          <div data-help-content>
+            <HelpSectionContent section={activeSection} />
+          </div>
         </Scroll>
       </div>
 

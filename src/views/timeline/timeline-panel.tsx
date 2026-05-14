@@ -1,6 +1,11 @@
 import { FileDropZone } from "@/audio/file-drop-zone";
+import { cn } from "@/utils/cn";
 import { useAudioStore } from "@/stores/audio";
 import { getAgentColor, useProjectStore } from "@/stores/project";
+import type { LyricLine } from "@/stores/project";
+import { selfKey } from "@/views/timeline/snap";
+import { useSnapBypass } from "@/views/timeline/use-snap-bypass";
+import { useTimelineSnap } from "@/views/timeline/use-timeline-snap";
 import { ExplicitSuggestionsBanner } from "@/views/timeline/explicit-suggestions-banner";
 import { GroupingSuggestionsBanner } from "@/views/timeline/grouping-suggestions-banner";
 import { LyricsImportModal } from "@/views/timeline/lyrics-import-modal";
@@ -11,6 +16,7 @@ import { TimelineSyllableSplitter } from "@/views/timeline/timeline-syllable-spl
 import { WordEditOverlay } from "@/views/timeline/word-edit-overlay";
 import { TimelineHeader } from "@/views/timeline/timeline-header";
 import { TimelineInfoPanel } from "@/views/timeline/timeline-info-panel";
+import { SnapGuideline } from "@/views/timeline/snap-guideline";
 import { TimelinePlayhead } from "@/views/timeline/timeline-playhead";
 import { TimelinePreviewSidebar } from "@/views/timeline/timeline-preview-sidebar";
 import { TimelineRows } from "@/views/timeline/timeline-rows";
@@ -44,12 +50,18 @@ const DragGhost: React.FC<{
   anchorWidth: number;
   anchorHeight: number;
   color: string;
-}> = ({ cells, anchorWidth, anchorHeight, color }) => (
+  isSnapped: boolean;
+}> = ({ cells, anchorWidth, anchorHeight, color, isSnapped }) => (
   <div className="relative" style={{ width: anchorWidth, height: anchorHeight }}>
     {cells.map((cell) => (
       <div
         key={`${cell.left}-${cell.top}`}
-        className="absolute flex items-center justify-center text-xs text-white truncate rounded-xl border pointer-events-none"
+        data-word-block
+        data-syllable-position="none"
+        className={cn(
+          "absolute flex items-center justify-center text-xs text-white truncate rounded-xl border pointer-events-none",
+          isSnapped && "is-snapped",
+        )}
         style={{
           left: cell.left,
           top: cell.top,
@@ -65,6 +77,23 @@ const DragGhost: React.FC<{
   </div>
 );
 
+function makeDragOverlapCheck(
+  data: { lineId: string; wordIndex: number; trackType: "word" | "bg"; begin: number; end: number },
+  lines: LyricLine[],
+) {
+  const line = lines.find((l) => l.id === data.lineId);
+  if (!line) return () => true;
+  const wordsArr = data.trackType === "word" ? (line.words ?? []) : (line.backgroundWords ?? []);
+  return (shift: number) => {
+    const newBegin = data.begin + shift;
+    const newEnd = data.end + shift;
+    return !wordsArr.some((w, i) => {
+      if (i === data.wordIndex) return false;
+      return newBegin < w.end && newEnd > w.begin;
+    });
+  };
+}
+
 const TimelinePanel: React.FC = () => {
   const source = useAudioStore((s) => s.source);
   const duration = useAudioStore((s) => s.duration);
@@ -75,6 +104,7 @@ const TimelinePanel: React.FC = () => {
   const previewSidebarOpen = useTimelineStore((s) => s.previewSidebarOpen);
   const pasteMode = useTimelineStore((s) => s.pasteMode);
   const editingWord = useTimelineStore((s) => s.editingWord);
+  const ghostSnapped = useTimelineStore((s) => s.snappedBlockId !== null);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -103,6 +133,20 @@ const TimelinePanel: React.FC = () => {
 
   const { handlePanMouseDown } = useTimelinePan(scrollContainerRef);
   const { sensors, activeDrag, handleDragStart, handleDragEnd, handleDragCancel } = useTimelineDnd(effectiveLines);
+  const { dragSnapModifier, beginGesture, endGesture } = useTimelineSnap();
+  const lastDragPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  const getLastDragPointer = useCallback(() => lastDragPointerRef.current, []);
+  useSnapBypass({ active: activeDrag !== null, getLastPointer: getLastDragPointer });
+
+  useEffect(() => {
+    if (!activeDrag) return;
+    const onMove = (e: PointerEvent) => {
+      lastDragPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [activeDrag]);
+
   const { marqueeRect, handleMarqueeMouseDown } = useMarquee(scrollContainerRef);
   const openLyricsModal = useCallback(() => setLyricsModalOpen(true), []);
   useTimelineKeyboard(scrollContainerRef, effectiveLines, duration, openLyricsModal);
@@ -315,9 +359,45 @@ const TimelinePanel: React.FC = () => {
   return (
     <DndContext
       sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
+      modifiers={[dragSnapModifier]}
+      onDragStart={(e) => {
+        handleDragStart(e);
+        const data = e.active.data.current as
+          | {
+              lineId: string;
+              wordIndex: number;
+              trackType: "word" | "bg";
+              begin: number;
+              end: number;
+              snap?: { edgesAtStart: number[] };
+            }
+          | undefined;
+        if (!data?.snap) return;
+        const { selectedWords } = useTimelineStore.getState();
+        const lines = useProjectStore.getState().lines;
+        const isLeaderInSelection = selectedWords.some(
+          (s) => s.lineId === data.lineId && s.wordIndex === data.wordIndex && s.type === data.trackType,
+        );
+        const draggedSet =
+          isLeaderInSelection && selectedWords.length > 0
+            ? selectedWords
+            : [{ lineId: data.lineId, lineIndex: 0, wordIndex: data.wordIndex, type: data.trackType }];
+        const selfIds = new Set(draggedSet.map((s) => selfKey(s.lineId, s.wordIndex, s.type)));
+        const leaderKey = selfKey(data.lineId, data.wordIndex, data.trackType);
+        beginGesture({
+          selfIds,
+          leaderKey,
+          overlapCheck: makeDragOverlapCheck(data, lines),
+        });
+      }}
+      onDragEnd={(e) => {
+        endGesture();
+        handleDragEnd(e);
+      }}
+      onDragCancel={() => {
+        endGesture();
+        handleDragCancel();
+      }}
     >
       <div data-tour="timeline-panel" className="flex flex-col flex-1 overflow-hidden select-none">
         <TimelineHeader onImportLyrics={() => setLyricsModalOpen(true)} />
@@ -361,6 +441,8 @@ const TimelinePanel: React.FC = () => {
 
               <TimelinePlayhead containerHeight={contentHeight} scrollContainerRef={scrollContainerRef} />
 
+              <SnapGuideline />
+
               {marqueeRect && <MarqueeSelection rect={marqueeRect} scrollContainerRef={scrollContainerRef} />}
 
               {pasteMode.status === "preview" && (
@@ -393,6 +475,7 @@ const TimelinePanel: React.FC = () => {
             anchorWidth={dragCells.anchorWidth}
             anchorHeight={dragCells.anchorHeight}
             color={dragColor}
+            isSnapped={ghostSnapped}
           />
         )}
       </DragOverlay>

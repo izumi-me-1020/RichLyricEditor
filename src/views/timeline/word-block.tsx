@@ -1,5 +1,7 @@
 import { cn } from "@/utils/cn";
 import type { SyllablePosition } from "@/utils/syllable-groups";
+import { selfKey } from "@/views/timeline/snap";
+import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { useDraggable } from "@dnd-kit/core";
 
 // -- Types ---------------------------------------------------------------------
@@ -65,9 +67,21 @@ const WordBlock: React.FC<WordBlockProps> = ({
   const width = Math.max(naturalWidth, 4);
   const showText = naturalWidth >= 20;
 
+  const myKey = selfKey(lineId, wordIndex, trackType);
+  const isSnapped = useTimelineStore((s) => s.snappedBlockId === myKey);
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id,
-    data: { lineId, lineIndex, wordIndex, trackType, text, begin, end },
+    data: {
+      lineId,
+      lineIndex,
+      wordIndex,
+      trackType,
+      text,
+      begin,
+      end,
+      snap: { edgesAtStart: [begin, end] },
+    },
   });
 
   const handleResizeStart = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -92,6 +106,7 @@ const WordBlock: React.FC<WordBlockProps> = ({
         isDimmed && "opacity-30",
         isDragging && "opacity-50 cursor-grabbing z-50",
         isExplicit && "is-explicit-word",
+        isSnapped && !isDragging && "is-snapped",
       )}
       style={{
         left,
