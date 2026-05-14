@@ -20,12 +20,6 @@ interface FactoryWordOptions {
   explicit?: true;
 }
 
-interface FactoryAgentOptions {
-  id?: string;
-  type?: "person" | "character" | "group" | "organization" | "other";
-  name?: string;
-}
-
 interface FactoryGroupOptions {
   id?: string;
   label?: string;
@@ -35,7 +29,6 @@ interface FactoryGroupOptions {
 
 let lineCounter = 0;
 let groupCounter = 0;
-let agentCounter = 0;
 
 function createWord(opts: FactoryWordOptions): FactoryWordOptions {
   return { text: opts.text, begin: opts.begin, end: opts.end, explicit: opts.explicit };
@@ -59,15 +52,6 @@ function createLine(opts: FactoryLineOptions = {}) {
   };
 }
 
-function createAgent(opts: FactoryAgentOptions = {}) {
-  const id = opts.id ?? `agent-${++agentCounter}`;
-  return {
-    id,
-    type: opts.type ?? "person",
-    ...(opts.name ? { name: opts.name } : {}),
-  };
-}
-
 function createGroup(opts: FactoryGroupOptions = {}) {
   const id = opts.id ?? `group-${++groupCounter}`;
   return {
@@ -78,16 +62,5 @@ function createGroup(opts: FactoryGroupOptions = {}) {
   };
 }
 
-function createFile(name: string, type: string, content: string | ArrayBuffer | Blob): File {
-  const parts: BlobPart[] = [content as BlobPart];
-  return new File(parts, name, { type });
-}
-
-function resetFactoryCounters() {
-  lineCounter = 0;
-  groupCounter = 0;
-  agentCounter = 0;
-}
-
-export { createLine, createWord, createAgent, createGroup, createFile, resetFactoryCounters };
-export type { FactoryLineOptions, FactoryWordOptions, FactoryAgentOptions, FactoryGroupOptions };
+export { createLine, createWord, createGroup };
+export type { FactoryLineOptions, FactoryWordOptions, FactoryGroupOptions };

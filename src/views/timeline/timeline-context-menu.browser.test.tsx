@@ -20,7 +20,10 @@ describe("TimelineContextMenu", () => {
   it("renders nothing when no context menu is set", async () => {
     useTimelineStore.setState({ contextMenu: null });
     await render(<TimelineContextMenu />);
-    expect(document.querySelector("button")?.closest("[data-floating]")).toBeUndefined();
+    const explicitButton = Array.from(document.querySelectorAll("button")).find((b) =>
+      /explicit/i.test(b.textContent ?? ""),
+    );
+    expect(explicitButton).toBeUndefined();
   });
 
   it("opens the menu when contextMenu state is set", async () => {

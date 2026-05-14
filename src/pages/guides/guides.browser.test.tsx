@@ -8,8 +8,8 @@ import MultiAgentContent from "@/pages/guides/content/multi-agent-lyrics-duets";
 import TtmlSpecContent from "@/pages/guides/content/ttml-file-format-spec";
 import TtmlVsLrcContent from "@/pages/guides/content/ttml-vs-lrc";
 import WhatIsTtmlContent from "@/pages/guides/content/what-is-ttml";
-import * as guidesIndex from "@/pages/guides/guides-index";
-import * as guidePage from "@/pages/guides/guide-page";
+import GuidesIndexPage from "@/pages/guides/guides-index";
+import GuidePage from "@/pages/guides/guide-page";
 
 const CONTENT_COMPONENTS = [
   ["BackgroundVocals", BackgroundVocalsContent],
@@ -33,10 +33,10 @@ describe("Guide content components", () => {
 
 describe("Guide index and page modules", () => {
   it("guides-index exports a default page component", () => {
-    expect(typeof (guidesIndex as { default?: unknown }).default).toBe("function");
+    expect(typeof GuidesIndexPage).toBe("function");
   });
 
   it("guide-page exports a default page component", () => {
-    expect(typeof (guidePage as { default?: unknown }).default).toBe("function");
+    expect(typeof GuidePage).toBe("function");
   });
 });

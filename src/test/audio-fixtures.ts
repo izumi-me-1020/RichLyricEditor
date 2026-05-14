@@ -1,5 +1,6 @@
-// Generates a valid 0.1-second 8 kHz mono PCM WAV (silence) at runtime.
-// Tests can request the same fixture as a base64 string, a Blob, or a File.
+// Generates a valid 0.1-second 8 kHz mono PCM WAV (silence) at module load
+// and exposes it as a real `File`. Tests use this for any code path that needs
+// a playable audio source (audio engine, drop zone, etc.).
 
 const SAMPLE_RATE = 8000;
 const DURATION_SECONDS = 0.1;
@@ -33,29 +34,8 @@ function buildSilentWav(): Uint8Array {
 
 const SILENT_WAV_BYTES = buildSilentWav();
 
-function getSilentWavBlob(): Blob {
-  return new Blob([SILENT_WAV_BYTES], { type: "audio/wav" });
-}
-
 function createAudioFile(name = "silence.wav"): File {
   return new File([SILENT_WAV_BYTES], name, { type: "audio/wav" });
 }
 
-function getSilentWavDataUrl(): string {
-  let binary = "";
-  for (let i = 0; i < SILENT_WAV_BYTES.length; i++) {
-    binary += String.fromCharCode(SILENT_WAV_BYTES[i]);
-  }
-  return `data:audio/wav;base64,${btoa(binary)}`;
-}
-
-const SILENT_PEAKS: number[] = new Array(128).fill(0);
-const SILENT_DURATION = DURATION_SECONDS;
-
-export {
-  getSilentWavBlob,
-  getSilentWavDataUrl,
-  createAudioFile,
-  SILENT_PEAKS,
-  SILENT_DURATION,
-};
+export { createAudioFile };

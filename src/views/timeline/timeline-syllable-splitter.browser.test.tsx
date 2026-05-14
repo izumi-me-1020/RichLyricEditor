@@ -10,7 +10,7 @@ describe("TimelineSyllableSplitter", () => {
 
   it("dispatches with composer:timeline:split-syllable event listener without throwing", async () => {
     await render(<TimelineSyllableSplitter />);
-    // Event without any selected word — should be a safe no-op.
+    // Event without any selected word, should be a safe no-op.
     window.dispatchEvent(new Event("composer:timeline:split-syllable"));
     expect(document.querySelector("dialog")).toBeNull();
   });
