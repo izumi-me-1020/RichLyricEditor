@@ -10,6 +10,16 @@ type GranularityMode = "line" | "word";
 type EditorMode = "simple" | "advanced";
 type SimpleTab = "import" | "edit" | "sync" | "timeline" | "preview" | "export";
 
+interface SyllableSplitDefaults {
+  applyToAll: boolean;
+  caseInsensitive: boolean;
+}
+
+const DEFAULT_SYLLABLE_SPLIT_DEFAULTS: SyllableSplitDefaults = {
+  applyToAll: false,
+  caseInsensitive: false,
+};
+
 interface HistoryEntry {
   lines: LyricLine[];
   groups: LinkGroup[];
@@ -38,6 +48,7 @@ interface UiState {
   granularity: GranularityMode;
   editorMode: EditorMode;
   activeTab: SimpleTab;
+  syllableSplitDefaults: SyllableSplitDefaults;
 }
 
 interface DismissalsState {
@@ -74,6 +85,7 @@ interface UiActions {
   setGranularity: (mode: GranularityMode) => void;
   setEditorMode: (mode: EditorMode) => void;
   setActiveTab: (tab: SimpleTab) => void;
+  setSyllableSplitDefaults: (defaults: SyllableSplitDefaults) => void;
 }
 
 interface DismissalActions {
@@ -120,6 +132,11 @@ interface LineActions {
     targets: Array<{ lineId: string; field: "words" | "backgroundWords"; wordIndex: number }>,
     value: boolean,
   ) => void;
+  splitSyllablesAcrossIdenticalWordsWithHistory: (params: {
+    source: { lineId: string; wordIndex: number; type: "word" | "bg" };
+    splitPoints: number[];
+    caseInsensitive: boolean;
+  }) => void;
 }
 
 interface GroupActions {
@@ -154,6 +171,7 @@ type ProjectStore = ProjectState & ProjectActions;
 export type {
   GranularityMode,
   SimpleTab,
+  SyllableSplitDefaults,
   MetadataState,
   AgentsState,
   LinesState,
@@ -171,3 +189,4 @@ export type {
   ProjectState,
   ProjectStore,
 };
+export { DEFAULT_SYLLABLE_SPLIT_DEFAULTS };

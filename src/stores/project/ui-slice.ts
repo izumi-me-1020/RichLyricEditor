@@ -1,5 +1,10 @@
 import { useAudioStore } from "@/stores/audio";
-import type { ProjectStore, UiActions, UiState } from "@/stores/project/types";
+import {
+  DEFAULT_SYLLABLE_SPLIT_DEFAULTS,
+  type ProjectStore,
+  type UiActions,
+  type UiState,
+} from "@/stores/project/types";
 import { useSettingsStore } from "@/stores/settings";
 import type { StateCreator } from "zustand";
 
@@ -10,6 +15,7 @@ function createUiInitialState(): UiState {
     granularity: useSettingsStore.getState().defaultGranularity,
     editorMode: "simple",
     activeTab: "import",
+    syllableSplitDefaults: DEFAULT_SYLLABLE_SPLIT_DEFAULTS,
   };
 }
 
@@ -28,6 +34,8 @@ const createUiSlice: StateCreator<ProjectStore, [], [], UiState & UiActions> = (
     }
     set({ activeTab });
   },
+
+  setSyllableSplitDefaults: (syllableSplitDefaults) => set({ syllableSplitDefaults, isDirty: true }),
 });
 
 // -- Exports ------------------------------------------------------------------

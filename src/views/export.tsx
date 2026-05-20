@@ -2,6 +2,7 @@ import { exportProjectToFile, importProjectFromFile, clearCurrentProject, cancel
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
 import { useProjectStore } from "@/stores/project";
+import { DEFAULT_SYLLABLE_SPLIT_DEFAULTS } from "@/stores/project/types";
 import { Button } from "@/ui/button";
 import { EmptyState } from "@/ui/empty-state";
 import { Scroll } from "@/ui/scroll";
@@ -99,9 +100,18 @@ const ExportPanel: React.FC = () => {
   const handleExportProject = useCallback(() => {
     const audioSource = useAudioStore.getState().source;
     const audioFileName = audioSource?.type === "file" ? audioSource.file.name : undefined;
-    const dismissed = useProjectStore.getState().dismissedSuggestions;
-    const dismissedExplicit = useProjectStore.getState().dismissedExplicitSuggestions;
-    exportProjectToFile(metadata, agents, lines, groups, granularity, dismissed, dismissedExplicit, audioFileName);
+    const { dismissedSuggestions, dismissedExplicitSuggestions, syllableSplitDefaults } = useProjectStore.getState();
+    exportProjectToFile(
+      metadata,
+      agents,
+      lines,
+      groups,
+      granularity,
+      syllableSplitDefaults,
+      dismissedSuggestions,
+      dismissedExplicitSuggestions,
+      audioFileName,
+    );
   }, [metadata, agents, lines, groups, granularity]);
 
   const handleImportProject = useCallback(
@@ -125,12 +135,14 @@ const ExportPanel: React.FC = () => {
       }
 
       const project = await importProjectFromFile(file);
+      const store = useProjectStore.getState();
       setMetadata(project.metadata);
       setLines(project.lines);
-      useProjectStore.getState().setGroups(project.groups ?? []);
-      useProjectStore.getState().setDismissedSuggestions(project.dismissedSuggestions ?? []);
-      useProjectStore.getState().setDismissedExplicitSuggestions(project.dismissedExplicitSuggestions ?? []);
+      store.setGroups(project.groups ?? []);
+      store.setDismissedSuggestions(project.dismissedSuggestions ?? []);
+      store.setDismissedExplicitSuggestions(project.dismissedExplicitSuggestions ?? []);
       setGranularity(project.granularity);
+      store.setSyllableSplitDefaults(project.syllableSplitDefaults ?? DEFAULT_SYLLABLE_SPLIT_DEFAULTS);
       setAgents(project.agents);
       markClean();
 
