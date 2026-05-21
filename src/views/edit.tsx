@@ -2,11 +2,13 @@ import { isLinked } from "@/domain/instance/predicates";
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
 import { useProjectStore } from "@/stores/project";
+import { useSettingsStore } from "@/stores/settings";
 import { getAgentColor } from "@/domain/agent/colors";
 import type { LyricLine } from "@/domain/line/model";
 import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
 import { Scroll } from "@/ui/scroll";
+import { classifyLine, extractBackgroundVocals, extractInlineFromLine } from "@/utils/background-vocal-extraction";
 import { type ParseResult, parseLyricsFile } from "@/utils/lyrics-parsers";
 import { remapWordTextsPreservingTiming } from "@/utils/lyrics-text";
 import { stripSplitCharacter } from "@/utils/split-character";
@@ -71,6 +73,7 @@ const LinePreview: React.FC<{
   onAgentChange: (lineId: string, agentId: string) => void;
   onBulkAgentChange: (agentId: string) => void;
   onBackgroundChange: (lineId: string, text: string) => void;
+  onExtractLine: (lineId: string) => void;
   onGutterMouseDown: (lineNumber: number, e: React.MouseEvent) => void;
   onGutterMouseEnter: (lineNumber: number, e: React.MouseEvent) => void;
   didDragRef: React.MutableRefObject<boolean>;
@@ -85,6 +88,7 @@ const LinePreview: React.FC<{
   onAgentChange,
   onBulkAgentChange,
   onBackgroundChange,
+  onExtractLine,
   onGutterMouseDown,
   onGutterMouseEnter,
   didDragRef,
@@ -173,13 +177,18 @@ const LinePreview: React.FC<{
       </span>
 
       <span
+        data-testid="line-preview-text"
         className={`text-sm ${line.hasBrackets ? "text-composer-error" : "text-composer-text"}`}
         style={{ borderLeft: `2px solid ${agentColor}`, paddingLeft: "6px" }}
       >
         {stripSplitCharacter(line.text)}
       </span>
 
-      {line.backgroundText && <span className="text-xs italic text-composer-text-muted">{line.backgroundText}</span>}
+      {line.backgroundText && (
+        <span data-testid="line-preview-background" className="text-xs italic text-composer-text-muted">
+          {line.backgroundText}
+        </span>
+      )}
 
       <div className="flex items-center gap-1.5 ml-auto transition-opacity opacity-0 group-hover:opacity-100">
         {agents.length > 1 && line.lineId && (
@@ -220,6 +229,18 @@ const LinePreview: React.FC<{
             {(close) => (
               <div className="p-2 w-48">
                 <p className="mb-1 text-xs text-composer-text-secondary">Background vocals</p>
+                {classifyLine(line.text).kind === "inline" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (line.lineId) onExtractLine(line.lineId);
+                      close();
+                    }}
+                    className="mb-1 flex w-full items-center gap-1 text-xs cursor-pointer text-composer-accent-text hover:text-composer-accent"
+                  >
+                    Pull from ( )
+                  </button>
+                )}
                 <input
                   type="text"
                   value={bgInput}
@@ -263,6 +284,7 @@ const EditPanel: React.FC = () => {
   rawTextRef.current = rawText;
   const linesSetByUs = useRef<LyricLine[] | null>(null);
   const modalPendingRef = useRef(false);
+  const pastedRef = useRef(false);
   const [importResult, setImportResult] = useState<{
     result: ParseResult;
     filename: string;
@@ -302,6 +324,23 @@ const EditPanel: React.FC = () => {
     return counts;
   }, [lines]);
 
+  const mergeStandalone = useSettingsStore((s) => s.mergeStandaloneBackgroundLines);
+  const extractOptions = useMemo(() => ({ mergeStandaloneLines: mergeStandalone }), [mergeStandalone]);
+  const canExtractBackgroundVocals = useMemo(() => {
+    const extracted = extractBackgroundVocals(lines, extractOptions);
+    return extracted.length !== lines.length || extracted.some((line, i) => line !== lines[i]);
+  }, [lines, extractOptions]);
+
+  const handleExtractBackgroundVocals = useCallback(() => {
+    const current = useProjectStore.getState().lines;
+    const next = extractBackgroundVocals(current, extractOptions);
+    if (next.length === current.length && next.every((line, i) => line === current[i])) return;
+    useProjectStore.getState().setLinesWithHistory(next);
+    const committed = useProjectStore.getState().lines;
+    linesSetByUs.current = committed;
+    setRawText(committed.map((line) => line.text).join("\n"));
+  }, [extractOptions]);
+
   const handleAgentChange = useCallback((lineId: string, agentId: string) => {
     useProjectStore.getState().updateLineWithHistory(lineId, { agentId });
   }, []);
@@ -320,6 +359,18 @@ const EditPanel: React.FC = () => {
     }
 
     useProjectStore.getState().updateLineWithHistory(lineId, updates);
+  }, []);
+
+  const handleExtractLine = useCallback((lineId: string) => {
+    const target = useProjectStore.getState().lines.find((line) => line.id === lineId);
+    if (!target) return;
+    const extracted = extractInlineFromLine(target);
+    if (extracted === target) return;
+    useProjectStore.getState().updateLineWithHistory(lineId, {
+      text: extracted.text,
+      words: extracted.words,
+      backgroundText: extracted.backgroundText,
+    });
   }, []);
 
   const handleLineSelect = useCallback(
@@ -391,6 +442,9 @@ const EditPanel: React.FC = () => {
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const wasPaste = pastedRef.current;
+      pastedRef.current = false;
+
       const text = e.target.value;
       const action = decideEditTextAction({
         text,
@@ -454,8 +508,15 @@ const EditPanel: React.FC = () => {
 
       if (action.kind === "noop") return;
 
-      linesSetByUs.current = action.finalLines;
-      setLines(action.finalLines);
+      let finalLines = action.finalLines;
+      if (wasPaste && useSettingsStore.getState().autoExtractBackgroundVocals) {
+        finalLines = extractBackgroundVocals(finalLines, {
+          mergeStandaloneLines: useSettingsStore.getState().mergeStandaloneBackgroundLines,
+        });
+        setRawText(finalLines.map((line) => line.text).join("\n"));
+      }
+      linesSetByUs.current = finalLines;
+      setLines(finalLines);
     },
     [confirm, defaultAgentId, groups, lines, setLines],
   );
@@ -479,9 +540,14 @@ const EditPanel: React.FC = () => {
           if (!ok) return;
         }
 
-        linesSetByUs.current = result.lines;
-        setLines(result.lines);
-        setRawText(result.lines.map((l) => l.text).join("\n"));
+        const importedLines = useSettingsStore.getState().autoExtractBackgroundVocals
+          ? extractBackgroundVocals(result.lines, {
+              mergeStandaloneLines: useSettingsStore.getState().mergeStandaloneBackgroundLines,
+            })
+          : result.lines;
+        linesSetByUs.current = importedLines;
+        setLines(importedLines);
+        setRawText(importedLines.map((l) => l.text).join("\n"));
         useProjectStore.getState().setGroups(result.groups ?? []);
 
         if (Object.keys(result.metadata).length > 0) {
@@ -549,6 +615,15 @@ const EditPanel: React.FC = () => {
           <span className="text-sm text-composer-text-muted">
             {nonEmptyCount} line{nonEmptyCount !== 1 ? "s" : ""}
           </span>
+          <Button
+            hasIcon
+            variant="secondary"
+            onClick={handleExtractBackgroundVocals}
+            disabled={!canExtractBackgroundVocals}
+          >
+            <IconMicrophone className="size-4" />
+            Extract background vocals
+          </Button>
           <Button hasIcon onClick={handleImportClick}>
             <IconFileImport className="size-4" />
             Import File
@@ -585,6 +660,9 @@ const EditPanel: React.FC = () => {
             id={textareaId}
             value={rawText}
             onChange={handleTextChange}
+            onPaste={() => {
+              pastedRef.current = true;
+            }}
             placeholder="Paste your lyrics here, one line at a time...
 
 Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
@@ -677,6 +755,7 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                         onAgentChange={handleAgentChange}
                         onBulkAgentChange={handleBulkAgentChange}
                         onBackgroundChange={handleBackgroundChange}
+                        onExtractLine={handleExtractLine}
                         onGutterMouseDown={handleGutterMouseDown}
                         onGutterMouseEnter={handleGutterMouseEnter}
                         didDragRef={didDragRef}

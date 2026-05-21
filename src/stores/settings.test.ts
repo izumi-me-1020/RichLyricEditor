@@ -32,6 +32,40 @@ describe("preview renderer settings", () => {
   });
 });
 
+describe("background vocal extraction settings", () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ ...DEFAULTS });
+  });
+
+  it("defaults autoExtractBackgroundVocals to false", () => {
+    expect(DEFAULTS.autoExtractBackgroundVocals).toBe(false);
+    expect(useSettingsStore.getState().autoExtractBackgroundVocals).toBe(false);
+  });
+
+  it("defaults mergeStandaloneBackgroundLines to true", () => {
+    expect(DEFAULTS.mergeStandaloneBackgroundLines).toBe(true);
+    expect(useSettingsStore.getState().mergeStandaloneBackgroundLines).toBe(true);
+  });
+
+  it("allows enabling autoExtractBackgroundVocals via set()", () => {
+    useSettingsStore.getState().set("autoExtractBackgroundVocals", true);
+    expect(useSettingsStore.getState().autoExtractBackgroundVocals).toBe(true);
+  });
+
+  it("allows disabling mergeStandaloneBackgroundLines via set()", () => {
+    useSettingsStore.getState().set("mergeStandaloneBackgroundLines", false);
+    expect(useSettingsStore.getState().mergeStandaloneBackgroundLines).toBe(false);
+  });
+
+  it("resetToDefaults restores the background vocal toggles", () => {
+    useSettingsStore.getState().set("autoExtractBackgroundVocals", true);
+    useSettingsStore.getState().set("mergeStandaloneBackgroundLines", false);
+    useSettingsStore.getState().resetToDefaults();
+    expect(useSettingsStore.getState().autoExtractBackgroundVocals).toBe(false);
+    expect(useSettingsStore.getState().mergeStandaloneBackgroundLines).toBe(true);
+  });
+});
+
 describe("cobalt instance helpers", () => {
   beforeEach(() => {
     useSettingsStore.setState({
