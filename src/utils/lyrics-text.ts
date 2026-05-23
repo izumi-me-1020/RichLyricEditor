@@ -1,14 +1,7 @@
 import { CLEARED_BACKGROUND } from "@/domain/line/background";
 import type { LyricLine } from "@/domain/line/model";
-import type { WordTiming } from "@/domain/word/timing";
-import { cleanSplitCharacters, getSplitCharacter, stripSplitCharacter } from "@/utils/split-character";
-import { splitIntoWordsWithMeta } from "@/utils/sync-helpers";
-
-function remapWordTextsPreservingTiming(oldWords: WordTiming[], newText: string): WordTiming[] | null {
-  const { parts, trailingSpace } = splitIntoWordsWithMeta(newText);
-  if (parts.length !== oldWords.length) return null;
-  return oldWords.map((oldWord, i) => ({ ...oldWord, text: parts[i] + (trailingSpace[i] ? " " : "") }));
-}
+import { reconcileMatchedTiming } from "@/domain/line/reconcile-text";
+import { cleanSplitCharacters, stripSplitCharacter } from "@/utils/split-character";
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -41,37 +34,14 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
     const exactMatch = candidates?.find((line) => !usedExistingIds.has(line.id));
     if (exactMatch) {
       usedExistingIds.add(exactMatch.id);
-      if (cleanedText.includes(getSplitCharacter())) {
-        return {
-          ...exactMatch,
-          text: cleanedText,
-          words: undefined,
-          begin: undefined,
-          end: undefined,
-        };
-      }
-      return { ...exactMatch };
+      return reconcileMatchedTiming(exactMatch, cleanedText);
     }
 
     if (allowPositionMatch) {
       const positionMatch = existingLines[index];
       if (positionMatch && !usedExistingIds.has(positionMatch.id)) {
         usedExistingIds.add(positionMatch.id);
-
-        if (positionMatch.words?.length) {
-          const remapped = remapWordTextsPreservingTiming(positionMatch.words, cleanedText);
-          if (remapped) {
-            return { ...positionMatch, text: cleanedText, words: remapped };
-          }
-        }
-
-        return {
-          ...positionMatch,
-          text: cleanedText,
-          words: undefined,
-          begin: undefined,
-          end: undefined,
-        };
+        return reconcileMatchedTiming(positionMatch, cleanedText);
       }
     }
 
@@ -89,4 +59,4 @@ function textToLyricLines(text: string, defaultAgentId: string, existingLines: L
 
 // -- Exports ------------------------------------------------------------------
 
-export { remapWordTextsPreservingTiming, textToLyricLines };
+export { textToLyricLines };
