@@ -23,20 +23,26 @@ import {
   IconPlus,
   IconTextPlus,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useTimelineZoom } from "@/views/timeline/use-timeline-zoom";
 
 // -- Types --------------------------------------------------------------------
 
 interface TimelineHeaderProps {
   onImportLyrics?: () => void;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 // -- Component -----------------------------------------------------------------
 
-const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics }) => {
+const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollContainerRef }) => {
   const zoom = useTimelineStore((s) => s.zoom);
-  const zoomIn = useTimelineStore((s) => s.zoomIn);
-  const zoomOut = useTimelineStore((s) => s.zoomOut);
+  const storeZoomIn = useTimelineStore((s) => s.zoomIn);
+  const storeZoomOut = useTimelineStore((s) => s.zoomOut);
+  const fallbackRef = useRef<HTMLDivElement | null>(null);
+  const anchoredZoom = useTimelineZoom(scrollContainerRef ?? fallbackRef);
+  const zoomIn = scrollContainerRef ? anchoredZoom.zoomIn : storeZoomIn;
+  const zoomOut = scrollContainerRef ? anchoredZoom.zoomOut : storeZoomOut;
   const followEnabled = useTimelineStore((s) => s.followEnabled);
   const toggleFollow = useTimelineStore((s) => s.toggleFollow);
   const previewSidebarOpen = useTimelineStore((s) => s.previewSidebarOpen);
@@ -223,7 +229,15 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics }) => {
 
         {/* Zoom controls */}
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={zoomOut} disabled={zoom <= MIN_ZOOM} className="size-7">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={zoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            className="size-7"
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
             <IconMinus size={16} />
           </Button>
 
@@ -231,7 +245,15 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics }) => {
             {zoomPercent}%
           </span>
 
-          <Button variant="ghost" size="icon" onClick={zoomIn} disabled={zoom >= MAX_ZOOM} className="size-7">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={zoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            className="size-7"
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
             <IconPlus size={16} />
           </Button>
         </div>

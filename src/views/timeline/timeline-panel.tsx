@@ -431,7 +431,7 @@ const TimelinePanel: React.FC = () => {
       }}
     >
       <div data-tour="timeline-panel" className="flex flex-col flex-1 overflow-hidden select-none">
-        <TimelineHeader onImportLyrics={openLyricsModal} />
+        <TimelineHeader onImportLyrics={openLyricsModal} scrollContainerRef={scrollContainerRef} />
         <GroupingSuggestionsBanner />
         <ExplicitSuggestionsBanner />
 
@@ -447,7 +447,7 @@ const TimelinePanel: React.FC = () => {
                 role="application"
                 aria-label="Timeline"
                 data-scroll-container
-                className="flex-1 overflow-auto overscroll-none static! z-[unset]"
+                className="flex-1 overflow-auto overscroll-none static! z-[unset] overflow-anchor-none"
                 onScroll={handleScroll}
                 onMouseDown={handleMouseDown}
                 onAuxClick={(e) => e.preventDefault()}
