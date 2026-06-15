@@ -26,6 +26,16 @@ RichLyricEditor takes a different approach. It's built around a linear mental mo
 
 For users who want more control, the Timeline view is a full GUI where you can do everything without leaving that single screen. Import audio, add lyrics, drag word blocks on the waveform, split syllables, assign agents, preview your work. It's designed so beginners start with the guided tabs and naturally graduate to the Timeline as they get comfortable.
 
+## Acknowledgements
+
+RichLyricEditor is based on Composer, originally created by Boidu.
+
+This project began as a fork of Composer and has since been adapted with additional functionality and workflow improvements for RichLyric users.
+
+Special thanks to Boidu for creating and maintaining Composer, and to all contributors, testers, translators, bug reporters, and community members who have helped improve Composer over time.
+
+Their work made RichLyricEditor possible.
+
 ## What it does
 
 RichLyricEditor turns plain lyrics into precisely timed TTML files. You import audio, paste your lyrics, tap along to sync each word, then export the result. Everything runs in the browser with no server required.
@@ -134,8 +144,18 @@ React, TypeScript, Vite, TailwindCSS v4, Zustand, Vitest
 
 ## License
 
-RichLyricEditor is dual-licensed.
+RichLyricEditor is based on Composer and is available under the terms of the GNU Affero General Public License v3.0 (AGPL-3.0).
 
-The open-source license is [AGPL-3.0](LICENSE). You are free to use, modify, and self-host RichLyricEditor under its terms.
+You are free to use, study, modify, and self-host this software under the conditions of the AGPL-3.0 license. See the LICENSE file for details.
 
-A commercial license is also available. It removes the AGPL copyleft obligations and covers commercial use of RichLyricEditor's output, such as a record label or distributor publishing generated lyrics as part of a release. For commercial or enterprise licensing, reach out to composer@boidu.dev.
+## Commercial use
+
+RichLyricEditor is a fork of Composer and contains modifications and additional features developed by RichLyric.
+
+Commercial use and commercial licensing are subject to Composer's licensing terms. If you require a commercial or enterprise license that removes AGPL obligations, please contact:
+
+composer@boidu.dev
+
+For more information about Composer:
+
+https://composer.boidu.dev
