@@ -158,4 +158,4 @@ composer@boidu.dev
 
 For more information about Composer:
 
-https://composer.boidu.dev
+https://github.com/better-lyrics/composer
