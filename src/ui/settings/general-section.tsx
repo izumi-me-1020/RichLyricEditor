@@ -108,6 +108,7 @@ const GeneralSection: React.FC<{
         description={t("Choose the application language.")}
         settingKey="language"
         options={[
+          { value: "auto", label: t("Automatic") },
           { value: "ja", label: t("Japanese") },
           { value: "en", label: t("English") },
         ]}

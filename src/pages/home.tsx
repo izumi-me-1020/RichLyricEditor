@@ -2,6 +2,7 @@ import { App } from "@/App";
 import { PageHead } from "@/seo/page-head";
 import { organizationSchema, softwareApplicationSchema } from "@/seo/schemas";
 import { ClientOnly } from "@/ui/client-only";
+import { t } from "i18next";
 
 const TITLE = "RichLyricEditor ・ Free TTML Lyrics Editor";
 const DESCRIPTION =
@@ -9,7 +10,7 @@ const DESCRIPTION =
 
 const AppFallback: React.FC = () => (
   <div className="flex items-center justify-center h-screen bg-composer-bg text-composer-text-muted text-sm">
-    Loading RichLyricEditor
+    {t("Loading RichLyricEditor")}
   </div>
 );
 

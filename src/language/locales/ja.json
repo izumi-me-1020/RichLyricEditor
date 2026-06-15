@@ -251,6 +251,7 @@
   "Reset to defaults": "初期設定に戻す",
   "Restore all settings to their original values.": "すべての設定を初期状態に戻します。",
   "Reset all": "すべてリセット",
+  "Automatic": "自動判別",
   "Japanese": "日本語",
   "English": "英語",
   "Language": "言語",
@@ -927,5 +928,6 @@
   "Made by": "開発元",
   "RichLyricEditor is a fork of": "RichLyricEditor は",
   "Composer": "Composer",
-  ", originally created by Boidu. This project includes modifications and additional features developed by RichLyric. Special thanks to the Composer contributors and community members whose work, feedback, bug reports, and support made this project possible.": "（Boidu によって開発されたプロジェクト）をフォークして作成されています。このプロジェクトには RichLyric による改変および追加機能が含まれています。また、Composer の開発に貢献したすべてのコントリビューター、フィードバックやバグ報告を寄せてくださったコミュニティの皆様に感謝いたします。皆様の支援と貢献があったからこそ、このプロジェクトが成り立っています。"
+  ", originally created by Boidu. This project includes modifications and additional features developed by RichLyric. Special thanks to the Composer contributors and community members whose work, feedback, bug reports, and support made this project possible.": "（Boidu によって開発されたプロジェクト）をフォークして作成されています。このプロジェクトには RichLyric による改変および追加機能が含まれています。また、Composer の開発に貢献したすべてのコントリビューター、フィードバックやバグ報告を寄せてくださったコミュニティの皆様に感謝いたします。皆様の支援と貢献があったからこそ、このプロジェクトが成り立っています。",
+  "Loading RichLyricEditor": "RichLyricEditorを読み込み中"
 }

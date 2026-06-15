@@ -16,6 +16,15 @@ describe("GeneralSection", () => {
     await expect.element(screen.getByRole("switch", { name: "Preserve brackets when extracting" })).toBeInTheDocument();
   });
 
+  it("renders the auto-detect language option by default", async () => {
+    useSettingsStore.setState({ language: "auto" });
+    const screen = await render(<GeneralSection onResetTour={() => {}} onClose={() => {}} />);
+    const select = screen.container.querySelector("select");
+    expect(select).not.toBeNull();
+    expect(select?.value).toBe("auto");
+    expect(select?.textContent).toContain("Automatic");
+  });
+
   it("flips preserveBracketsOnExtraction when its switch is clicked", async () => {
     useSettingsStore.setState({ preserveBracketsOnExtraction: false });
     const screen = await render(<GeneralSection onResetTour={() => {}} onClose={() => {}} />);

@@ -149,7 +149,7 @@ const DEFAULTS: SettingsState = {
 
   experiments: { youtubeBridge: false },
   composerBridgeUrl: DEFAULT_BRIDGE_URL,
-  language: "ja",
+  language: "auto",
 };
 
 const BUILTIN_COBALT_INSTANCE: CobaltInstance = {

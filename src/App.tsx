@@ -34,7 +34,7 @@ import { Activity, useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import "@/language/i18n.js";
 import { useSettingsStore } from "./stores/settings";
-import i18n from "./language/i18n";
+import i18n, { resolveAppLanguage } from "./language/i18n";
 
 const TABS_WITH_PLAYER = ["import", "edit", "sync", "timeline", "preview"];
 
@@ -53,7 +53,6 @@ const AppContent: React.FC = () => {
   const openSettings = useUIStore((s) => s.openSettings);
   const closeSettings = useUIStore((s) => s.closeSettings);
   const language = useSettingsStore((s) => s.language);
-  i18n.changeLanguage(language);
   const {
     startTour,
     resumeOrStartTour,
@@ -72,6 +71,10 @@ const AppContent: React.FC = () => {
     const timer = setTimeout(() => startTourRef.current(), 500);
     return () => clearTimeout(timer);
   }, [shouldShowTour]);
+
+  useEffect(() => {
+    void i18n.changeLanguage(resolveAppLanguage(language));
+  }, [language]);
 
   usePersistence();
   useImportFromHash();
