@@ -2,7 +2,11 @@ import { isLinked } from "@/domain/instance/predicates";
 import { useDualClickImport } from "@/hooks/useDualClickImport";
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
-import { useImportModal, useImportModalStore, useLastImportResult } from "@/stores/import-modal-store";
+import {
+  useImportModal,
+  useImportModalStore,
+  useLastImportResult,
+} from "@/stores/import-modal-store";
 import { isAnyModalOpen } from "@/stores/modal-stack";
 import { useProjectStore } from "@/stores/project";
 import { useSettingsStore } from "@/stores/settings";
@@ -14,7 +18,11 @@ import type { WordTiming } from "@/domain/word/timing";
 import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
 import { Scroll } from "@/ui/scroll";
-import { classifyLine, extractBackgroundVocals, extractInlineFromLine } from "@/utils/background-vocal-extraction";
+import {
+  classifyLine,
+  extractBackgroundVocals,
+  extractInlineFromLine,
+} from "@/utils/background-vocal-extraction";
 import { type ParseResult, parseLyricsFile } from "@/utils/lyrics-parsers";
 import { remapWordTextsPreservingTiming } from "@/domain/word/remap-text";
 import { stripSplitCharacter } from "@/utils/split-character";
@@ -27,8 +35,21 @@ import {
   importParsedLyrics,
   type ImportParsedLyricsContext,
 } from "@/views/lyrics-import-modal/use-import-modal-actions";
-import { IconAlertTriangle, IconFileImport, IconMicrophone, IconX } from "@tabler/icons-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  IconAlertTriangle,
+  IconFileImport,
+  IconMicrophone,
+  IconX,
+} from "@tabler/icons-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { t } from "i18next";
 
 // -- Constants ----------------------------------------------------------------
 
@@ -45,7 +66,9 @@ const BracketWarning: React.FC<{ count: number }> = ({ count }) => {
     <div className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-composer-error/10 text-composer-error">
       <IconAlertTriangle className="size-4 shrink-0" />
       <span>
-        {count} line{count > 1 ? "s" : ""} contain{count === 1 ? "s" : ""} [brackets]
+        {t("{{count}} lines contain [brackets]", {
+          count,
+        })}
       </span>
     </div>
   );
@@ -57,7 +80,9 @@ const ImportSuccessBanner: React.FC<{
   onDismiss: () => void;
 }> = ({ result, filename, onDismiss }) => {
   const lineCount = result.lines.length;
-  const timedLineCount = result.lines.filter((l) => l.begin !== undefined).length;
+  const timedLineCount = result.lines.filter(
+    (l) => l.begin !== undefined,
+  ).length;
   const wordTimedCount = result.lines.filter((l) => l.words?.length).length;
 
   return (
@@ -65,13 +90,29 @@ const ImportSuccessBanner: React.FC<{
       <div className="flex items-center gap-2">
         <IconFileImport className="size-4 shrink-0" />
         <span>
-          Imported {lineCount} lines from {filename}
+          {t("Imported {{count}} lines from {{filename}} ", {
+            count: lineCount,
+            filename,
+          })}
           {result.hasTimingData && (
-            <> with {wordTimedCount > 0 ? `${wordTimedCount} word-timed` : `${timedLineCount} timed`} lines</>
+            <>
+              {wordTimedCount > 0
+                ? t("with {{count}} word-timed lines", {
+                    count: wordTimedCount,
+                  })
+                : t("with {{count}} timed lines", {
+                    count: timedLineCount,
+                  })}
+            </>
           )}
         </span>
       </div>
-      <Button size="icon" variant="ghost" onClick={onDismiss} className="size-6">
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={onDismiss}
+        className="size-6"
+      >
         <IconX className="size-4" />
       </Button>
     </div>
@@ -152,7 +193,9 @@ const LinePreview: React.FC<{
         >
           {line.lineNumber}
         </span>
-        <span className="flex-1 text-sm italic text-composer-text-muted">(empty line)</span>
+        <span className="flex-1 text-sm italic text-composer-text-muted">
+          {t("(empty line)")}
+        </span>
       </div>
     );
   }
@@ -162,7 +205,11 @@ const LinePreview: React.FC<{
       role="button"
       tabIndex={-1}
       className={`relative flex items-center gap-2 px-3 py-0.5 group cursor-pointer ${
-        isSelected ? "bg-composer-accent/15" : line.hasBrackets ? "bg-composer-error/5" : "hover:bg-composer-button/30"
+        isSelected
+          ? "bg-composer-accent/15"
+          : line.hasBrackets
+            ? "bg-composer-error/5"
+            : "hover:bg-composer-button/30"
       }`}
       onMouseDown={handleMouseDown}
       onClick={selectLineForBulkEdit}
@@ -186,7 +233,8 @@ const LinePreview: React.FC<{
         onMouseEnter={(e) => onGutterMouseEnter(line.lineNumber, e)}
         onClick={handleGutterClick}
         onKeyDown={(e) => {
-          if (e.key === "Enter") handleGutterClick(e as unknown as React.MouseEvent);
+          if (e.key === "Enter")
+            handleGutterClick(e as unknown as React.MouseEvent);
         }}
       >
         {line.lineNumber}
@@ -201,7 +249,10 @@ const LinePreview: React.FC<{
       </span>
 
       {line.backgroundText && (
-        <span data-testid="line-preview-background" className="text-xs italic text-composer-text-muted">
+        <span
+          data-testid="line-preview-background"
+          className="text-xs italic text-composer-text-muted"
+        >
           {line.backgroundText}
         </span>
       )}
@@ -244,7 +295,9 @@ const LinePreview: React.FC<{
           >
             {(close) => (
               <div className="p-2 w-48">
-                <p className="mb-1 text-xs text-composer-text-secondary">Background vocals</p>
+                <p className="mb-1 text-xs text-composer-text-secondary">
+                  Background vocals
+                </p>
                 {classifyLine(line.text).kind === "inline" && (
                   <button
                     type="button"
@@ -254,7 +307,7 @@ const LinePreview: React.FC<{
                     }}
                     className="mb-1 flex w-full items-center gap-1 text-xs cursor-pointer text-composer-accent-text hover:text-composer-accent"
                   >
-                    Pull from ( )
+                    {t("Pull from")} ( )
                   </button>
                 )}
                 <input
@@ -278,8 +331,12 @@ const LinePreview: React.FC<{
           </Popover>
         )}
 
-        {line.hasTiming && <span className="text-xs text-composer-accent-text">synced</span>}
-        {line.hasBrackets && <IconAlertTriangle className="size-4 text-composer-error" />}
+        {line.hasTiming && (
+          <span className="text-xs text-composer-accent-text">synced</span>
+        )}
+        {line.hasBrackets && (
+          <IconAlertTriangle className="size-4 text-composer-error" />
+        )}
       </div>
     </div>
   );
@@ -295,17 +352,28 @@ const EditPanel: React.FC = () => {
   const confirm = useConfirm();
   const openImportModal = useImportModal();
   const lastImportResult = useLastImportResult();
-  const autoExtractBackgroundVocals = useSettingsStore((s) => s.autoExtractBackgroundVocals);
-  const mergeStandaloneBackgroundLines = useSettingsStore((s) => s.mergeStandaloneBackgroundLines);
-  const preserveBracketsOnExtraction = useSettingsStore((s) => s.preserveBracketsOnExtraction);
+  const autoExtractBackgroundVocals = useSettingsStore(
+    (s) => s.autoExtractBackgroundVocals,
+  );
+  const mergeStandaloneBackgroundLines = useSettingsStore(
+    (s) => s.mergeStandaloneBackgroundLines,
+  );
+  const preserveBracketsOnExtraction = useSettingsStore(
+    (s) => s.preserveBracketsOnExtraction,
+  );
 
-  const [rawText, setRawText] = useState(() => (lines.length > 0 ? lines.map((l) => l.text).join("\n") : ""));
+  const [rawText, setRawText] = useState(() =>
+    lines.length > 0 ? lines.map((l) => l.text).join("\n") : "",
+  );
   const rawTextRef = useRef(rawText);
   rawTextRef.current = rawText;
   const linesSetByUs = useRef<LyricLine[] | null>(null);
   const modalPendingRef = useRef(false);
   const pastedRef = useRef(false);
-  const runBaselineRef = useRef<{ lines: LyricLine[]; wasDirty: boolean } | null>(null);
+  const runBaselineRef = useRef<{
+    lines: LyricLine[];
+    wasDirty: boolean;
+  } | null>(null);
   const debounceRef = useRef<number | null>(null);
   const [selectedLines, setSelectedLines] = useState<Set<number>>(new Set());
   const lastSelectedLineRef = useRef<number | null>(null);
@@ -322,9 +390,18 @@ const EditPanel: React.FC = () => {
   }, [lines]);
 
   const defaultAgentId = agents?.[0]?.id ?? "v1";
-  const parsed = useMemo(() => parseLyrics(rawText, lines, defaultAgentId), [rawText, lines, defaultAgentId]);
-  const bracketCount = useMemo(() => parsed.filter((p) => p.hasBrackets).length, [parsed]);
-  const nonEmptyCount = useMemo(() => parsed.filter((p) => !p.isEmpty).length, [parsed]);
+  const parsed = useMemo(
+    () => parseLyrics(rawText, lines, defaultAgentId),
+    [rawText, lines, defaultAgentId],
+  );
+  const bracketCount = useMemo(
+    () => parsed.filter((p) => p.hasBrackets).length,
+    [parsed],
+  );
+  const nonEmptyCount = useMemo(
+    () => parsed.filter((p) => !p.isEmpty).length,
+    [parsed],
+  );
   const instanceCountByGroup = useMemo(() => {
     const indices = new Map<string, Set<number>>();
     for (const l of lines) {
@@ -351,20 +428,30 @@ const EditPanel: React.FC = () => {
   );
   const canExtractBackgroundVocals = useMemo(() => {
     const extracted = extractBackgroundVocals(lines, extractOptions);
-    return extracted.length !== lines.length || extracted.some((line, i) => line !== lines[i]);
+    return (
+      extracted.length !== lines.length ||
+      extracted.some((line, i) => line !== lines[i])
+    );
   }, [lines, extractOptions]);
 
-  const commitLinesWithHistory = useCallback((nextLines: LyricLine[], nextGroups?: LinkGroup[]) => {
-    useProjectStore.getState().setLinesWithHistory(nextLines, nextGroups);
-    const committed = useProjectStore.getState().lines;
-    linesSetByUs.current = committed;
-    setRawText(committed.map((line) => line.text).join("\n"));
-  }, []);
+  const commitLinesWithHistory = useCallback(
+    (nextLines: LyricLine[], nextGroups?: LinkGroup[]) => {
+      useProjectStore.getState().setLinesWithHistory(nextLines, nextGroups);
+      const committed = useProjectStore.getState().lines;
+      linesSetByUs.current = committed;
+      setRawText(committed.map((line) => line.text).join("\n"));
+    },
+    [],
+  );
 
   const handleExtractBackgroundVocals = useCallback(() => {
     const current = useProjectStore.getState().lines;
     const next = extractBackgroundVocals(current, extractOptions);
-    if (next.length === current.length && next.every((line, i) => line === current[i])) return;
+    if (
+      next.length === current.length &&
+      next.every((line, i) => line === current[i])
+    )
+      return;
     commitLinesWithHistory(next);
   }, [extractOptions, commitLinesWithHistory]);
 
@@ -374,24 +461,34 @@ const EditPanel: React.FC = () => {
 
   const handleBackgroundChange = useCallback((lineId: string, text: string) => {
     const newBgText = text || undefined;
-    const target = useProjectStore.getState().lines.find((l) => l.id === lineId);
+    const target = useProjectStore
+      .getState()
+      .lines.find((l) => l.id === lineId);
 
     let words: WordTiming[] | undefined;
     if (newBgText && target?.backgroundWords?.length) {
-      words = remapWordTextsPreservingTiming(target.backgroundWords, newBgText) ?? undefined;
+      words =
+        remapWordTextsPreservingTiming(target.backgroundWords, newBgText) ??
+        undefined;
     }
 
     useProjectStore
       .getState()
-      .updateLineWithHistory(lineId, backgroundFields({ text: newBgText, words, source: "manual" }));
+      .updateLineWithHistory(
+        lineId,
+        backgroundFields({ text: newBgText, words, source: "manual" }),
+      );
   }, []);
 
   const handleExtractLine = useCallback((lineId: string) => {
-    const target = useProjectStore.getState().lines.find((line) => line.id === lineId);
+    const target = useProjectStore
+      .getState()
+      .lines.find((line) => line.id === lineId);
     if (!target) return;
     const extracted = extractInlineFromLine(target, {
       mergeStandaloneLines: false,
-      preserveBrackets: useSettingsStore.getState().preserveBracketsOnExtraction,
+      preserveBrackets:
+        useSettingsStore.getState().preserveBracketsOnExtraction,
     });
     if (extracted === target) return;
     useProjectStore.getState().updateLineWithHistory(lineId, {
@@ -405,61 +502,75 @@ const EditPanel: React.FC = () => {
     });
   }, []);
 
-  const handleLineSelect = useCallback((lineNumber: number, shiftKey: boolean) => {
-    const anchor = lastSelectedLineRef.current;
-    setSelectedLines((prev) => {
-      const next = new Set(prev);
-      if (shiftKey && anchor !== null) {
-        const start = Math.min(anchor, lineNumber);
-        const end = Math.max(anchor, lineNumber);
-        for (let i = start; i <= end; i++) {
-          next.add(i);
-        }
-      } else {
-        if (next.has(lineNumber)) {
-          next.delete(lineNumber);
+  const handleLineSelect = useCallback(
+    (lineNumber: number, shiftKey: boolean) => {
+      const anchor = lastSelectedLineRef.current;
+      setSelectedLines((prev) => {
+        const next = new Set(prev);
+        if (shiftKey && anchor !== null) {
+          const start = Math.min(anchor, lineNumber);
+          const end = Math.max(anchor, lineNumber);
+          for (let i = start; i <= end; i++) {
+            next.add(i);
+          }
         } else {
-          next.add(lineNumber);
+          if (next.has(lineNumber)) {
+            next.delete(lineNumber);
+          } else {
+            next.add(lineNumber);
+          }
         }
-      }
-      return next;
-    });
-    lastSelectedLineRef.current = lineNumber;
-  }, []);
+        return next;
+      });
+      lastSelectedLineRef.current = lineNumber;
+    },
+    [],
+  );
 
-  const handleGutterMouseDown = useCallback((lineNumber: number, e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    window.getSelection()?.removeAllRanges();
-    dragAnchorRef.current = lineNumber;
-    didDragRef.current = false;
-  }, []);
-
-  const handleGutterMouseEnter = useCallback((lineNumber: number, e: React.MouseEvent) => {
-    const anchor = dragAnchorRef.current;
-    if (anchor === null) return;
-    if (e.buttons === 0) {
-      dragAnchorRef.current = null;
+  const handleGutterMouseDown = useCallback(
+    (lineNumber: number, e: React.MouseEvent) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      window.getSelection()?.removeAllRanges();
+      dragAnchorRef.current = lineNumber;
       didDragRef.current = false;
-      return;
-    }
-    didDragRef.current = true;
-    const start = Math.min(anchor, lineNumber);
-    const end = Math.max(anchor, lineNumber);
-    const next = new Set<number>();
-    for (let i = start; i <= end; i++) {
-      next.add(i);
-    }
-    setSelectedLines(next);
-    lastSelectedLineRef.current = lineNumber;
-  }, []);
+    },
+    [],
+  );
+
+  const handleGutterMouseEnter = useCallback(
+    (lineNumber: number, e: React.MouseEvent) => {
+      const anchor = dragAnchorRef.current;
+      if (anchor === null) return;
+      if (e.buttons === 0) {
+        dragAnchorRef.current = null;
+        didDragRef.current = false;
+        return;
+      }
+      didDragRef.current = true;
+      const start = Math.min(anchor, lineNumber);
+      const end = Math.max(anchor, lineNumber);
+      const next = new Set<number>();
+      for (let i = start; i <= end; i++) {
+        next.add(i);
+      }
+      setSelectedLines(next);
+      lastSelectedLineRef.current = lineNumber;
+    },
+    [],
+  );
 
   const handleBulkAgentChange = useCallback(
     (agentId: string) => {
       const selectedLineIds = new Set(
-        parsed.flatMap((p) => (selectedLines.has(p.lineNumber) && p.lineId ? [p.lineId] : [])),
+        parsed.flatMap((p) =>
+          selectedLines.has(p.lineNumber) && p.lineId ? [p.lineId] : [],
+        ),
       );
-      const updates = [...selectedLineIds].map((id) => ({ id: id as string, updates: { agentId } }));
+      const updates = [...selectedLineIds].map((id) => ({
+        id: id as string,
+        updates: { agentId },
+      }));
       useProjectStore.getState().updateLinesWithHistory(updates);
       setSelectedLines(new Set());
     },
@@ -478,7 +589,9 @@ const EditPanel: React.FC = () => {
     const baseline = runBaselineRef.current;
     if (baseline) {
       runBaselineRef.current = null;
-      useProjectStore.getState().commitPendingLineEdit(baseline.lines, baseline.wasDirty);
+      useProjectStore
+        .getState()
+        .commitPendingLineEdit(baseline.lines, baseline.wasDirty);
     }
   }, []);
 
@@ -495,10 +608,16 @@ const EditPanel: React.FC = () => {
     if (!useSettingsStore.getState().autoExtractBackgroundVocals) return;
     const current = useProjectStore.getState().lines;
     const next = extractBackgroundVocals(current, {
-      mergeStandaloneLines: useSettingsStore.getState().mergeStandaloneBackgroundLines,
-      preserveBrackets: useSettingsStore.getState().preserveBracketsOnExtraction,
+      mergeStandaloneLines:
+        useSettingsStore.getState().mergeStandaloneBackgroundLines,
+      preserveBrackets:
+        useSettingsStore.getState().preserveBracketsOnExtraction,
     });
-    if (next.length === current.length && next.every((line, i) => line === current[i])) return;
+    if (
+      next.length === current.length &&
+      next.every((line, i) => line === current[i])
+    )
+      return;
     commitLinesWithHistory(next);
   }, [commitLinesWithHistory, finalizeRun]);
 
@@ -508,7 +627,11 @@ const EditPanel: React.FC = () => {
       if (isAnyModalOpen()) return;
       if (!(e.metaKey || e.ctrlKey)) return;
       const target = e.target as HTMLElement;
-      if ((target.tagName === "INPUT" || target.tagName === "TEXTAREA") && target.id !== textareaId) return;
+      if (
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA") &&
+        target.id !== textareaId
+      )
+        return;
       const key = e.key.toLowerCase();
       const isUndo = key === "z" && !e.shiftKey;
       const isRedo = (key === "z" && e.shiftKey) || key === "y";
@@ -559,24 +682,31 @@ const EditPanel: React.FC = () => {
         modalPendingRef.current = true;
         const labelText =
           action.labels.length === 0
-            ? `${action.impacted.length} instance${action.impacted.length === 1 ? "" : "s"}`
+            ? `${action.impacted.length} ${t("instance")}${action.impacted.length === 1 ? "" : "s"}`
             : action.labels.length === 1
               ? `[${action.labels[0]}]`
               : action.labels.map((l) => `[${l}]`).join(", ");
 
         confirm({
-          title: `Detach ${labelText} to apply this edit?`,
-          description: `Adding or removing rows inside ${
-            action.labels.length === 1 ? `the ${labelText} group` : "these groups"
-          } will detach ${action.impacted.length === 1 ? "this instance" : "these instances"} from the link. Other instances stay linked.`,
-          confirmLabel: "Detach and apply",
+          title: `${t("Detach")} ${labelText} ${t("to apply this edit?")}`,
+          description: `${t("Adding or removing rows inside")} ${
+            action.labels.length === 1
+              ? `${t("the")} ${labelText} ${t("group")}`
+              : t("these groups")
+          } will detach ${action.impacted.length === 1 ? t("this instance") : t("these instances")} ${t("from the link. Other instances stay linked.")}`,
+          confirmLabel: t("Detach and apply"),
           variant: "destructive",
           recoverable: true,
         }).then((ok) => {
           modalPendingRef.current = false;
           if (!ok) return;
-          const detached = detachInstancesFromLines(action.lyricLines, action.impacted);
-          const remainingGroupIds = new Set(detached.flatMap((l) => (l.groupId ? [l.groupId] : [])));
+          const detached = detachInstancesFromLines(
+            action.lyricLines,
+            action.impacted,
+          );
+          const remainingGroupIds = new Set(
+            detached.flatMap((l) => (l.groupId ? [l.groupId] : [])),
+          );
           const nextGroups = groups.filter((g) => remainingGroupIds.has(g.id));
           finalizeRun();
           commitLinesWithHistory(detached, nextGroups);
@@ -594,8 +724,10 @@ const EditPanel: React.FC = () => {
       if (wasPaste) {
         if (useSettingsStore.getState().autoExtractBackgroundVocals) {
           finalLines = extractBackgroundVocals(finalLines, {
-            mergeStandaloneLines: useSettingsStore.getState().mergeStandaloneBackgroundLines,
-            preserveBrackets: useSettingsStore.getState().preserveBracketsOnExtraction,
+            mergeStandaloneLines:
+              useSettingsStore.getState().mergeStandaloneBackgroundLines,
+            preserveBrackets:
+              useSettingsStore.getState().preserveBracketsOnExtraction,
           });
         }
         finalizeRun();
@@ -605,20 +737,36 @@ const EditPanel: React.FC = () => {
 
       if (runBaselineRef.current === null) {
         const projectState = useProjectStore.getState();
-        runBaselineRef.current = { lines: projectState.lines, wasDirty: projectState.isDirtySinceHistory };
+        runBaselineRef.current = {
+          lines: projectState.lines,
+          wasDirty: projectState.isDirtySinceHistory,
+        };
       }
       linesSetByUs.current = finalLines;
       setLines(finalLines);
       scheduleRunFinalize();
     },
-    [confirm, defaultAgentId, groups, lines, setLines, scheduleRunFinalize, commitLinesWithHistory, finalizeRun],
+    [
+      confirm,
+      defaultAgentId,
+      groups,
+      lines,
+      setLines,
+      scheduleRunFinalize,
+      commitLinesWithHistory,
+      finalizeRun,
+    ],
   );
 
   const handleDroppedFile = useCallback(
     async (file: File) => {
       const content = await file.text();
       const audioDuration = useAudioStore.getState().duration;
-      const parsed = parseLyricsFile(file.name, content, audioDuration > 0 ? audioDuration : undefined);
+      const parsed = parseLyricsFile(
+        file.name,
+        content,
+        audioDuration > 0 ? audioDuration : undefined,
+      );
       const context: ImportParsedLyricsContext = {
         confirm,
         agents,
@@ -633,7 +781,13 @@ const EditPanel: React.FC = () => {
       };
       await importParsedLyrics(parsed, context);
     },
-    [agents, autoExtractBackgroundVocals, confirm, mergeStandaloneBackgroundLines, preserveBracketsOnExtraction],
+    [
+      agents,
+      autoExtractBackgroundVocals,
+      confirm,
+      mergeStandaloneBackgroundLines,
+      preserveBracketsOnExtraction,
+    ],
   );
 
   const importTriggers = useDualClickImport(openImportModal);
@@ -648,7 +802,7 @@ const EditPanel: React.FC = () => {
     },
     [handleDroppedFile],
   );
-
+  const language = useSettingsStore((s) => s.language);
   return (
     <div
       data-tour="edit-panel"
@@ -657,10 +811,11 @@ const EditPanel: React.FC = () => {
       onDragOver={preventDefaultDragOver}
     >
       <div className="flex items-center justify-between select-none">
-        <h2 className="text-lg font-medium">Lyrics Editor</h2>
+        <h2 className="text-lg font-medium">{t("Lyrics Editor")}</h2>
         <div className="flex items-center gap-3">
           <span className="text-sm text-composer-text-muted">
-            {nonEmptyCount} line{nonEmptyCount !== 1 ? "s" : ""}
+            {nonEmptyCount} {t("line")}
+            {language == "en" && nonEmptyCount !== 1 ? "s" : ""}
           </span>
           <Button
             hasIcon
@@ -669,7 +824,7 @@ const EditPanel: React.FC = () => {
             disabled={!canExtractBackgroundVocals}
           >
             <IconMicrophone className="size-4" />
-            Extract background vocals
+            {t("Extract background vocals")}
           </Button>
           <Button
             hasIcon
@@ -678,7 +833,7 @@ const EditPanel: React.FC = () => {
             title="Click to search, paste, or upload. Double-click to upload a file directly."
           >
             <IconFileImport className="size-4" />
-            Import Lyrics
+            {t("Import Lyrics")}
           </Button>
           {importTriggers.fileInput}
         </div>
@@ -699,8 +854,11 @@ const EditPanel: React.FC = () => {
       <div className="flex flex-1 min-h-0 gap-4">
         {/* Input */}
         <div className="flex flex-col flex-1 min-w-0">
-          <label htmlFor={textareaId} className="mb-2 text-sm font-medium select-none text-composer-text-secondary">
-            Paste or type lyrics
+          <label
+            htmlFor={textareaId}
+            className="mb-2 text-sm font-medium select-none text-composer-text-secondary"
+          >
+            {t("Paste or type lyrics")}
           </label>
           {/* react-doctor-disable-next-line react-doctor/control-has-associated-label */}
           <textarea
@@ -711,9 +869,9 @@ const EditPanel: React.FC = () => {
             onPaste={() => {
               pastedRef.current = true;
             }}
-            placeholder="Paste your lyrics here, one line at a time...
-
-Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
+            placeholder={t(
+              `Paste your lyrics here, one line at a time...\nOr drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)`,
+            )}
             className="flex-1 p-3 text-sm border rounded-lg resize-none bg-composer-input border-composer-border focus:outline-none focus:border-composer-accent placeholder:text-composer-text-muted"
             spellCheck={false}
           />
@@ -722,12 +880,15 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
         {/* Preview */}
         <div className="flex flex-col flex-1 min-w-0">
           <div className="flex items-center justify-between h-5 mb-2">
-            <span className="text-sm font-medium select-none text-composer-text-secondary">Preview</span>
+            <span className="text-sm font-medium select-none text-composer-text-secondary">
+              {t("Preview")}
+            </span>
             <div
               className={`flex items-center gap-2 transition-opacity ${selectedLines.size > 0 ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             >
               <span className="text-xs text-composer-text-muted">
-                {selectedLines.size} line{selectedLines.size !== 1 ? "s" : ""} selected
+                {selectedLines.size} line{selectedLines.size !== 1 ? "s" : ""}{" "}
+                {t("selected")}
               </span>
               {agents.length > 1 && (
                 <select
@@ -736,7 +897,7 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                   className="h-6 px-1.5 text-xs border rounded cursor-pointer bg-composer-input border-composer-border focus:outline-none focus:border-composer-accent"
                 >
                   <option value="" disabled>
-                    Assign agent
+                    {t("Assign agent")}
                   </option>
                   {agents.map((agent) => (
                     <option key={agent.id} value={agent.id}>
@@ -750,30 +911,38 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                 onClick={handleClearSelection}
                 className="text-xs cursor-pointer text-composer-text-muted hover:text-composer-text"
               >
-                Clear
+                {t("Clear")}
               </button>
             </div>
           </div>
           <Scroll className="flex-1 border rounded-lg border-composer-border bg-composer-bg-dark">
-            {parsed.length === 0 || (parsed.length === 1 && parsed[0].isEmpty) ? (
+            {parsed.length === 0 ||
+            (parsed.length === 1 && parsed[0].isEmpty) ? (
               <div className="flex items-center justify-center h-full text-sm text-composer-text-muted">
-                Lyrics will appear here
+                {t("Lyrics will appear here")}
               </div>
             ) : (
               <div className="py-2">
                 {parsed.map((line, index) => {
                   const prev = index > 0 ? parsed[index - 1] : null;
-                  const next = index < parsed.length - 1 ? parsed[index + 1] : null;
+                  const next =
+                    index < parsed.length - 1 ? parsed[index + 1] : null;
                   const isFirstOfInstance =
                     line.groupId !== undefined &&
                     line.instanceIdx !== undefined &&
-                    (prev?.groupId !== line.groupId || prev?.instanceIdx !== line.instanceIdx);
+                    (prev?.groupId !== line.groupId ||
+                      prev?.instanceIdx !== line.instanceIdx);
                   const isLastOfInstance =
                     line.groupId !== undefined &&
                     line.instanceIdx !== undefined &&
-                    (next?.groupId !== line.groupId || next?.instanceIdx !== line.instanceIdx);
-                  const group = line.groupId ? groups.find((g) => g.id === line.groupId) : undefined;
-                  const totalInstances = group ? (instanceCountByGroup.get(group.id) ?? 0) : 0;
+                    (next?.groupId !== line.groupId ||
+                      next?.instanceIdx !== line.instanceIdx);
+                  const group = line.groupId
+                    ? groups.find((g) => g.id === line.groupId)
+                    : undefined;
+                  const totalInstances = group
+                    ? (instanceCountByGroup.get(group.id) ?? 0)
+                    : 0;
                   const groupTooltip =
                     group && totalInstances > 1
                       ? `Part of ${group.label} · linked to ${totalInstances - 1} other instance${totalInstances - 1 === 1 ? "" : "s"}. Edits propagate.`
@@ -785,11 +954,20 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                           className="mx-3 mt-2 mb-1 flex items-center gap-2 text-xs text-composer-text-muted select-none"
                           aria-hidden
                         >
-                          <span className="font-medium text-composer-text">{group.label}</span>
-                          <span className="tabular-nums">
-                            · {(line.instanceIdx ?? 0) + 1} of {totalInstances}
+                          <span className="font-medium text-composer-text">
+                            {group.label}
                           </span>
-                          <span className="flex-1 h-px" style={{ backgroundColor: group.color, opacity: 0.4 }} />
+                          <span className="tabular-nums">
+                            · {(line.instanceIdx ?? 0) + 1} {t("")}{" "}
+                            {totalInstances}
+                          </span>
+                          <span
+                            className="flex-1 h-px"
+                            style={{
+                              backgroundColor: group.color,
+                              opacity: 0.4,
+                            }}
+                          />
                         </div>
                       )}
                       <LinePreview
@@ -809,8 +987,17 @@ Or drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)"
                         didDragRef={didDragRef}
                       />
                       {isLastOfInstance && group && (
-                        <div className="mx-3 mt-1 mb-2 flex items-center select-none" aria-hidden>
-                          <span className="flex-1 h-px" style={{ backgroundColor: group.color, opacity: 0.4 }} />
+                        <div
+                          className="mx-3 mt-1 mb-2 flex items-center select-none"
+                          aria-hidden
+                        >
+                          <span
+                            className="flex-1 h-px"
+                            style={{
+                              backgroundColor: group.color,
+                              opacity: 0.4,
+                            }}
+                          />
                         </div>
                       )}
                     </div>

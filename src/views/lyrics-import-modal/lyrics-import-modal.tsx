@@ -3,7 +3,11 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
-import { type ImportModalSection, useImportModalState, useImportModalStore } from "@/stores/import-modal-store";
+import {
+  type ImportModalSection,
+  useImportModalState,
+  useImportModalStore,
+} from "@/stores/import-modal-store";
 import { useProjectStore } from "@/stores/project";
 import { useSettingsStore } from "@/stores/settings";
 import { Button } from "@/ui/button";
@@ -30,6 +34,7 @@ import {
   type ImportParsedLyricsContext,
   type ImportSourceInfo,
 } from "@/views/lyrics-import-modal/use-import-modal-actions";
+import { t } from "i18next";
 
 // -- Component ----------------------------------------------------------------
 
@@ -39,14 +44,24 @@ const LyricsImportModalShell: React.FC = () => {
   const confirm = useConfirm();
   const agents = useProjectStore((s) => s.agents);
   const audioDuration = useAudioStore((s) => s.duration);
-  const autoExtractBackgroundVocals = useSettingsStore((s) => s.autoExtractBackgroundVocals);
-  const mergeStandaloneBackgroundLines = useSettingsStore((s) => s.mergeStandaloneBackgroundLines);
-  const preserveBracketsOnExtraction = useSettingsStore((s) => s.preserveBracketsOnExtraction);
+  const autoExtractBackgroundVocals = useSettingsStore(
+    (s) => s.autoExtractBackgroundVocals,
+  );
+  const mergeStandaloneBackgroundLines = useSettingsStore(
+    (s) => s.mergeStandaloneBackgroundLines,
+  );
+  const preserveBracketsOnExtraction = useSettingsStore(
+    (s) => s.preserveBracketsOnExtraction,
+  );
 
-  const [currentSection, setCurrentSection] = useState<ImportModalSection>(initialSection ?? "search");
+  const [currentSection, setCurrentSection] = useState<ImportModalSection>(
+    initialSection ?? "search",
+  );
   const [pasteText, setPasteText] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [selectingResultId, setSelectingResultId] = useState<string | null>(null);
+  const [selectingResultId, setSelectingResultId] = useState<string | null>(
+    null,
+  );
   const [isModalDragOver, setIsModalDragOver] = useState(false);
   const closedRef = useRef(false);
   const selectionAbortRef = useRef<AbortController | null>(null);
@@ -92,15 +107,25 @@ const LyricsImportModalShell: React.FC = () => {
     const defaultAgentId = agents?.[0]?.id ?? "v1";
     const lyricLines = textToLyricLines(pasteText, defaultAgentId);
     const parsed = wrapTextAsParseResult(lyricLines);
-    const ok = await importParsedLyrics(parsed, buildContext({ label: "Paste", filename: "paste.txt" }));
+    const ok = await importParsedLyrics(
+      parsed,
+      buildContext({ label: t("Paste"), filename: "paste.txt" }),
+    );
     if (ok) close();
   }, [agents, buildContext, close, pasteText]);
 
   const handleImportUpload = useCallback(async () => {
     if (!pendingFile) return;
     const content = await pendingFile.text();
-    const parsed = parseLyricsFile(pendingFile.name, content, audioDuration > 0 ? audioDuration : undefined);
-    const ok = await importParsedLyrics(parsed, buildContext({ label: "File", filename: pendingFile.name }));
+    const parsed = parseLyricsFile(
+      pendingFile.name,
+      content,
+      audioDuration > 0 ? audioDuration : undefined,
+    );
+    const ok = await importParsedLyrics(
+      parsed,
+      buildContext({ label: t("File"), filename: pendingFile.name }),
+    );
     if (ok) close();
   }, [audioDuration, buildContext, close, pendingFile]);
 
@@ -115,30 +140,46 @@ const LyricsImportModalShell: React.FC = () => {
       try {
         content = await payloadToContent(result, controller.signal);
       } catch (error) {
-        if (selectionAbortRef.current === controller) selectionAbortRef.current = null;
+        if (selectionAbortRef.current === controller)
+          selectionAbortRef.current = null;
         setSelectingResultId((prev) => (prev === result.id ? null : prev));
         if (isAbortError(error) || controller.signal.aborted) return;
-        const message = error instanceof Error ? error.message : "Failed to fetch lyrics";
+        const message =
+          error instanceof Error ? error.message : t("Failed to fetch lyrics");
         toast.error(`${result.sourceLabel}: ${message}`);
         return;
       }
 
-      if (controller.signal.aborted || closedRef.current || !useImportModalStore.getState().isOpen) {
-        if (selectionAbortRef.current === controller) selectionAbortRef.current = null;
+      if (
+        controller.signal.aborted ||
+        closedRef.current ||
+        !useImportModalStore.getState().isOpen
+      ) {
+        if (selectionAbortRef.current === controller)
+          selectionAbortRef.current = null;
         setSelectingResultId((prev) => (prev === result.id ? null : prev));
         return;
       }
 
       if (content === null) {
-        if (selectionAbortRef.current === controller) selectionAbortRef.current = null;
+        if (selectionAbortRef.current === controller)
+          selectionAbortRef.current = null;
         setSelectingResultId((prev) => (prev === result.id ? null : prev));
         return;
       }
 
       const filename = syntheticFilenameForResult(result);
-      const parsed = parseLyricsFile(filename, content, audioDuration > 0 ? audioDuration : undefined);
-      const ok = await importParsedLyrics(parsed, buildContext({ label: result.sourceLabel, filename }));
-      if (selectionAbortRef.current === controller) selectionAbortRef.current = null;
+      const parsed = parseLyricsFile(
+        filename,
+        content,
+        audioDuration > 0 ? audioDuration : undefined,
+      );
+      const ok = await importParsedLyrics(
+        parsed,
+        buildContext({ label: result.sourceLabel, filename }),
+      );
+      if (selectionAbortRef.current === controller)
+        selectionAbortRef.current = null;
       setSelectingResultId((prev) => (prev === result.id ? null : prev));
       if (ok) close();
     },
@@ -220,7 +261,11 @@ const LyricsImportModalShell: React.FC = () => {
       );
     }
     return (
-      <UploadSection onFile={handleFilePicked} onSwitchToSearch={switchToSearch} onSwitchToPaste={switchToPaste} />
+      <UploadSection
+        onFile={handleFilePicked}
+        onSwitchToSearch={switchToSearch}
+        onSwitchToPaste={switchToPaste}
+      />
     );
   }, [
     currentSection,
@@ -240,12 +285,18 @@ const LyricsImportModalShell: React.FC = () => {
     (currentSection === "upload" && pendingFile === null) ||
     selectingResultId !== null;
 
-  const handleImportClick = currentSection === "paste" ? handleImportPaste : handleImportUpload;
+  const handleImportClick =
+    currentSection === "paste" ? handleImportPaste : handleImportUpload;
 
   const pendingFileLabel = pendingFile ? pendingFile.name : null;
 
   return (
-    <Modal isOpen onClose={close} title="Import Lyrics" className="max-w-lg">
+    <Modal
+      isOpen
+      onClose={close}
+      title={t("Import Lyrics")}
+      className="max-w-lg"
+    >
       <div
         className="relative flex flex-col gap-4"
         onDragEnter={handleModalDragEnter}
@@ -257,18 +308,27 @@ const LyricsImportModalShell: React.FC = () => {
 
         {pendingFileLabel && currentSection === "upload" && (
           <div className="text-xs text-composer-text-muted">
-            Ready to import: <span className="text-composer-text-secondary select-text">{pendingFileLabel}</span>
+            {t("Ready to import:")}{" "}
+            <span className="text-composer-text-secondary select-text">
+              {pendingFileLabel}
+            </span>
           </div>
         )}
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="sm" onClick={close}>
-            Cancel
+            {t("Cancel")}
           </Button>
           {showImportButton && (
-            <Button variant="primary" size="sm" hasIcon disabled={importDisabled} onClick={handleImportClick}>
+            <Button
+              variant="primary"
+              size="sm"
+              hasIcon
+              disabled={importDisabled}
+              onClick={handleImportClick}
+            >
               <IconFileImport size={16} />
-              Import
+              {t("Import")}
             </Button>
           )}
         </div>
@@ -282,7 +342,9 @@ const LyricsImportModalShell: React.FC = () => {
           )}
         >
           <IconUpload size={32} stroke={1.5} className="text-composer-accent" />
-          <div className="text-sm font-medium text-composer-text">Drop lyrics file to import</div>
+          <div className="text-sm font-medium text-composer-text">
+            {t("Drop lyrics file to import")}
+          </div>
           <div className="font-mono text-[10.5px] tracking-tight text-composer-text opacity-50">
             .txt .lrc .srt .ttml
           </div>

@@ -17,6 +17,7 @@ import {
   IconPencil,
   IconRocket,
 } from "@tabler/icons-react";
+import { t } from "i18next";
 import { useState } from "react";
 
 // -- Types --------------------------------------------------------------------
@@ -26,33 +27,35 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-// -- Data ---------------------------------------------------------------------
-
-const HELP_SECTIONS: ModalNavSection[] = [
-  { id: "getting-started", label: "Getting Started", icon: IconRocket },
-  { id: "keyboard-shortcuts", label: "Keyboard Shortcuts", icon: IconKeyboard },
-  { id: "importing", label: "Importing", icon: IconFileImport },
-  { id: "editing", label: "Editing Lyrics", icon: IconPencil },
-  { id: "syncing", label: "Syncing", icon: IconHandClick },
-  { id: "timeline", label: "Timeline", icon: IconLayoutRows },
-  { id: "groups", label: "Linked groups", icon: IconLink },
-  { id: "preview", label: "Preview", icon: IconEye },
-  { id: "exporting", label: "Exporting", icon: IconDownload },
-  { id: "recovery", label: "Recovery", icon: IconLifebuoy },
-  { id: "ttml-standards", label: "TTML & standards", icon: IconAward },
-  { id: "about", label: "About", icon: IconInfoHexagon },
-];
-
 // -- Help Modal ---------------------------------------------------------------
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const [activeSection, setActiveSection] = useState("getting-started");
+  // -- Data ---------------------------------------------------------------------
 
+  const HELP_SECTIONS: ModalNavSection[] = [
+    { id: "getting-started", label: t("Getting Started"), icon: IconRocket },
+    {
+      id: "keyboard-shortcuts",
+      label: t("Keyboard Shortcuts"),
+      icon: IconKeyboard,
+    },
+    { id: "importing", label: t("Importing"), icon: IconFileImport },
+    { id: "editing", label: t("Editing Lyrics"), icon: IconPencil },
+    { id: "syncing", label: t("Syncing"), icon: IconHandClick },
+    { id: "timeline", label: t("Timeline"), icon: IconLayoutRows },
+    { id: "groups", label: t("Linked groups"), icon: IconLink },
+    { id: "preview", label: t("Preview"), icon: IconEye },
+    { id: "exporting", label: t("Exporting"), icon: IconDownload },
+    { id: "recovery", label: t("Recovery"), icon: IconLifebuoy },
+    { id: "ttml-standards", label: t("TTML & standards"), icon: IconAward },
+    { id: "about", label: t("About"), icon: IconInfoHexagon },
+  ];
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Help"
+      title={t("Help")}
       className="max-w-4xl h-[80%] flex flex-col"
       bodyClassName="p-0 flex-1 min-h-0 flex flex-col"
     >
@@ -69,11 +72,11 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       </ModalNavLayout>
 
       <div className="px-5 py-3 border-t border-composer-border text-xs text-composer-text-muted text-center shrink-0 select-none flex items-center justify-center gap-1.5">
-        Press{" "}
+        {t("Press")}{" "}
         {getEffectiveKeysArray("global.help").map((key) => (
           <KeyBadge key={key} keyName={key} />
         ))}{" "}
-        to open anytime
+        {t("to open anytime")}
       </div>
     </Modal>
   );

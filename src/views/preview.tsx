@@ -7,8 +7,12 @@ import { generateTTML } from "@/utils/ttml";
 import { AmLyricsRenderer } from "@/views/preview/am-lyrics-renderer";
 import { BraccatoRenderer } from "@/views/preview/braccato-renderer";
 import { effectiveBounds } from "@/domain/line/bounds";
-import { IconPlayerPauseFilled, IconPlayerPlayFilled } from "@tabler/icons-react";
+import {
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
+} from "@tabler/icons-react";
 import { useMemo } from "react";
+import { t } from "i18next";
 
 // -- Components ---------------------------------------------------------------
 
@@ -30,13 +34,31 @@ const PreviewPanel: React.FC = () => {
 
   const ttmlString = useMemo(() => {
     if (!hasSyncedContent) return null;
-    return generateTTML({ metadata, agents, lines, groups, granularity, duration });
-  }, [metadata, agents, lines, groups, granularity, duration, hasSyncedContent]);
+    return generateTTML({
+      metadata,
+      agents,
+      lines,
+      groups,
+      granularity,
+      duration,
+    });
+  }, [
+    metadata,
+    agents,
+    lines,
+    groups,
+    granularity,
+    duration,
+    hasSyncedContent,
+  ]);
 
   if (!source) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No audio loaded" hint="Import audio in the Import tab first" />
+        <EmptyState
+          message={t("No audio loaded")}
+          hint={t("Import audio in the Import tab first")}
+        />
       </div>
     );
   }
@@ -44,7 +66,10 @@ const PreviewPanel: React.FC = () => {
   if (lines.length === 0) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No lyrics to preview" hint="Add lyrics in the Edit tab first" />
+        <EmptyState
+          message={t("No lyrics to preview")}
+          hint={t("Add lyrics in the Edit tab first")}
+        />
       </div>
     );
   }
@@ -52,18 +77,32 @@ const PreviewPanel: React.FC = () => {
   if (!hasSyncedContent || !ttmlString) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No synced content" hint="Sync lyrics in the Sync tab first" />
+        <EmptyState
+          message={t("No synced content")}
+          hint={t("Sync lyrics in the Sync tab first")}
+        />
       </div>
     );
   }
 
   return (
-    <div data-tour="preview-panel" className="flex flex-col flex-1 overflow-hidden select-none">
+    <div
+      data-tour="preview-panel"
+      className="flex flex-col flex-1 overflow-hidden select-none"
+    >
       <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border">
-        <h2 className="text-lg font-medium">Preview</h2>
-        <Button variant="primary" hasIcon onClick={() => setIsPlaying(!isPlaying)}>
-          {isPlaying ? <IconPlayerPauseFilled className="size-4" /> : <IconPlayerPlayFilled className="size-4" />}
-          {isPlaying ? "Pause" : "Play"}
+        <h2 className="text-lg font-medium">{t("Preview")}</h2>
+        <Button
+          variant="primary"
+          hasIcon
+          onClick={() => setIsPlaying(!isPlaying)}
+        >
+          {isPlaying ? (
+            <IconPlayerPauseFilled className="size-4" />
+          ) : (
+            <IconPlayerPlayFilled className="size-4" />
+          )}
+          {isPlaying ? t("Pause") : t("Play")}
         </Button>
       </div>
 

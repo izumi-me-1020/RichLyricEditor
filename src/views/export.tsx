@@ -1,4 +1,8 @@
-import { exportProjectToFile, importProjectFromFile, clearCurrentProject } from "@/lib/persistence";
+import {
+  exportProjectToFile,
+  importProjectFromFile,
+  clearCurrentProject,
+} from "@/lib/persistence";
 import { cancelPendingSave } from "@/lib/persistence-debounce";
 import { useAudioStore } from "@/stores/audio";
 import { useConfirm } from "@/stores/confirm-store";
@@ -21,6 +25,7 @@ import {
 } from "@tabler/icons-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { t } from "i18next";
 
 // -- Components ---------------------------------------------------------------
 
@@ -40,7 +45,10 @@ const ExportPanel: React.FC = () => {
   const confirm = useConfirm();
 
   const [copied, setCopied] = useState(false);
-  const [editState, setEditState] = useState<{ source: string; content: string } | null>(null);
+  const [editState, setEditState] = useState<{
+    source: string;
+    content: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasSyncedContent = useMemo(() => {
@@ -53,15 +61,47 @@ const ExportPanel: React.FC = () => {
 
   const generatedTtml = useMemo(() => {
     if (!hasSyncedContent) return "";
-    return generateTTML({ metadata, agents, lines, groups, granularity, duration });
-  }, [metadata, agents, lines, groups, granularity, duration, hasSyncedContent]);
+    return generateTTML({
+      metadata,
+      agents,
+      lines,
+      groups,
+      granularity,
+      duration,
+    });
+  }, [
+    metadata,
+    agents,
+    lines,
+    groups,
+    granularity,
+    duration,
+    hasSyncedContent,
+  ]);
 
   const minifiedTtml = useMemo(() => {
     if (!hasSyncedContent) return "";
-    return generateTTML({ metadata, agents, lines, groups, granularity, minify: true, duration });
-  }, [metadata, agents, lines, groups, granularity, duration, hasSyncedContent]);
+    return generateTTML({
+      metadata,
+      agents,
+      lines,
+      groups,
+      granularity,
+      minify: true,
+      duration,
+    });
+  }, [
+    metadata,
+    agents,
+    lines,
+    groups,
+    granularity,
+    duration,
+    hasSyncedContent,
+  ]);
 
-  const editedContent = editState && editState.source === generatedTtml ? editState.content : null;
+  const editedContent =
+    editState && editState.source === generatedTtml ? editState.content : null;
   const isEditing = editedContent !== null;
   const displayContent = editedContent ?? generatedTtml;
   const exportContent = editedContent ?? minifiedTtml;
@@ -91,7 +131,9 @@ const ExportPanel: React.FC = () => {
   }, [exportContent]);
 
   const handleEdit = useCallback(() => {
-    setEditState((prev) => (prev ? null : { source: generatedTtml, content: displayContent }));
+    setEditState((prev) =>
+      prev ? null : { source: generatedTtml, content: displayContent },
+    );
   }, [generatedTtml, displayContent]);
 
   const handleRegenerate = useCallback(() => {
@@ -100,8 +142,13 @@ const ExportPanel: React.FC = () => {
 
   const handleExportProject = useCallback(() => {
     const audioSource = useAudioStore.getState().source;
-    const audioFileName = audioSource?.type === "file" ? audioSource.file.name : undefined;
-    const { dismissedSuggestions, dismissedExplicitSuggestions, syllableSplitDefaults } = useProjectStore.getState();
+    const audioFileName =
+      audioSource?.type === "file" ? audioSource.file.name : undefined;
+    const {
+      dismissedSuggestions,
+      dismissedExplicitSuggestions,
+      syllableSplitDefaults,
+    } = useProjectStore.getState();
     exportProjectToFile(
       metadata,
       agents,
@@ -123,9 +170,17 @@ const ExportPanel: React.FC = () => {
       const existingLineCount = useProjectStore.getState().lines.length;
       if (existingLineCount > 0) {
         const ok = await confirm({
-          title: "Replace current project?",
-          description: `Loading this project file will replace your ${existingLineCount} existing line${existingLineCount === 1 ? "" : "s"} and metadata. This cannot be undone.`,
-          confirmLabel: "Replace",
+          title: t("Replace current project?"),
+
+          description: t(
+            "Loading this project file will replace your {{count}} existing lines and metadata. This cannot be undone.",
+            {
+              count: existingLineCount,
+            },
+          ),
+
+          confirmLabel: t("Replace"),
+
           variant: "destructive",
           settingsKey: "confirmReplaceLyrics",
         });
@@ -141,9 +196,13 @@ const ExportPanel: React.FC = () => {
       setLines(project.lines);
       store.setGroups(project.groups ?? []);
       store.setDismissedSuggestions(project.dismissedSuggestions ?? []);
-      store.setDismissedExplicitSuggestions(project.dismissedExplicitSuggestions ?? []);
+      store.setDismissedExplicitSuggestions(
+        project.dismissedExplicitSuggestions ?? [],
+      );
       setGranularity(project.granularity);
-      store.setSyllableSplitDefaults(project.syllableSplitDefaults ?? DEFAULT_SYLLABLE_SPLIT_DEFAULTS);
+      store.setSyllableSplitDefaults(
+        project.syllableSplitDefaults ?? DEFAULT_SYLLABLE_SPLIT_DEFAULTS,
+      );
       setAgents(project.agents);
       markClean();
 
@@ -156,9 +215,14 @@ const ExportPanel: React.FC = () => {
 
   const handleClearProject = useCallback(async () => {
     const ok = await confirm({
-      title: "Clear all project data?",
-      description: "Remove every line, all metadata, and the audio file from this project. This cannot be undone.",
-      confirmLabel: "Clear",
+      title: t("Clear all project data?"),
+
+      description: t(
+        "Remove every line, all metadata, and the audio file from this project. This cannot be undone.",
+      ),
+
+      confirmLabel: t("Clear"),
+
       variant: "destructive",
       settingsKey: "confirmClearProject",
     });
@@ -181,9 +245,14 @@ const ExportPanel: React.FC = () => {
   const importAction = (
     <>
       {projectFileInput}
-      <Button hasIcon variant="secondary" onClick={() => fileInputRef.current?.click()} className="mt-2">
+      <Button
+        hasIcon
+        variant="secondary"
+        onClick={() => fileInputRef.current?.click()}
+        className="mt-2"
+      >
         <IconFolderOpen className="size-4 text-composer-text opacity-50" />
-        Import Project
+        {t("Import Project")}
       </Button>
     </>
   );
@@ -191,7 +260,11 @@ const ExportPanel: React.FC = () => {
   if (lines.length === 0) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No lyrics to export" hint="Add lyrics in the Edit tab first" action={importAction} />
+        <EmptyState
+          message="No lyrics to export"
+          hint="Add lyrics in the Edit tab first"
+          action={importAction}
+        />
       </div>
     );
   }
@@ -199,19 +272,26 @@ const ExportPanel: React.FC = () => {
   if (!hasSyncedContent) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No synced content" hint="Sync lyrics in the Sync tab first" action={importAction} />
+        <EmptyState
+          message="No synced content"
+          hint="Sync lyrics in the Sync tab first"
+          action={importAction}
+        />
       </div>
     );
   }
 
   return (
-    <div data-tour="export-panel" className="flex flex-col flex-1 overflow-hidden">
+    <div
+      data-tour="export-panel"
+      className="flex flex-col flex-1 overflow-hidden"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border">
         <div className="flex items-baseline gap-3">
-          <h2 className="text-lg font-medium">Export</h2>
+          <h2 className="text-lg font-medium">{t("Export")}</h2>
           <span className="text-sm text-composer-text-muted">
-            {syncedLineCount}/{lines.length} lines synced
+            {syncedLineCount}/{lines.length} {t("lines synced")}
             {editedContent !== null && " · edited"}
           </span>
         </div>
@@ -219,40 +299,63 @@ const ExportPanel: React.FC = () => {
           {editedContent !== null && (
             <Button hasIcon onClick={handleRegenerate}>
               <IconRefresh className="size-4" />
-              Regenerate
+              {t("Regenerate")}
             </Button>
           )}
-          <Button hasIcon variant={isEditing ? "primary" : "secondary"} onClick={handleEdit}>
+          <Button
+            hasIcon
+            variant={isEditing ? "primary" : "secondary"}
+            onClick={handleEdit}
+          >
             <IconEdit className="size-4" />
-            {isEditing ? "Done" : "Edit"}
+            {isEditing ? t("Done") : t("Edit")}
           </Button>
           <Button hasIcon onClick={handleCopy}>
-            {copied ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}
-            {copied ? "Copied" : "Copy"}
+            {copied ? (
+              <IconCheck className="size-4" />
+            ) : (
+              <IconCopy className="size-4" />
+            )}
+            {copied ? t("Copied") : t("Copy")}
           </Button>
           <Button hasIcon variant="primary" onClick={handleDownload}>
             <IconDownload className="size-4" />
-            Download TTML
+            {t("Download TTML")}
           </Button>
         </div>
       </div>
 
       {/* Project management */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-composer-border bg-composer-bg-elevated/50">
-        <span className="text-sm text-composer-text-muted">Project</span>
+        <span className="text-sm text-composer-text-muted">{t("Project")}</span>
         <div className="flex items-center gap-2">
           {projectFileInput}
-          <Button hasIcon variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+          <Button
+            hasIcon
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+          >
             <IconFolderOpen className="size-4 text-composer-text opacity-50" />
-            Import Project
+            {t("Import Project")}
           </Button>
-          <Button hasIcon variant="ghost" size="sm" onClick={handleExportProject}>
+          <Button
+            hasIcon
+            variant="ghost"
+            size="sm"
+            onClick={handleExportProject}
+          >
             <IconUpload className="size-4 text-composer-text opacity-50" />
-            Export Project
+            {t("Export Project")}
           </Button>
-          <Button hasIcon variant="ghost" size="sm" onClick={handleClearProject}>
+          <Button
+            hasIcon
+            variant="ghost"
+            size="sm"
+            onClick={handleClearProject}
+          >
             <IconTrash className="size-4 text-composer-text opacity-50" />
-            Clear
+            {t("Clear")}
           </Button>
         </div>
       </div>
@@ -263,12 +366,18 @@ const ExportPanel: React.FC = () => {
           <textarea
             value={editedContent ?? ""}
             aria-label="Edit TTML content"
-            onChange={(e) => setEditState({ source: generatedTtml, content: e.target.value })}
+            onChange={(e) =>
+              setEditState({ source: generatedTtml, content: e.target.value })
+            }
             className="w-full h-full p-4 rounded-lg font-mono text-xs bg-composer-bg-elevated text-composer-text resize-none focus:outline-none focus:ring-1 focus:ring-composer-accent"
             spellCheck={false}
           />
         ) : (
-          <Highlight theme={themes.nightOwl} code={displayContent} language="xml">
+          <Highlight
+            theme={themes.nightOwl}
+            code={displayContent}
+            language="xml"
+          >
             {({ style, tokens, getLineProps, getTokenProps }) => (
               <pre
                 className="p-4 rounded-lg font-mono text-xs whitespace-pre-wrap break-all select-text"

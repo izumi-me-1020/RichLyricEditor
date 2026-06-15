@@ -5,6 +5,7 @@ import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
+import { t } from "i18next";
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -25,7 +26,10 @@ function generateAgentId(existingAgents: { id: string }[]): string {
 // -- Components ---------------------------------------------------------------
 
 const AgentBadge: React.FC<
-  { agent: Agent; ref?: React.Ref<HTMLButtonElement> } & React.ButtonHTMLAttributes<HTMLButtonElement>
+  {
+    agent: Agent;
+    ref?: React.Ref<HTMLButtonElement>;
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>
 > = ({ agent, ref, ...props }) => {
   const color = getAgentColor(agent.id);
 
@@ -36,8 +40,13 @@ const AgentBadge: React.FC<
       {...props}
       className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-md bg-composer-button cursor-pointer"
     >
-      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-      <span className="text-sm text-composer-text">{agent.name || agent.id}</span>
+      <span
+        className="size-2 rounded-full shrink-0"
+        style={{ backgroundColor: color }}
+      />
+      <span className="text-sm text-composer-text">
+        {agent.name || agent.id}
+      </span>
       <span className="text-xs text-composer-text-muted">{agent.id}</span>
     </button>
   );
@@ -72,14 +81,16 @@ const EditAgentPopover: React.FC<{
     <Popover placement="bottom-start" trigger={<AgentBadge agent={agent} />}>
       {(close) => (
         <div className="w-64 p-3">
-          <p className="mb-2 text-xs font-medium text-composer-text-secondary">Edit Agent · {agent.id}</p>
+          <p className="mb-2 text-xs font-medium text-composer-text-secondary">
+            {t("Edit Agent")}・{agent.id}
+          </p>
           <div className="flex flex-col gap-2">
             <input
               type="text"
               aria-label="Agent name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Agent name"
+              placeholder={t("Agent name")}
               className="px-2 py-1.5 text-sm rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent"
             />
             <select
@@ -87,15 +98,20 @@ const EditAgentPopover: React.FC<{
               onChange={(e) => setType(e.target.value as AgentType)}
               className="px-2 py-1.5 text-sm rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent cursor-pointer"
             >
-              <option value="person">Person</option>
-              <option value="group">Group</option>
-              <option value="character">Character</option>
-              <option value="organization">Organization</option>
-              <option value="other">Other</option>
+              <option value="person">{t("Person")}</option>
+              <option value="group">{t("Group")}</option>
+              <option value="character">{t("Character")}</option>
+              <option value="organization">{t("Organization")}</option>
+              <option value="other">{t("Other")}</option>
             </select>
             <div className="flex gap-2">
-              <Button size="sm" variant="primary" onClick={() => handleSave(close)} className="flex-1">
-                Save
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => handleSave(close)}
+                className="flex-1"
+              >
+                {t("Save")}
               </Button>
               {removable && onRemove && (
                 <Button
@@ -121,7 +137,9 @@ const AddAgentPopover: React.FC = () => {
   const [customName, setCustomName] = useState("");
   const [customType, setCustomType] = useState<AgentType>("person");
 
-  const availablePresets = AGENT_PRESETS.filter((preset) => !agents.some((a) => a.id === preset.id));
+  const availablePresets = AGENT_PRESETS.filter(
+    (preset) => !agents.some((a) => a.id === preset.id),
+  );
 
   const handleAddPreset = useCallback(
     (preset: Agent, close: () => void) => {
@@ -151,7 +169,7 @@ const AddAgentPopover: React.FC = () => {
       trigger={
         <Button size="sm" hasIcon>
           <IconPlus className="size-3.5" />
-          Add
+          {t("Add")}
         </Button>
       }
     >
@@ -159,7 +177,9 @@ const AddAgentPopover: React.FC = () => {
         <div className="w-64 p-3">
           {availablePresets.length > 0 && (
             <>
-              <p className="mb-2 text-xs font-medium text-composer-text-secondary">Presets</p>
+              <p className="mb-2 text-xs font-medium text-composer-text-secondary">
+                {t("Presets")}
+              </p>
               <div className="flex flex-col gap-1 mb-3">
                 {availablePresets.map((preset) => (
                   <button
@@ -172,15 +192,21 @@ const AddAgentPopover: React.FC = () => {
                       className="size-2 rounded-full shrink-0"
                       style={{ backgroundColor: getAgentColor(preset.id) }}
                     />
-                    <span className="text-sm text-composer-text">{preset.name}</span>
-                    <span className="text-xs text-composer-text-muted">{preset.id}</span>
+                    <span className="text-sm text-composer-text">
+                      {preset.name}
+                    </span>
+                    <span className="text-xs text-composer-text-muted">
+                      {preset.id}
+                    </span>
                   </button>
                 ))}
               </div>
             </>
           )}
 
-          <p className="mb-2 text-xs font-medium text-composer-text-secondary">Custom Agent</p>
+          <p className="mb-2 text-xs font-medium text-composer-text-secondary">
+            {t("Custom Agent")}
+          </p>
           <div className="flex flex-col gap-2">
             <input
               type="text"
@@ -195,14 +221,19 @@ const AddAgentPopover: React.FC = () => {
               onChange={(e) => setCustomType(e.target.value as AgentType)}
               className="px-2 py-1.5 text-sm rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent cursor-pointer"
             >
-              <option value="person">Person</option>
-              <option value="group">Group</option>
-              <option value="character">Character</option>
-              <option value="organization">Organization</option>
-              <option value="other">Other</option>
+              <option value="person">{t("Person")}</option>
+              <option value="group">{t("Group")}</option>
+              <option value="character">{t("Character")}</option>
+              <option value="organization">{t("Organization")}</option>
+              <option value="other">{t("Other")}</option>
             </select>
-            <Button size="sm" variant="primary" onClick={() => handleAddCustom(close)} disabled={!customName.trim()}>
-              Add Custom Agent
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => handleAddCustom(close)}
+              disabled={!customName.trim()}
+            >
+              {t("Add Custom Agent")}
             </Button>
           </div>
         </div>
@@ -220,7 +251,9 @@ const AgentManager: React.FC = () => {
   const handleRemoveAgent = useCallback(
     (agentId: string) => {
       const fallbackId = agents.find((a) => a.id !== agentId)?.id ?? "v1";
-      const updatedLines = lines.map((line) => (line.agentId === agentId ? { ...line, agentId: fallbackId } : line));
+      const updatedLines = lines.map((line) =>
+        line.agentId === agentId ? { ...line, agentId: fallbackId } : line,
+      );
       setLinesWithHistory(updatedLines);
       removeAgent(agentId);
     },
@@ -229,7 +262,9 @@ const AgentManager: React.FC = () => {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium text-composer-text-secondary">Agents</span>
+      <span className="text-sm font-medium text-composer-text-secondary">
+        {t("Agents")}
+      </span>
       {agents.map((agent) => (
         <EditAgentPopover
           key={agent.id}

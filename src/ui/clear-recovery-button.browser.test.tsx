@@ -16,22 +16,32 @@ describe("ClearRecoveryButton", () => {
     const screen = await render(<ClearRecoveryButton />);
 
     await screen.getByRole("button", { name: /Clear saved data/ }).click();
-    await expect.element(screen.getByText(/Click again to confirm/)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Click again to confirm/))
+      .toBeInTheDocument();
     expect((await readRecoveryMetadata()).found).toBe(true);
 
     await screen.getByRole("button", { name: /Confirm clear/ }).click();
-    await expect.element(screen.getByText(/Reload Composer to start fresh/)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Reload RichLyricEditor to start fresh/))
+      .toBeInTheDocument();
     expect((await readRecoveryMetadata()).found).toBe(false);
   });
 
   it("renders the optional hint while idle", async () => {
-    const screen = await render(<ClearRecoveryButton hint="this is the hint" />);
-    await expect.element(screen.getByText(/this is the hint/)).toBeInTheDocument();
+    const screen = await render(
+      <ClearRecoveryButton hint="this is the hint" />,
+    );
+    await expect
+      .element(screen.getByText(/this is the hint/))
+      .toBeInTheDocument();
   });
 
   it("uses the custom clearedMessage after clearing", async () => {
     await seedProject(RECOVERABLE_PROJECT);
-    const screen = await render(<ClearRecoveryButton clearedMessage="all gone" />);
+    const screen = await render(
+      <ClearRecoveryButton clearedMessage="all gone" />,
+    );
     await screen.getByRole("button", { name: /Clear saved data/ }).click();
     await screen.getByRole("button", { name: /Confirm clear/ }).click();
     await expect.element(screen.getByText(/all gone/)).toBeInTheDocument();

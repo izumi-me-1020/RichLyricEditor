@@ -3,16 +3,28 @@ import { AppHeader } from "@/ui/app-header";
 import { render } from "@/test/render";
 
 describe("AppHeader", () => {
-  it("renders the Composer logo and brand text", async () => {
-    const screen = await render(<AppHeader onSettingsOpen={() => {}} onHelpOpen={() => {}} onTourStart={() => {}} />);
-    await expect.element(screen.getByRole("img", { name: "Composer Logo" })).toBeInTheDocument();
-    expect(screen.container.textContent).toContain("Composer");
+  it("renders the RichLyricEditor logo and brand text", async () => {
+    const screen = await render(
+      <AppHeader
+        onSettingsOpen={() => {}}
+        onHelpOpen={() => {}}
+        onTourStart={() => {}}
+      />,
+    );
+    await expect
+      .element(screen.getByRole("img", { name: "RichLyricEditor Logo" }))
+      .toBeInTheDocument();
+    expect(screen.container.textContent).toContain("RichLyricEditor");
   });
 
   it("calls onSettingsOpen when the settings button is clicked", async () => {
     let calls = 0;
     const screen = await render(
-      <AppHeader onSettingsOpen={() => calls++} onHelpOpen={() => {}} onTourStart={() => {}} />,
+      <AppHeader
+        onSettingsOpen={() => calls++}
+        onHelpOpen={() => {}}
+        onTourStart={() => {}}
+      />,
     );
     await screen.getByRole("button", { name: "Settings" }).click();
     expect(calls).toBe(1);
@@ -21,7 +33,11 @@ describe("AppHeader", () => {
   it("calls onHelpOpen when the help button is clicked", async () => {
     let calls = 0;
     const screen = await render(
-      <AppHeader onSettingsOpen={() => {}} onHelpOpen={() => calls++} onTourStart={() => {}} />,
+      <AppHeader
+        onSettingsOpen={() => {}}
+        onHelpOpen={() => calls++}
+        onTourStart={() => {}}
+      />,
     );
     await screen.getByRole("button", { name: /Keyboard shortcuts/ }).click();
     expect(calls).toBe(1);
@@ -30,7 +46,11 @@ describe("AppHeader", () => {
   it("calls onTourStart when the tour button is clicked", async () => {
     let calls = 0;
     const screen = await render(
-      <AppHeader onSettingsOpen={() => {}} onHelpOpen={() => {}} onTourStart={() => calls++} />,
+      <AppHeader
+        onSettingsOpen={() => {}}
+        onHelpOpen={() => {}}
+        onTourStart={() => calls++}
+      />,
     );
     await screen.getByRole("button", { name: "Product tour" }).click();
     expect(calls).toBe(1);

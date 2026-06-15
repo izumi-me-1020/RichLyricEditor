@@ -1,12 +1,13 @@
 import { SliderSetting } from "@/ui/settings/setting-controls";
+import { t } from "i18next";
 
 // -- Storage Section ----------------------------------------------------------
 
 const StorageSection: React.FC = () => (
   <div className="divide-y divide-composer-border">
     <SliderSetting
-      label="Auto-save delay"
-      description="How long to wait after your last edit before auto-saving."
+      label={t("Auto-save delay")}
+      description={t("How long to wait after your last edit before auto-saving.")}
       settingKey="autoSaveDelay"
       min={500}
       max={10000}

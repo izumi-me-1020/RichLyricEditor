@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/project";
 import { extractBackgroundVocals } from "@/utils/background-vocal-extraction";
 import type { ParseResult } from "@/utils/lyrics-parsers/shared";
 import { distributeLinesTiming } from "@/views/timeline/utils";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -31,15 +32,26 @@ async function confirmReplaceIfNeeded(confirm: ConfirmFn): Promise<boolean> {
   const existingLineCount = useProjectStore.getState().lines.length;
   if (existingLineCount === 0) return true;
   return confirm({
-    title: "Replace existing lyrics?",
-    description: `This will replace your ${existingLineCount} existing line${existingLineCount === 1 ? "" : "s"}. This cannot be undone.`,
-    confirmLabel: "Replace",
+    title: t("Replace existing lyrics?"),
+
+    description: t(
+      "This will replace your {{count}} existing lines. This cannot be undone.",
+      {
+        count: existingLineCount,
+      },
+    ),
+
+    confirmLabel: t("Replace"),
+
     variant: "destructive",
     settingsKey: "confirmReplaceLyrics",
   });
 }
 
-function reconcileAgents(existing: Agent[], incoming: Agent[] | undefined): void {
+function reconcileAgents(
+  existing: Agent[],
+  incoming: Agent[] | undefined,
+): void {
   if (!incoming || incoming.length === 0) return;
   const store = useProjectStore.getState();
   const agentsById = new Map(existing.map((a) => [a.id, a] as const));
@@ -54,7 +66,10 @@ function reconcileAgents(existing: Agent[], incoming: Agent[] | undefined): void
 
 // -- Action -------------------------------------------------------------------
 
-async function importParsedLyrics(parsed: ParseResult, ctx: ImportParsedLyricsContext): Promise<boolean> {
+async function importParsedLyrics(
+  parsed: ParseResult,
+  ctx: ImportParsedLyricsContext,
+): Promise<boolean> {
   if (parsed.lines.length === 0) return false;
 
   const accepted = await confirmReplaceIfNeeded(ctx.confirm);

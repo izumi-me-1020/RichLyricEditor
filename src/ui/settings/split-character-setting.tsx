@@ -2,6 +2,7 @@ import { DEFAULTS, useSettingsStore } from "@/stores/settings";
 import { Button } from "@/ui/button";
 import { Modal } from "@/ui/modal";
 import { useCallback, useEffect, useState } from "react";
+import { t } from "i18next";
 
 // -- Split Character Setting --------------------------------------------------
 
@@ -51,7 +52,7 @@ const SplitCharacterSetting: React.FC = () => {
       if (result === "blocked") {
         setCaptureState({
           status: "listening",
-          error: "Letters, numbers, and whitespace cannot be used",
+          error: t("Letters, numbers, and whitespace cannot be used"),
         });
         return;
       }
@@ -73,9 +74,9 @@ const SplitCharacterSetting: React.FC = () => {
     <>
       <div className="flex items-center justify-between py-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-composer-text">Split character</span>
+          <span className="text-sm font-medium text-composer-text">{t("Split character")}</span>
           <span className="text-xs text-composer-text-muted">
-            Character used to mark syllable boundaries in the edit view
+            {t("Character used to mark syllable boundaries in the edit view")}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -85,7 +86,7 @@ const SplitCharacterSetting: React.FC = () => {
               onClick={() => set("splitCharacter", DEFAULTS.splitCharacter)}
               className="text-xs text-composer-text-muted hover:text-composer-text cursor-pointer transition-colors"
             >
-              Reset
+              {t("Reset")}
             </button>
           )}
           <button
@@ -98,17 +99,18 @@ const SplitCharacterSetting: React.FC = () => {
         </div>
       </div>
 
-      <Modal isOpen={captureState.status === "listening"} onClose={cancelCapture} title="Change split character">
+      <Modal isOpen={captureState.status === "listening"} onClose={cancelCapture} title={t("Change split character")}>
         <div className="text-center py-4 pb-0 space-y-10">
           <div className="space-y-2">
             <p className="text-sm text-composer-text-secondary">
-              Press a character to use as the syllable split marker
+              {t("Press a character to use as the syllable split marker")}
             </p>
-            <p className="text-xs text-composer-text-muted">Press Escape to cancel</p>
+            <p className="text-xs text-composer-text-muted">{t("Press Escape to cancel")}</p>
           </div>
           <p className="text-xs text-composer-text-muted bg-composer-button/50 rounded-lg px-3 py-2 text-left">
-            Pick a symbol you won't use in lyrics. Characters like commas, apostrophes, and hyphens appear in lyrics and
-            will cause unintended splits.
+            {t(
+              "Pick a symbol you won't use in lyrics. Characters like commas, apostrophes, and hyphens appear in lyrics and will cause unintended splits.",
+            )}
           </p>
         </div>
         {captureState.status === "listening" && captureState.error && (
@@ -117,20 +119,20 @@ const SplitCharacterSetting: React.FC = () => {
       </Modal>
 
       {captureState.status === "warning" && (
-        <Modal isOpen onClose={cancelCapture} title="Character warning">
+        <Modal isOpen onClose={cancelCapture} title={t("Character warning")}>
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm text-composer-text">
               <span className="inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-md bg-composer-button border border-composer-border font-mono">
                 {captureState.char}
               </span>
-              <span className="text-composer-text-secondary">commonly appears in lyrics.</span>
+              <span className="text-composer-text-secondary">{t("commonly appears in lyrics.")}</span>
             </div>
             <p className="text-xs text-composer-text-muted">
-              Using it as a split marker means every occurrence in your text will be treated as a syllable break.
+              {t("Using it as a split marker means every occurrence in your text will be treated as a syllable break.")}
             </p>
             <div className="flex gap-2 justify-end">
               <Button variant="secondary" size="sm" onClick={cancelCapture}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 variant="primary"
@@ -140,7 +142,7 @@ const SplitCharacterSetting: React.FC = () => {
                   setCaptureState({ status: "idle" });
                 }}
               >
-                Use anyway
+                {t("Use anyway")}
               </Button>
             </div>
           </div>

@@ -27,9 +27,15 @@ import {
 import { ScrollableLine } from "@/views/sync/scrollable-line";
 import { type RippleTarget, SyncCarousel } from "@/views/sync/sync-carousel";
 import { TimingDisplay } from "@/views/sync/timing-display";
-import { IconLock, IconLockOpen, IconPlayerPlayFilled, IconRefresh } from "@tabler/icons-react";
+import {
+  IconLock,
+  IconLockOpen,
+  IconPlayerPlayFilled,
+  IconRefresh,
+} from "@tabler/icons-react";
 import { m } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { t } from "i18next";
 
 // -- Components ---------------------------------------------------------------
 
@@ -82,7 +88,8 @@ const SyncPanel: React.FC = () => {
   syncStateRef.current = syncState;
 
   const triggerRippleAtCurrentPosition = useCallback(() => {
-    const { lineIndex: committedLineIndex, wordIndex: committedWordIndex } = syncStateRef.current.position;
+    const { lineIndex: committedLineIndex, wordIndex: committedWordIndex } =
+      syncStateRef.current.position;
     const lineId = linesRef.current[committedLineIndex]?.id;
     if (!lineId) return;
     setRippleTarget((prev) => ({
@@ -139,7 +146,11 @@ const SyncPanel: React.FC = () => {
       if (line.backgroundText && !line.backgroundWords?.length) {
         const bgWords = createBgWordsFromLine(line);
         if (bgWords) {
-          updateLine(line.id, { backgroundWords: bgWords }, { deriveText: false });
+          updateLine(
+            line.id,
+            { backgroundWords: bgWords },
+            { deriveText: false },
+          );
         }
       }
     }
@@ -162,7 +173,8 @@ const SyncPanel: React.FC = () => {
       const audioEl = useAudioStore.getState().audioElement;
       const time = audioEl?.currentTime ?? useAudioStore.getState().currentTime;
 
-      const wordEls = container.querySelectorAll<HTMLElement>("[data-word-begin]");
+      const wordEls =
+        container.querySelectorAll<HTMLElement>("[data-word-begin]");
       for (const el of wordEls) {
         const begin = Number.parseFloat(el.dataset.wordBegin ?? "0");
         const end = Number.parseFloat(el.dataset.wordEnd ?? "0");
@@ -195,7 +207,10 @@ const SyncPanel: React.FC = () => {
   const syncedWords = useMemo(() => getSyncedWordCount(lines), [lines]);
   const syncedLines = useMemo(() => getSyncedLineCount(lines), [lines]);
 
-  const progressText = granularity === "word" ? `${syncedWords}/${totalWords}` : `${syncedLines}/${lines.length}`;
+  const progressText =
+    granularity === "word"
+      ? `${syncedWords}/${totalWords}`
+      : `${syncedLines}/${lines.length}`;
 
   const handleGranularityChange = useCallback(
     (newGranularity: "line" | "word") => {
@@ -357,7 +372,10 @@ const SyncPanel: React.FC = () => {
   if (!source) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No audio loaded" hint="Import audio in the Import tab first" />
+        <EmptyState
+          message="No audio loaded"
+          hint="Import audio in the Import tab first"
+        />
       </div>
     );
   }
@@ -365,18 +383,26 @@ const SyncPanel: React.FC = () => {
   if (lines.length === 0) {
     return (
       <div className="flex flex-col flex-1 p-4">
-        <EmptyState message="No lyrics to sync" hint="Add lyrics in the Edit tab first" />
+        <EmptyState
+          message="No lyrics to sync"
+          hint="Add lyrics in the Edit tab first"
+        />
       </div>
     );
   }
 
   return (
-    <div data-tour="sync-panel" className="flex flex-col flex-1 overflow-hidden select-none">
+    <div
+      data-tour="sync-panel"
+      className="flex flex-col flex-1 overflow-hidden select-none"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border">
         <div className="flex items-baseline gap-3">
-          <h2 className="text-lg font-medium">Sync</h2>
-          <span className="font-mono text-sm text-composer-text-muted tabular-nums">{progressText}</span>
+          <h2 className="text-lg font-medium">{t("")}</h2>
+          <span className="font-mono text-sm text-composer-text-muted tabular-nums">
+            {progressText}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex h-8 rounded-lg bg-composer-bg-elevated p-0.5">
@@ -389,7 +415,7 @@ const SyncPanel: React.FC = () => {
                   : "text-composer-text-muted hover:text-composer-text"
               }`}
             >
-              Line
+              {t("Line")}
             </button>
             <button
               type="button"
@@ -400,7 +426,7 @@ const SyncPanel: React.FC = () => {
                   : "text-composer-text-muted hover:text-composer-text"
               }`}
             >
-              Word
+              {t("Word")}
             </button>
           </div>
           <Button
@@ -409,19 +435,23 @@ const SyncPanel: React.FC = () => {
             onClick={() => setEditMode(!editMode)}
             title={editMode ? "Unlock sync mode" : "Lock to edit mode"}
           >
-            {editMode ? <IconLock className="size-4" /> : <IconLockOpen className="size-4" />}
-            Edit
+            {editMode ? (
+              <IconLock className="size-4" />
+            ) : (
+              <IconLockOpen className="size-4" />
+            )}
+            {t("Edit")}
           </Button>
           {syncState.isActive && !editMode && (
             <Button hasIcon onClick={handleReset}>
               <IconRefresh className="size-4" />
-              Reset
+              {t("Reset")}
             </Button>
           )}
           {!syncState.isActive && !editMode && (
             <Button hasIcon variant="primary" onClick={handleStartSync}>
               <IconPlayerPlayFilled className="size-4" />
-              Start
+              {t("Start")}
             </Button>
           )}
         </div>
@@ -433,8 +463,12 @@ const SyncPanel: React.FC = () => {
           <div className="py-2">
             {lines.map((line, index) => {
               const timing = effectiveBounds(line);
-              const linkedGroup = line.groupId ? groups.find((g) => g.id === line.groupId) : undefined;
-              const totalInstances = linkedGroup ? (instanceCountByGroup.get(linkedGroup.id) ?? 0) : 0;
+              const linkedGroup = line.groupId
+                ? groups.find((g) => g.id === line.groupId)
+                : undefined;
+              const totalInstances = linkedGroup
+                ? (instanceCountByGroup.get(linkedGroup.id) ?? 0)
+                : 0;
               const linkInfo =
                 linkedGroup && line.instanceIdx !== undefined
                   ? {
@@ -450,7 +484,9 @@ const SyncPanel: React.FC = () => {
                   lineId={line.id}
                   lineNumber={index + 1}
                   text={line.text}
-                  isCurrent={editMode ? index === playingLineIndex : index === lineIndex}
+                  isCurrent={
+                    editMode ? index === playingLineIndex : index === lineIndex
+                  }
                   agentId={line.agentId}
                   backgroundText={line.backgroundText}
                   backgroundWords={line.backgroundWords}
@@ -462,17 +498,37 @@ const SyncPanel: React.FC = () => {
                   editMode={editMode}
                   linkInfo={linkInfo}
                   onClick={() => handleJumpToLine(index)}
-                  onNudgeWord={(wordIdx, delta) => handleNudgeWord(index, wordIdx, delta)}
-                  onSetWordTime={(wordIdx, newBegin) => handleSetWordTime(index, wordIdx, newBegin)}
-                  onNudgeWordEnd={(wordIdx, delta) => handleNudgeWordEnd(index, wordIdx, delta)}
-                  onSetWordEndTime={(wordIdx, newEnd) => handleSetWordEndTime(index, wordIdx, newEnd)}
+                  onNudgeWord={(wordIdx, delta) =>
+                    handleNudgeWord(index, wordIdx, delta)
+                  }
+                  onSetWordTime={(wordIdx, newBegin) =>
+                    handleSetWordTime(index, wordIdx, newBegin)
+                  }
+                  onNudgeWordEnd={(wordIdx, delta) =>
+                    handleNudgeWordEnd(index, wordIdx, delta)
+                  }
+                  onSetWordEndTime={(wordIdx, newEnd) =>
+                    handleSetWordEndTime(index, wordIdx, newEnd)
+                  }
                   onNudgeLine={(delta) => handleNudgeLine(index, delta)}
-                  onSetLineTime={(newBegin) => handleSetLineTime(index, newBegin)}
-                  onSplitWord={(wordIdx, newWords) => handleSplitWord(index, wordIdx, newWords)}
-                  onNudgeBgWord={(wordIdx, delta) => handleNudgeBgWord(index, wordIdx, delta)}
-                  onSetBgWordTime={(wordIdx, newBegin) => handleSetBgWordTime(index, wordIdx, newBegin)}
-                  onNudgeBgWordEnd={(wordIdx, delta) => handleNudgeBgWordEnd(index, wordIdx, delta)}
-                  onSetBgWordEndTime={(wordIdx, newEnd) => handleSetBgWordEndTime(index, wordIdx, newEnd)}
+                  onSetLineTime={(newBegin) =>
+                    handleSetLineTime(index, newBegin)
+                  }
+                  onSplitWord={(wordIdx, newWords) =>
+                    handleSplitWord(index, wordIdx, newWords)
+                  }
+                  onNudgeBgWord={(wordIdx, delta) =>
+                    handleNudgeBgWord(index, wordIdx, delta)
+                  }
+                  onSetBgWordTime={(wordIdx, newBegin) =>
+                    handleSetBgWordTime(index, wordIdx, newBegin)
+                  }
+                  onNudgeBgWordEnd={(wordIdx, delta) =>
+                    handleNudgeBgWordEnd(index, wordIdx, delta)
+                  }
+                  onSetBgWordEndTime={(wordIdx, newEnd) =>
+                    handleSetBgWordEndTime(index, wordIdx, newEnd)
+                  }
                 />
               );
             })}
@@ -498,9 +554,11 @@ const SyncPanel: React.FC = () => {
                   color: "transparent",
                 }}
               >
-                Sync complete!
+                {t("Sync complete!")}
               </m.div>
-              <div className="text-composer-text-muted">Proceed to Preview to review your work</div>
+              <div className="text-composer-text-muted">
+                {t("Proceed to Preview to review your work")}
+              </div>
             </div>
           ) : (
             <SyncCarousel
@@ -523,7 +581,11 @@ const SyncPanel: React.FC = () => {
 
           {!isComplete && isPlaying && (
             <div className="flex items-center gap-4">
-              {currentWord && <span className="text-xl font-medium text-composer-text">{currentWord}</span>}
+              {currentWord && (
+                <span className="text-xl font-medium text-composer-text">
+                  {currentWord}
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <m.div
                   variants={syncPulseVariants}
@@ -531,7 +593,9 @@ const SyncPanel: React.FC = () => {
                   animate={isHolding ? "pulse" : "idle"}
                   transition={syncCarouselTransition}
                   className={`flex items-center justify-center border-2 rounded-full size-14 ${
-                    isHolding ? "bg-composer-accent/20 border-composer-accent" : "bg-composer-bg-elevated"
+                    isHolding
+                      ? "bg-composer-accent/20 border-composer-accent"
+                      : "bg-composer-bg-elevated"
                   }`}
                 >
                   <span className="text-xs font-medium text-composer-text-muted">
@@ -558,7 +622,9 @@ const SyncPanel: React.FC = () => {
           )}
 
           {!isComplete && !isPlaying && syncState.isActive && (
-            <div className="text-sm text-composer-text-muted">Paused ・ Click a line to jump, or play to continue</div>
+            <div className="text-sm text-composer-text-muted">
+              {t("Paused ・ Click a line to jump, or play to continue")}
+            </div>
           )}
         </div>
       </div>

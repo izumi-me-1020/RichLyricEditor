@@ -4,6 +4,7 @@ import { Popover } from "@/ui/popover";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { IconPlus } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -15,7 +16,11 @@ interface GutterAgentPickerProps {
 
 // -- Component ----------------------------------------------------------------
 
-const GutterAgentPicker: React.FC<GutterAgentPickerProps> = ({ lineId, lineIndex, agentId }) => {
+const GutterAgentPicker: React.FC<GutterAgentPickerProps> = ({
+  lineId,
+  lineIndex,
+  agentId,
+}) => {
   const agents = useProjectStore((s) => s.agents);
   const addAgent = useProjectStore((s) => s.addAgent);
   const updateLineWithHistory = useProjectStore((s) => s.updateLineWithHistory);
@@ -69,13 +74,17 @@ const GutterAgentPicker: React.FC<GutterAgentPickerProps> = ({ lineId, lineIndex
             });
           }}
         >
-          <span className="text-xs text-composer-text-muted tabular-nums">{lineIndex + 1}</span>
+          <span className="text-xs text-composer-text-muted tabular-nums">
+            {lineIndex + 1}
+          </span>
         </button>
       }
     >
       {(close) => (
         <div className="w-48 p-2">
-          <p className="px-2 mb-1 text-xs text-composer-text-muted">Assign agent</p>
+          <p className="px-2 mb-1 text-xs text-composer-text-muted">
+            {t("Assign agent")}
+          </p>
           <div className="flex flex-col gap-px">
             {agents.map((agent) => {
               const agentColor = getAgentColor(agent.id);
@@ -91,7 +100,10 @@ const GutterAgentPicker: React.FC<GutterAgentPickerProps> = ({ lineId, lineIndex
                       : "text-composer-text hover:bg-composer-button"
                   }`}
                 >
-                  <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: agentColor }} />
+                  <span
+                    className="size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: agentColor }}
+                  />
                   {agent.name || agent.id}
                 </button>
               );
@@ -108,7 +120,7 @@ const GutterAgentPicker: React.FC<GutterAgentPickerProps> = ({ lineId, lineIndex
                   e.stopPropagation();
                   if (e.key === "Enter") handleAddNew(close);
                 }}
-                placeholder="New agent name"
+                placeholder={t("New agent name")}
                 className="flex-1 px-2 py-1 text-xs rounded bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent"
               />
               <button

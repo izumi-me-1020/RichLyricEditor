@@ -9,6 +9,7 @@ import { getWordsInInstance } from "@/views/timeline/utils";
 import { IconChevronDown, IconLink } from "@tabler/icons-react";
 import { m } from "motion/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { t } from "i18next";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -40,13 +41,20 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
 }) => {
   const pingingGroupId = useTimelineStore((s) => s.pingingGroupId);
   const isPinging = pingingGroupId === group.id;
-  const pingVariants = useMemo(() => buildGroupPingVariants(group.color), [group.color]);
+  const pingVariants = useMemo(
+    () => buildGroupPingVariants(group.color),
+    [group.color],
+  );
   const setDraggedGroupShift = useTimelineStore((s) => s.setDraggedGroupShift);
   const setSelectedWords = useTimelineStore((s) => s.setSelectedWords);
 
   const [dragOffsetPx, setDragOffsetPx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStateRef = useRef<{ startX: number; moved: boolean; cleanup: () => void } | null>(null);
+  const dragStateRef = useRef<{
+    startX: number;
+    moved: boolean;
+    cleanup: () => void;
+  } | null>(null);
   const bannerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -70,7 +78,11 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         }
         if (dragStateRef.current.moved) {
           setDragOffsetPx(dx);
-          setDraggedGroupShift({ groupId: group.id, instanceIdx, offsetPx: dx });
+          setDraggedGroupShift({
+            groupId: group.id,
+            instanceIdx,
+            offsetPx: dx,
+          });
         }
       };
 
@@ -84,10 +96,15 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         setDragOffsetPx(0);
         setDraggedGroupShift(null);
 
-        if (wasDrag && useProjectStore.getState().groups.find((g) => g.id === group.id)) {
+        if (
+          wasDrag &&
+          useProjectStore.getState().groups.find((g) => g.id === group.id)
+        ) {
           const deltaSeconds = dx / zoom;
           if (Math.abs(deltaSeconds) > 0.001) {
-            useProjectStore.getState().shiftInstance(group.id, instanceIdx, deltaSeconds);
+            useProjectStore
+              .getState()
+              .shiftInstance(group.id, instanceIdx, deltaSeconds);
           }
         } else {
           // treat as click: select all words in this instance (so nudge works on it)
@@ -109,11 +126,19 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
   );
 
   const setPingingGroupId = useTimelineStore((s) => s.setPingingGroupId);
-  const handleBadgeMouseEnter = useCallback(() => setPingingGroupId(group.id), [group.id, setPingingGroupId]);
-  const handleBadgeMouseLeave = useCallback(() => setPingingGroupId(null), [setPingingGroupId]);
+  const handleBadgeMouseEnter = useCallback(
+    () => setPingingGroupId(group.id),
+    [group.id, setPingingGroupId],
+  );
+  const handleBadgeMouseLeave = useCallback(
+    () => setPingingGroupId(null),
+    [setPingingGroupId],
+  );
 
   const setContextMenu = useTimelineStore((s) => s.setContextMenu);
-  const toggleInstanceCollapsed = useTimelineStore((s) => s.toggleInstanceCollapsed);
+  const toggleInstanceCollapsed = useTimelineStore(
+    (s) => s.toggleInstanceCollapsed,
+  );
   const handleChevronPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
   }, []);
@@ -132,14 +157,22 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
       setContextMenu({
         x: e.clientX,
         y: e.clientY,
-        target: { kind: "group-banner", groupId: group.id, instanceIdx, source: "banner" },
+        target: {
+          kind: "group-banner",
+          groupId: group.id,
+          instanceIdx,
+          source: "banner",
+        },
       });
     },
     [group.id, instanceIdx, setContextMenu],
   );
 
   const left = instanceStart * zoom;
-  const width = Math.max(BANNER_MIN_WIDTH, (instanceEnd - instanceStart) * zoom);
+  const width = Math.max(
+    BANNER_MIN_WIDTH,
+    (instanceEnd - instanceStart) * zoom,
+  );
   const deltaSecondsLive = dragOffsetPx / Math.max(zoom, 1);
 
   // Reactive subscription to lines so word edits inside a collapsed banner
@@ -153,7 +186,8 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
     if (span <= 0) return [];
     const ticks: Array<{ idx: number; leftPct: number; widthPct: number }> = [];
     for (const line of allLines) {
-      if (line.groupId !== group.id || line.instanceIdx !== instanceIdx) continue;
+      if (line.groupId !== group.id || line.instanceIdx !== instanceIdx)
+        continue;
       if (!line.words?.length) continue;
       for (const w of line.words) {
         const startPct = ((w.begin - instanceStart) / span) * 100;
@@ -163,7 +197,14 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
       }
     }
     return ticks;
-  }, [isCollapsed, instanceStart, instanceEnd, allLines, group.id, instanceIdx]);
+  }, [
+    isCollapsed,
+    instanceStart,
+    instanceEnd,
+    allLines,
+    group.id,
+    instanceIdx,
+  ]);
 
   return (
     <m.div
@@ -200,7 +241,10 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         className="shrink-0 w-auto h-auto p-0.5 opacity-70 hover:opacity-100 hover:bg-transparent text-current relative before:content-[''] before:absolute before:-inset-2"
       >
         <IconChevronDown
-          className={cn("size-3 transition-transform duration-200 ease-out", isCollapsed && "-rotate-90")}
+          className={cn(
+            "size-3 transition-transform duration-200 ease-out",
+            isCollapsed && "-rotate-90",
+          )}
         />
       </Button>
       <span className="font-semibold whitespace-nowrap">{group.label}</span>
@@ -210,7 +254,7 @@ const GroupBannerComponent: React.FC<GroupBannerProps> = ({
         onMouseLeave={handleBadgeMouseLeave}
       >
         <IconLink className="size-2.5" />
-        {instanceIdx + 1} of {totalInstances}
+        {instanceIdx + 1} {t("of")} {totalInstances}
         {isDragging && (
           <span className="ml-1 text-composer-text">
             {deltaSecondsLive >= 0 ? "+" : ""}

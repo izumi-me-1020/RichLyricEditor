@@ -1,5 +1,8 @@
 import { loadCurrentProject } from "@/lib/persistence";
-import { getPersistenceSettled, markHashImportSettled } from "@/lib/persistence-settled";
+import {
+  getPersistenceSettled,
+  markHashImportSettled,
+} from "@/lib/persistence-settled";
 import { useConfirm } from "@/stores/confirm-store";
 import { useProjectStore } from "@/stores/project";
 import type { Agent } from "@/domain/agent/model";
@@ -37,7 +40,9 @@ async function isProjectNonEmpty(): Promise<boolean> {
   const saved = await loadCurrentProject();
   if (!saved) return false;
   if (saved.lines.length > 0) return true;
-  return Boolean(saved.metadata.title || saved.metadata.artist || saved.metadata.album);
+  return Boolean(
+    saved.metadata.title || saved.metadata.artist || saved.metadata.album,
+  );
 }
 
 function useImportFromHash(): void {
@@ -60,14 +65,16 @@ function useImportFromHash(): void {
         const decoded = decodeURIComponent(encoded);
         const payload: unknown = JSON.parse(decoded);
         if (!isValidPayload(payload)) {
-          console.error("[Composer] Invalid import payload structure");
+          console.error("[RichLyricEditor] Invalid import payload structure");
           toast.error("Could not import converter result");
           return;
         }
 
-        if (import.meta.env.DEV) console.log("[Boot] useImportFromHash awaiting settled");
+        if (import.meta.env.DEV)
+          console.log("[Boot] useImportFromHash awaiting settled");
         await getPersistenceSettled();
-        if (import.meta.env.DEV) console.log("[Boot] useImportFromHash settled");
+        if (import.meta.env.DEV)
+          console.log("[Boot] useImportFromHash settled");
 
         if (await isProjectNonEmpty()) {
           const ok = await confirm({
@@ -79,7 +86,11 @@ function useImportFromHash(): void {
             settingsKey: "confirmReplaceProjectFromHash",
           });
           if (!ok) {
-            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+            window.history.replaceState(
+              null,
+              "",
+              window.location.pathname + window.location.search,
+            );
             return;
           }
         }
@@ -97,10 +108,17 @@ function useImportFromHash(): void {
           }
         }
 
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
         toast.success("Imported from converter");
       } catch (importError) {
-        console.error("[Composer] Failed to import from hash", importError);
+        console.error(
+          "[RichLyricEditor] Failed to import from hash",
+          importError,
+        );
         toast.error("Could not import converter result");
       } finally {
         markHashImportSettled();

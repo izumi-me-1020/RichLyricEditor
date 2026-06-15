@@ -1,5 +1,7 @@
+import { useSettingsStore } from "@/stores/settings";
 import { Button } from "@/ui/button";
 import { cn } from "@/utils/cn";
+import { t } from "i18next";
 import { useMemo } from "react";
 
 // -- Interfaces ---------------------------------------------------------------
@@ -52,11 +54,15 @@ const SplitModeContent: React.FC<SplitModeContentProps> = ({
     return result;
   }, [text, splitPoints]);
 
-  const confirmLabel = applyToAll && identicalCount > 0 ? "Split all" : "Split Word";
+  const confirmLabel =
+    applyToAll && identicalCount > 0 ? t("Split all") : t("Split Word");
 
+  const language = useSettingsStore((s) => s.language);
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm text-composer-text-secondary">Click between letters to mark split points</p>
+      <p className="text-sm text-composer-text-secondary">
+        {t("Click between letters to mark split points")}
+      </p>
 
       <div className="flex flex-wrap items-center justify-center gap-0.5 py-4 text-2xl tracking-wide">
         {chars.map((char, idx) => (
@@ -93,8 +99,10 @@ const SplitModeContent: React.FC<SplitModeContentProps> = ({
 
       {splitPoints.length > 0 && (
         <div className="flex items-center justify-center gap-2 text-sm text-composer-text-muted">
-          <span>Preview:</span>
-          <span className="font-medium text-composer-text">{previewParts.join(" · ")}</span>
+          <span>{t("Preview")}:</span>
+          <span className="font-medium text-composer-text">
+            {previewParts.join(" · ")}
+          </span>
         </div>
       )}
 
@@ -102,8 +110,12 @@ const SplitModeContent: React.FC<SplitModeContentProps> = ({
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
             {/* react-doctor-disable-next-line react-doctor/control-has-associated-label */}
-            <input type="checkbox" checked={applyToAll} onChange={(e) => onApplyToAllChange(e.target.checked)} />
-            <span>Apply to all identical words</span>
+            <input
+              type="checkbox"
+              checked={applyToAll}
+              onChange={(e) => onApplyToAllChange(e.target.checked)}
+            />
+            <span>{t("Apply to all identical words")}</span>
           </label>
           <label
             className={cn(
@@ -118,22 +130,35 @@ const SplitModeContent: React.FC<SplitModeContentProps> = ({
               onChange={(e) => onCaseInsensitiveChange(e.target.checked)}
               disabled={!applyToAll}
             />
-            <span>Case-insensitive matching</span>
+            <span>{t("Case-insensitive matching")}</span>
           </label>
           {applyToAll && identicalCount > 0 && (
             <p className="text-sm text-composer-text-secondary">
-              This will also split {identicalCount} other "{sourceText}"{identicalCount === 1 ? "" : "s"}
+              {t(
+                "This will also split {{identicalCount}} other '{{sourceText}}'",
+                {
+                  identicalCount,
+                  sourceText,
+                },
+              )}
+              {language == "en" && identicalCount === 1 ? "" : "s"}
             </p>
           )}
           {applyToAll && identicalCount === 0 && (
-            <p className="text-sm text-composer-text-muted">No other matching words</p>
+            <p className="text-sm text-composer-text-muted">
+              {t("No other matching words")}
+            </p>
           )}
         </div>
       )}
 
       <div className="flex items-center justify-end gap-2 pt-2">
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" onClick={onConfirm} disabled={splitPoints.length === 0}>
+        <Button onClick={onCancel}>{t("Cancel")}</Button>
+        <Button
+          variant="primary"
+          onClick={onConfirm}
+          disabled={splitPoints.length === 0}
+        >
           {confirmLabel}
         </Button>
       </div>

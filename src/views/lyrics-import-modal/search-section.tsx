@@ -3,7 +3,10 @@ import type { LyricsSearchResult } from "@/domain/lyrics-search/result";
 import { useLyricsSearch } from "@/hooks/useLyricsSearch";
 import { useImportModalStore } from "@/stores/import-modal-store";
 import type { LyricsSearchQuery } from "@/utils/lyrics-search/types";
-import { formatDuration, parseDurationInput } from "@/views/lyrics-import-modal/duration-input-utils";
+import {
+  formatDuration,
+  parseDurationInput,
+} from "@/views/lyrics-import-modal/duration-input-utils";
 import { SearchField } from "@/views/lyrics-import-modal/search-field";
 import { SearchResults } from "@/views/lyrics-import-modal/search-results";
 import {
@@ -15,6 +18,7 @@ import {
   IconUpload,
   IconUser,
 } from "@tabler/icons-react";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -39,7 +43,7 @@ interface InputState {
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   lrclib: "LRCLib",
   binimum: "Binimum",
-  "boidu-lyrics": "Better Lyrics",
+  "boidu-lyrics": "RichLyric",
 };
 
 // -- Helpers ------------------------------------------------------------------
@@ -49,12 +53,18 @@ function buildInitialInputState(prefill: LyricsSearchQuery | null): InputState {
     track: prefill?.track ?? "",
     artist: prefill?.artist ?? "",
     album: prefill?.album ?? "",
-    duration: typeof prefill?.durationSec === "number" ? formatDuration(prefill.durationSec) : "",
+    duration:
+      typeof prefill?.durationSec === "number"
+        ? formatDuration(prefill.durationSec)
+        : "",
     videoId: prefill?.videoId ?? "",
   };
 }
 
-function buildQuery(inputs: InputState, isrc: string | undefined): LyricsSearchQuery {
+function buildQuery(
+  inputs: InputState,
+  isrc: string | undefined,
+): LyricsSearchQuery {
   return {
     track: inputs.track.trim() || undefined,
     artist: inputs.artist.trim() || undefined,
@@ -78,7 +88,9 @@ const SearchSection: React.FC<SearchSectionProps> = ({
   onSwitchToPaste,
   onSwitchToUpload,
 }) => {
-  const [inputs, setInputs] = useState<InputState>(() => buildInitialInputState(initialPrefill));
+  const [inputs, setInputs] = useState<InputState>(() =>
+    buildInitialInputState(initialPrefill),
+  );
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
   const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -87,7 +99,8 @@ const SearchSection: React.FC<SearchSectionProps> = ({
   const isrcRef = useRef(initialPrefill?.isrc);
 
   const query = useMemo(() => buildQuery(inputs, isrcRef.current), [inputs]);
-  const effectiveExpectedDuration = expectedDurationSec ?? parseDurationInput(inputs.duration);
+  const effectiveExpectedDuration =
+    expectedDurationSec ?? parseDurationInput(inputs.duration);
   const { results, isFetching, errors } = useLyricsSearch(query, {
     expectedDurationSec: effectiveExpectedDuration,
   });
@@ -101,12 +114,15 @@ const SearchSection: React.FC<SearchSectionProps> = ({
     }
   }, [inputs.duration]);
 
-  const handleInputChange = useCallback(<K extends keyof InputState>(key: K) => {
-    return (value: string) => {
-      setInputs((prev) => ({ ...prev, [key]: value }));
-      setFocusedIndex(-1);
-    };
-  }, []);
+  const handleInputChange = useCallback(
+    <K extends keyof InputState>(key: K) => {
+      return (value: string) => {
+        setInputs((prev) => ({ ...prev, [key]: value }));
+        setFocusedIndex(-1);
+      };
+    },
+    [],
+  );
 
   const handleClearAll = useCallback(() => {
     setInputs({ track: "", artist: "", album: "", duration: "", videoId: "" });
@@ -116,7 +132,13 @@ const SearchSection: React.FC<SearchSectionProps> = ({
     trackInputRef.current?.focus();
   }, []);
 
-  const hasAnyInput = Boolean(inputs.track || inputs.artist || inputs.album || inputs.duration || inputs.videoId);
+  const hasAnyInput = Boolean(
+    inputs.track ||
+    inputs.artist ||
+    inputs.album ||
+    inputs.duration ||
+    inputs.videoId,
+  );
 
   const handleSelectResult = useCallback(
     (result: LyricsSearchResult) => {
@@ -133,14 +155,18 @@ const SearchSection: React.FC<SearchSectionProps> = ({
         e.preventDefault();
         const next = Math.min(focusedIndex + 1, results.length - 1);
         setFocusedIndex(next);
-        (listboxRef.current?.children[next] as HTMLElement | undefined)?.scrollIntoView({ block: "nearest" });
+        (
+          listboxRef.current?.children[next] as HTMLElement | undefined
+        )?.scrollIntoView({ block: "nearest" });
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         const next = Math.max(focusedIndex - 1, 0);
         setFocusedIndex(next);
-        (listboxRef.current?.children[next] as HTMLElement | undefined)?.scrollIntoView({ block: "nearest" });
+        (
+          listboxRef.current?.children[next] as HTMLElement | undefined
+        )?.scrollIntoView({ block: "nearest" });
         return;
       }
       if (e.key === "Enter") {
@@ -161,11 +187,15 @@ const SearchSection: React.FC<SearchSectionProps> = ({
   );
 
   return (
-    <form className="flex flex-col gap-3" onSubmit={(e) => e.preventDefault()} role="search">
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => e.preventDefault()}
+      role="search"
+    >
       <div className="flex flex-col gap-2">
         <div className="grid grid-cols-[1.4fr_1fr] gap-2">
           <SearchField
-            label="Track"
+            label={t("Track")}
             icon={<IconMicrophone size={14} stroke={1.75} />}
             value={inputs.track}
             placeholder="Bohemian Rhapsody"
@@ -174,7 +204,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({
             inputRef={trackInputRef}
           />
           <SearchField
-            label="Artist"
+            label={t("Artist")}
             icon={<IconUser size={14} stroke={1.75} />}
             value={inputs.artist}
             placeholder="Queen"
@@ -182,7 +212,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({
             onKeyDown={handleKeyDown}
           />
           <SearchField
-            label="Album"
+            label={t("Album")}
             optional
             icon={<IconAlbum size={14} stroke={1.75} />}
             value={inputs.album}
@@ -191,7 +221,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({
             onKeyDown={handleKeyDown}
           />
           <SearchField
-            label="Duration"
+            label={t("Duration")}
             optional
             mono
             icon={<IconClock size={14} stroke={1.75} />}
@@ -202,7 +232,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({
             onKeyDown={handleKeyDown}
           />
           <SearchField
-            label="Video ID"
+            label={t("Video ID")}
             optional
             mono
             fullWidth
@@ -219,19 +249,19 @@ const SearchSection: React.FC<SearchSectionProps> = ({
         <div className="flex items-center justify-between px-1">
           <span className="text-[11px] text-composer-text-muted">
             {isFetching && results.length === 0
-              ? "Searching"
+              ? t("Searching")
               : errors.size > 0 && results.length === 0
-                ? "Search failed"
+                ? t("Search failed")
                 : results.length === 0
-                  ? "No results"
-                  : `${results.length} result${results.length === 1 ? "" : "s"}`}
+                  ? t("No results")
+                  : t("{{count}} results", { count: results.length })}
           </span>
           <button
             type="button"
             onClick={handleClearAll}
             className="text-[11px] text-composer-text-muted hover:text-composer-text cursor-pointer transition-colors"
           >
-            Reset fields
+            {t("Reset fields")}
           </button>
         </div>
       )}
@@ -259,16 +289,24 @@ const SearchSection: React.FC<SearchSectionProps> = ({
           onClick={onSwitchToPaste}
           className="inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-composer-input rounded-xl text-composer-text-secondary text-xs font-medium cursor-pointer hover:bg-composer-button-hover hover:text-composer-text transition-colors"
         >
-          <IconFileText size={14} stroke={1.75} className="text-composer-text opacity-50" />
-          Paste lyrics instead
+          <IconFileText
+            size={14}
+            stroke={1.75}
+            className="text-composer-text opacity-50"
+          />
+          {t("Paste lyrics instead")}
         </button>
         <button
           type="button"
           onClick={onSwitchToUpload}
           className="inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-composer-input rounded-xl text-composer-text-secondary text-xs font-medium cursor-pointer hover:bg-composer-button-hover hover:text-composer-text transition-colors"
         >
-          <IconUpload size={14} stroke={1.75} className="text-composer-text opacity-50" />
-          Upload file
+          <IconUpload
+            size={14}
+            stroke={1.75}
+            className="text-composer-text opacity-50"
+          />
+          {t("Upload file")}
         </button>
       </div>
     </form>

@@ -3,6 +3,7 @@ import { cn } from "@/utils/cn";
 import { formatDuration } from "@/views/lyrics-import-modal/duration-input-utils";
 import { SyncTypeBadge } from "@/views/lyrics-import-modal/sync-type-badge";
 import { IconLoader2 } from "@tabler/icons-react";
+import { t } from "i18next";
 
 // -- Constants ----------------------------------------------------------------
 
@@ -28,8 +29,12 @@ type DurationMatch =
 
 // -- Helpers ------------------------------------------------------------------
 
-function describeDurationMatch(actual: number, expected: number | undefined): DurationMatch {
-  if (expected === undefined || !Number.isFinite(expected)) return { kind: "neutral" };
+function describeDurationMatch(
+  actual: number,
+  expected: number | undefined,
+): DurationMatch {
+  if (expected === undefined || !Number.isFinite(expected))
+    return { kind: "neutral" };
   const delta = Math.round(actual) - Math.round(expected);
   const abs = Math.abs(delta);
   if (abs === 0) return { kind: "exact" };
@@ -38,8 +43,10 @@ function describeDurationMatch(actual: number, expected: number | undefined): Du
 }
 
 function formatDelta(delta: number): string {
-  const sign = delta > 0 ? "+" : "−";
-  return `${sign}${Math.abs(delta)}s`;
+  return t("{{sign}}{{seconds}}s", {
+    sign: delta > 0 ? "+" : "−",
+    seconds: Math.abs(delta),
+  });
 }
 
 function joinArtistAlbum(artist: string, album: string | undefined): string {
@@ -54,12 +61,15 @@ interface DurationDisplayProps {
   actualSec: number;
 }
 
-const DurationDisplay: React.FC<DurationDisplayProps> = ({ match, actualSec }) => {
+const DurationDisplay: React.FC<DurationDisplayProps> = ({
+  match,
+  actualSec,
+}) => {
   const text = formatDuration(actualSec);
   if (match.kind === "exact") {
     return (
       <span
-        title="Matches your duration"
+        title={t("Matches your duration")}
         className="inline-flex items-baseline gap-1 px-1.5 py-0.5 rounded-md bg-composer-accent/22 text-white font-mono text-[11px] font-medium tabular-nums select-text"
       >
         {text}
@@ -69,25 +79,35 @@ const DurationDisplay: React.FC<DurationDisplayProps> = ({ match, actualSec }) =
   if (match.kind === "close") {
     return (
       <span
-        title={`Off by ${Math.abs(match.delta)}s`}
+        title={t("Off by {{seconds}}s", {
+          seconds: Math.abs(match.delta),
+        })}
         className="inline-flex items-baseline gap-1 px-1.5 py-0.5 rounded-md bg-composer-accent/12 text-composer-accent-text font-mono text-[11px] font-medium tabular-nums select-text"
       >
         {text}
-        <span className="text-[9.5px] opacity-85">{formatDelta(match.delta)}</span>
+        <span className="text-[9.5px] opacity-85">
+          {formatDelta(match.delta)}
+        </span>
       </span>
     );
   }
   if (match.kind === "mismatch") {
     return (
       <span
-        title={`Off by ${Math.abs(match.delta)}s`}
+        title={t("Off by {{seconds}}s", {
+          seconds: Math.abs(match.delta),
+        })}
         className="font-mono text-[11px] text-composer-text-muted opacity-60 tabular-nums select-text"
       >
         {text}
       </span>
     );
   }
-  return <span className="font-mono text-[11px] text-composer-text-secondary tabular-nums select-text">{text}</span>;
+  return (
+    <span className="font-mono text-[11px] text-composer-text-secondary tabular-nums select-text">
+      {text}
+    </span>
+  );
 };
 
 // -- Component ----------------------------------------------------------------
@@ -125,7 +145,9 @@ const ResultRow: React.FC<ResultRowProps> = ({
       )}
     >
       <span className="min-w-0 flex flex-col gap-0.5">
-        <span className="truncate text-[13px] font-medium text-composer-text select-text">{result.track}</span>
+        <span className="truncate text-[13px] font-medium text-composer-text select-text">
+          {result.track}
+        </span>
         <span className="truncate text-[11px] text-composer-text-muted select-text">
           {joinArtistAlbum(result.artist, result.album)}
         </span>
@@ -133,9 +155,16 @@ const ResultRow: React.FC<ResultRowProps> = ({
 
       <span className="flex items-center gap-1.5 shrink-0">
         <DurationDisplay match={match} actualSec={result.durationSec} />
-        <SyncTypeBadge syncType={result.syncType} sourceLabel={result.sourceLabel} />
+        <SyncTypeBadge
+          syncType={result.syncType}
+          sourceLabel={result.sourceLabel}
+        />
         {isSelecting ? (
-          <IconLoader2 size={12} className="animate-spin text-composer-accent-text" aria-label="Loading" />
+          <IconLoader2
+            size={12}
+            className="animate-spin text-composer-accent-text"
+            aria-label="Loading"
+          />
         ) : null}
       </span>
     </button>

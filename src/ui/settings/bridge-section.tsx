@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { IconCheck, IconExclamationCircle, IconLoader2 } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconExclamationCircle,
+  IconLoader2,
+} from "@tabler/icons-react";
 import { useSettingsStore } from "@/stores/settings";
 import { useUIStore } from "@/stores/ui";
-import { hasBridgeEverBeenDetected, markBridgeDetected } from "@/utils/bridge-detection";
+import {
+  hasBridgeEverBeenDetected,
+  markBridgeDetected,
+} from "@/utils/bridge-detection";
 import {
   type BridgeHealth,
   checkBridgeHealth,
@@ -12,6 +19,7 @@ import {
 } from "@/utils/composer-bridge-api";
 import { cn } from "@/utils/cn";
 import { BridgeInstallGuide } from "@/ui/settings/bridge-install-guide";
+import { t } from "i18next";
 
 // -- Constants ----------------------------------------------------------------
 
@@ -20,12 +28,15 @@ const HIGHLIGHT_PULSE_MS = 2000;
 
 // -- Sub-components -----------------------------------------------------------
 
-const BridgeToggle: React.FC<{ enabled: boolean; onToggle: () => void }> = ({ enabled, onToggle }) => (
+const BridgeToggle: React.FC<{ enabled: boolean; onToggle: () => void }> = ({
+  enabled,
+  onToggle,
+}) => (
   <button
     type="button"
     role="switch"
     aria-checked={enabled}
-    aria-label="Use Composer Bridge for YouTube"
+    aria-label={t("Use RichLyricEditor Bridge for YouTube")}
     onClick={onToggle}
     className={cn(
       "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors",
@@ -50,25 +61,31 @@ const StatusBadge: React.FC<{
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-composer-text-muted">
         <IconLoader2 size={12} className="animate-spin" />
-        Checking…
+        {t("Checking…")}
       </span>
     );
   }
   if (state === "ok" && data) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-500" title={`yt-dlp ${data.ytdlp}`}>
+      <span
+        className="inline-flex items-center gap-1.5 text-xs text-emerald-500"
+        title={t("yt-dlp {{version}}", { version: data.ytdlp })}
+      >
         <IconCheck size={12} />
-        Running · bridge {data.bridge} · yt-dlp {data.ytdlp}
+        {t("Running · bridge {{bridge}} · yt-dlp {{ytdlp}}", {
+          bridge: data.bridge,
+          ytdlp: data.ytdlp,
+        })}
       </span>
     );
   }
   return (
     <span
       className="inline-flex items-center gap-1.5 text-xs text-rose-500"
-      title={errorMessage ?? "bridge unreachable"}
+      title={errorMessage ?? t("bridge unreachable")}
     >
       <IconExclamationCircle size={12} />
-      Not running
+      {t("Not running")}
     </span>
   );
 };
@@ -77,17 +94,21 @@ const StatusBadge: React.FC<{
 
 const BridgeStoppedHint: React.FC = () => (
   <div className="text-xs text-composer-text-muted leading-relaxed">
-    <p className="mb-1">Bridge isn't responding at this address. Start it with:</p>
-    <code className="block px-2 py-1 rounded bg-composer-bg font-mono text-[11px] select-text">composer-bridge</code>
+    <p className="mb-1">
+      {t("Bridge isn't responding at this address. Start it with:")}
+    </p>
+    <code className="block px-2 py-1 rounded bg-composer-bg font-mono text-[11px] select-text">
+      composer-bridge
+    </code>
     <p className="mt-2">
-      If you don't have it yet, grab a binary from{" "}
+      {t("If you don't have it yet, grab a binary from")}{" "}
       <a
-        href="https://github.com/better-lyrics/composer-bridge/releases"
+        href="https://github.com/izumi-me-1020/RichLyricEditor-bridge/releases"
         target="_blank"
         rel="noopener noreferrer"
         className="text-composer-accent-text hover:text-composer-accent underline"
       >
-        releases
+        {t("releases")}
       </a>
       .
     </p>
@@ -108,7 +129,10 @@ const BridgeSection: React.FC = () => {
   const [pulsing, setPulsing] = useState(false);
   useEffect(() => {
     if (settingsHighlight !== "bridge-section") return;
-    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    containerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
     if (pulseTimerRef.current !== null) clearTimeout(pulseTimerRef.current);
     setPulsing(true);
     pulseTimerRef.current = setTimeout(() => {
@@ -130,7 +154,10 @@ const BridgeSection: React.FC = () => {
 
   const toggleEnabled = () => {
     const current = useSettingsStore.getState().experiments;
-    setSetting("experiments", { ...current, youtubeBridge: !current.youtubeBridge });
+    setSetting("experiments", {
+      ...current,
+      youtubeBridge: !current.youtubeBridge,
+    });
   };
 
   const commitUrl = () => {
@@ -158,8 +185,13 @@ const BridgeSection: React.FC = () => {
   }, [health.data]);
 
   const state: "checking" | "ok" | "error" =
-    health.isFetching && !health.data ? "checking" : health.data ? "ok" : "error";
-  const errorMessage = health.error instanceof Error ? health.error.message : undefined;
+    health.isFetching && !health.data
+      ? "checking"
+      : health.data
+        ? "ok"
+        : "error";
+  const errorMessage =
+    health.error instanceof Error ? health.error.message : undefined;
 
   return (
     <div
@@ -173,19 +205,22 @@ const BridgeSection: React.FC = () => {
       <div className="flex items-start justify-between mb-3">
         <div className="flex flex-col gap-0.5 pr-4">
           <span className="text-sm font-medium text-composer-text">
-            Composer Bridge for YouTube
-            <span className="ml-2 text-[10px] tracking-wide text-composer-accent-text">Experimental</span>
+            {t("RichLyricEditor Bridge for YouTube")}
+            <span className="ml-2 text-[10px] tracking-wide text-composer-accent-text">
+              {t("Experimental")}
+            </span>
           </span>
           <span className="text-xs text-composer-text-muted">
-            Route YouTube imports through a small local binary running on your machine instead of Cobalt. Uses your
-            residential IP, so YouTube doesn't block it. Requires running{" "}
+            {t(
+              "Route YouTube imports through a small local binary running on your machine instead of Cobalt. Uses your residential IP, so YouTube doesn't block it. Requires running",
+            )}{" "}
             <a
-              href="https://github.com/better-lyrics/composer-bridge"
+              href="https://github.com/izumi-me-1020/RichLyricEditor-bridge"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 transition-colors hover:text-composer-text"
             >
-              Composer Bridge
+              RichLyricEditor Bridge
             </a>
             .
           </span>
@@ -196,12 +231,20 @@ const BridgeSection: React.FC = () => {
       {enabled && (
         <div className="flex flex-col gap-2 px-3 py-3 rounded-md bg-composer-input border border-composer-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-composer-text">Bridge status</span>
-            <StatusBadge state={state} data={health.data} errorMessage={errorMessage} />
+            <span className="text-xs font-medium text-composer-text">
+              {t("Bridge status")}
+            </span>
+            <StatusBadge
+              state={state}
+              data={health.data}
+              errorMessage={errorMessage}
+            />
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-composer-text-muted">Bridge URL</span>
+            <span className="text-xs text-composer-text-muted">
+              {t("Bridge URL")}
+            </span>
             <div className="flex items-center gap-2">
               <input
                 type="url"
@@ -223,14 +266,18 @@ const BridgeSection: React.FC = () => {
                   onClick={resetUrl}
                   className="text-xs text-composer-accent-text hover:text-composer-accent cursor-pointer"
                 >
-                  Reset
+                  {t("Reset")}
                 </button>
               )}
             </div>
           </label>
 
           {state === "error" &&
-            (everDetectedAtMount ? <BridgeStoppedHint /> : <BridgeInstallGuide onCheckNow={() => health.refetch()} />)}
+            (everDetectedAtMount ? (
+              <BridgeStoppedHint />
+            ) : (
+              <BridgeInstallGuide onCheckNow={() => health.refetch()} />
+            ))}
         </div>
       )}
     </div>

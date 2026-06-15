@@ -19,11 +19,18 @@ function detectLrcSyncType(content: string): SyncType {
     const line = rawLine.trim();
     if (!line) continue;
 
-    if (LRC_INLINE_WORD_TAG_REGEX.test(line) && LRC_LINE_TIMESTAMP_REGEX.test(line)) {
+    if (
+      LRC_INLINE_WORD_TAG_REGEX.test(line) &&
+      LRC_LINE_TIMESTAMP_REGEX.test(line)
+    ) {
       return "word";
     }
 
-    if (!sawLineTimestamp && LRC_LINE_TIMESTAMP_REGEX.test(line) && !isMetadataLine(line)) {
+    if (
+      !sawLineTimestamp &&
+      LRC_LINE_TIMESTAMP_REGEX.test(line) &&
+      !isMetadataLine(line)
+    ) {
       sawLineTimestamp = true;
     }
   }
@@ -66,7 +73,10 @@ function detectTtmlSyncTypeViaDom(xml: string): SyncType | null {
 
     return sawLineLevel ? "line" : "unsynced";
   } catch (error) {
-    console.warn("[Composer] detectTtmlSyncType DOMParser failed", error);
+    console.warn(
+      "[RichLyricEditor] detectTtmlSyncType DOMParser failed",
+      error,
+    );
     return null;
   }
 }

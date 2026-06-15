@@ -2,23 +2,25 @@ import { useProjectStore } from "@/stores/project";
 import type { SimpleTab } from "@/stores/project";
 import { useSettingsStore } from "@/stores/settings";
 import { InlineKeyBadge } from "@/ui/inline-key-badge";
-
-const TABS: { id: SimpleTab; label: string }[] = [
-  { id: "import", label: "Import" },
-  { id: "edit", label: "Edit" },
-  { id: "sync", label: "Sync" },
-  { id: "timeline", label: "Timeline" },
-  { id: "preview", label: "Preview" },
-  { id: "export", label: "Export" },
-];
+import { t } from "i18next";
 
 const TabBar: React.FC = () => {
   const activeTab = useProjectStore((s) => s.activeTab);
   const setActiveTab = useProjectStore((s) => s.setActiveTab);
   const showHints = useSettingsStore((s) => s.showShortcutHints);
-
+  const TABS: { id: SimpleTab; label: string }[] = [
+    { id: "import", label: t("Import") },
+    { id: "edit", label: t("Edit") },
+    { id: "sync", label: t("Sync") },
+    { id: "timeline", label: t("Timeline") },
+    { id: "preview", label: t("Preview") },
+    { id: "export", label: t("Export") },
+  ];
   return (
-    <nav data-tour="tab-bar" className="flex border-b border-composer-border select-none">
+    <nav
+      data-tour="tab-bar"
+      className="flex border-b border-composer-border select-none"
+    >
       {TABS.map((tab, index) => {
         const isActive = activeTab === tab.id;
         return (

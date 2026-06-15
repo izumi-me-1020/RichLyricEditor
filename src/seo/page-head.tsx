@@ -12,7 +12,13 @@ interface PageHeadProps {
 
 const DEFAULT_OG_IMAGE = "/og-image.png";
 
-const PageHead: React.FC<PageHeadProps> = ({ title, description, path, ogImage, jsonLd }) => {
+const PageHead: React.FC<PageHeadProps> = ({
+  title,
+  description,
+  path,
+  ogImage,
+  jsonLd,
+}) => {
   const canonical = `${SITE_ORIGIN}${path}`;
   const image = `${SITE_ORIGIN}${ogImage ?? DEFAULT_OG_IMAGE}`;
   const structured = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
@@ -31,7 +37,7 @@ const PageHead: React.FC<PageHeadProps> = ({ title, description, path, ogImage, 
         <meta property="og:image" content={image} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="Composer" />
+        <meta property="og:site_name" content="RichLyricEditor" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />

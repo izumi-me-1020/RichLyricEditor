@@ -1,15 +1,28 @@
-import { BUILTIN_COBALT_INSTANCE, DEFAULT_COBALT_INSTANCE_ID, useSettingsStore } from "@/stores/settings";
+import {
+  BUILTIN_COBALT_INSTANCE,
+  DEFAULT_COBALT_INSTANCE_ID,
+  useSettingsStore,
+} from "@/stores/settings";
 import { BridgeSection } from "@/ui/settings/bridge-section";
-import { CobaltInstanceAddForm, CobaltInstanceEditRow } from "@/ui/settings/cobalt-instance-forms";
-import { CobaltDirectoryLink, CobaltInstanceRow } from "@/ui/settings/cobalt-instances";
+import {
+  CobaltInstanceAddForm,
+  CobaltInstanceEditRow,
+} from "@/ui/settings/cobalt-instance-forms";
+import {
+  CobaltDirectoryLink,
+  CobaltInstanceRow,
+} from "@/ui/settings/cobalt-instances";
 import { SelectSetting } from "@/ui/settings/setting-controls";
+import { t } from "i18next";
 import { useState } from "react";
 
 // -- Advanced Section ---------------------------------------------------------
 
 const AdvancedSection: React.FC = () => {
   const cobaltInstances = useSettingsStore((s) => s.cobaltInstances);
-  const selectedCobaltInstanceId = useSettingsStore((s) => s.selectedCobaltInstanceId);
+  const selectedCobaltInstanceId = useSettingsStore(
+    (s) => s.selectedCobaltInstanceId,
+  );
   const cobaltInstanceStatus = useSettingsStore((s) => s.cobaltInstanceStatus);
   const addCobaltInstance = useSettingsStore((s) => s.addCobaltInstance);
   const updateCobaltInstance = useSettingsStore((s) => s.updateCobaltInstance);
@@ -21,11 +34,13 @@ const AdvancedSection: React.FC = () => {
   return (
     <div>
       <SelectSetting
-        label="Preview renderer"
-        description="Which engine renders synced lyrics in the Preview tab."
+        label={t("Preview renderer")}
+        description={t(
+          "Which engine renders synced lyrics in the Preview tab.",
+        )}
         settingKey="previewRenderer"
         options={[
-          { value: "braccato", label: "Braccato (default)" },
+          { value: "braccato", label: t("Braccato (default)") },
           { value: "am-lyrics", label: "am-lyrics" },
         ]}
       />
@@ -34,10 +49,13 @@ const AdvancedSection: React.FC = () => {
 
       <div className="pt-3 mt-3 border-t border-composer-border">
         <div className="flex flex-col gap-0.5 mb-3">
-          <span className="text-sm font-medium text-composer-text">Cobalt instance</span>
+          <span className="text-sm font-medium text-composer-text">
+            {t("Cobalt instance")}
+          </span>
           <span className="text-xs text-composer-text-muted">
-            Composer uses a Cobalt backend to fetch YouTube audio. The default one is currently blocked by YouTube, so
-            add a working instance from cobalt.directory below, or self-host.
+            {t(
+              "RichLyricEditor uses a Cobalt backend to fetch YouTube audio. The default one is currently blocked by YouTube, so add a working instance from cobalt.directory below, or self-host.",
+            )}
           </span>
         </div>
 
@@ -73,7 +91,9 @@ const AdvancedSection: React.FC = () => {
           )}
         </div>
 
-        <CobaltInstanceAddForm onAdd={(label, url) => addCobaltInstance({ label, url })} />
+        <CobaltInstanceAddForm
+          onAdd={(label, url) => addCobaltInstance({ label, url })}
+        />
 
         <CobaltDirectoryLink />
       </div>

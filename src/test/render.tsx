@@ -3,19 +3,34 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import { render as baseRender, type RenderOptions, type RenderResult } from "vitest-browser-react";
+import {
+  render as baseRender,
+  type RenderOptions,
+  type RenderResult,
+} from "vitest-browser-react";
 
-interface ComposerRenderOptions extends RenderOptions {
+interface RichLyricEditorRenderOptions extends RenderOptions {
   dndContext?: boolean;
   withRouter?: boolean | { initialEntries?: string[]; initialIndex?: number };
 }
 
-function buildWrapper(dndContext: boolean, withRouter: ComposerRenderOptions["withRouter"]) {
-  return function ComposerWrapper({ children }: { children: ReactNode }) {
+function buildWrapper(
+  dndContext: boolean,
+  withRouter: RichLyricEditorRenderOptions["withRouter"],
+) {
+  return function RichLyricEditorWrapper({
+    children,
+  }: {
+    children: ReactNode;
+  }) {
     // Fresh QueryClient per render so caches do not bleed between tests.
     const queryClient = new QueryClient({
       defaultOptions: {
-        queries: { retry: false, gcTime: 0, staleTime: Number.POSITIVE_INFINITY },
+        queries: {
+          retry: false,
+          gcTime: 0,
+          staleTime: Number.POSITIVE_INFINITY,
+        },
       },
     });
     let tree: ReactNode = (
@@ -39,7 +54,10 @@ function buildWrapper(dndContext: boolean, withRouter: ComposerRenderOptions["wi
   };
 }
 
-function render(ui: ReactElement, options: ComposerRenderOptions = {}): Promise<RenderResult> {
+function render(
+  ui: ReactElement,
+  options: RichLyricEditorRenderOptions = {},
+): Promise<RenderResult> {
   const { dndContext = false, withRouter = false, ...rest } = options;
   return baseRender(ui, {
     ...rest,

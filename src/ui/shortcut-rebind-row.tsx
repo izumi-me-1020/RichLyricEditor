@@ -5,6 +5,7 @@ import { KeyBadge } from "@/ui/shortcut-reference";
 import { Modal } from "@/ui/modal";
 import { isMac } from "@/utils/platform";
 import { detectConflicts, isReservedBrowserShortcut } from "@/utils/shortcut-matcher";
+import { t } from "i18next";
 import { useCallback, useEffect, useState } from "react";
 
 // -- Types --------------------------------------------------------------------
@@ -118,7 +119,7 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
               onClick={() => resetBinding(definition.id)}
               className="text-xs text-composer-text-muted hover:text-composer-text cursor-pointer transition-colors"
             >
-              Reset
+              {t("Reset")}
             </button>
           )}
           <button
@@ -127,7 +128,7 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
             className="flex items-center gap-1 cursor-pointer rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-composer-button/50"
           >
             {keys.length === 0 ? (
-              <span className="text-xs text-composer-text-muted italic">Unbound</span>
+              <span className="text-xs text-composer-text-muted italic">{t("Unbound")}</span>
             ) : (
               keys.map((key) => <KeyBadge key={key} keyName={key} />)
             )}
@@ -135,10 +136,10 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
         </div>
       </div>
 
-      <Modal isOpen={captureState.status === "listening"} onClose={cancelCapture} title="Rebind shortcut">
+      <Modal isOpen={captureState.status === "listening"} onClose={cancelCapture} title={t("Rebind shortcut")}>
         <div className="text-center py-4">
-          <p className="text-sm text-composer-text-secondary mb-1">Press a new key combination</p>
-          <p className="text-xs text-composer-text-muted">Press Escape to cancel</p>
+          <p className="text-sm text-composer-text-secondary mb-1">{t("Press a new key combination")}</p>
+          <p className="text-xs text-composer-text-muted">{t("Press Escape to cancel")}</p>
         </div>
       </Modal>
 
@@ -179,7 +180,7 @@ const BrowserWarningModal: React.FC<{
   bindingKeys.push(displayKey);
 
   return (
-    <Modal isOpen onClose={onCancel} title="Browser shortcut">
+    <Modal isOpen onClose={onCancel} title={t("Browser shortcut")}>
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-composer-text">
           <span className="inline-flex items-center gap-1">
@@ -187,18 +188,19 @@ const BrowserWarningModal: React.FC<{
               <KeyBadge key={key} keyName={key} />
             ))}
           </span>
-          <span className="text-composer-text-secondary">may be reserved by the browser.</span>
+          <span className="text-composer-text-secondary">{t("may be reserved by the browser.")}</span>
         </div>
         <p className="text-xs text-composer-text-muted">
-          This combination might be handled by your browser before it reaches the app. You can still assign it, but it
-          may not work in all browsers.
+          {t(
+            "This combination might be handled by your browser before it reaches the app. You can still assign it, but it may not work in all browsers.",
+          )}
         </p>
         <div className="flex gap-2 justify-end">
           <Button variant="secondary" size="sm" onClick={onCancel}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={onContinue}>
-            Assign anyway
+            {t("Assign anyway")}
           </Button>
         </div>
       </div>
@@ -209,9 +211,9 @@ const BrowserWarningModal: React.FC<{
 // -- Conflict Modal -----------------------------------------------------------
 
 const SCOPE_LABELS: Record<string, string> = {
-  global: "General",
-  sync: "Sync Mode",
-  timeline: "Timeline Mode",
+  global: t("General"),
+  sync: t("Sync Mode"),
+  timeline: t("Timeline Mode"),
 };
 
 const ConflictModal: React.FC<{
@@ -230,7 +232,7 @@ const ConflictModal: React.FC<{
   bindingKeys.push(displayKey);
 
   return (
-    <Modal isOpen onClose={onCancel} title="Shortcut conflict">
+    <Modal isOpen onClose={onCancel} title={t("Shortcut conflict")}>
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-composer-text">
           <span className="inline-flex items-center gap-1">
@@ -238,7 +240,7 @@ const ConflictModal: React.FC<{
               <KeyBadge key={key} keyName={key} />
             ))}
           </span>
-          <span className="text-composer-text-secondary">is already used by:</span>
+          <span className="text-composer-text-secondary">{t("is already used by:")}</span>
         </div>
 
         <div className="rounded-lg bg-composer-bg-elevated border border-composer-border divide-y divide-composer-border">
@@ -251,15 +253,15 @@ const ConflictModal: React.FC<{
         </div>
 
         <p className="text-xs text-composer-text-muted">
-          Replacing will reset the conflicting shortcut to its default.
+          {t("Replacing will reset the conflicting shortcut to its default.")}
         </p>
 
         <div className="flex gap-2 justify-end">
           <Button variant="secondary" size="sm" onClick={onCancel}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button variant="primary" size="sm" onClick={onReplace}>
-            Replace
+            {t("Replace")}
           </Button>
         </div>
       </div>

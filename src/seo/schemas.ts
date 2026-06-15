@@ -1,6 +1,6 @@
 const SITE_ORIGIN = "https://composer.boidu.dev";
-const SITE_NAME = "Composer";
-const ORG_NAME = "Better Lyrics";
+const SITE_NAME = "RichLyricEditor";
+const ORG_NAME = "RichLyric";
 const ORG_URL = "https://better-lyrics.boidu.dev";
 
 interface FaqEntry {
@@ -24,11 +24,19 @@ function organizationSchema() {
     "@type": "Organization",
     name: ORG_NAME,
     url: ORG_URL,
-    sameAs: [SITE_ORIGIN, "https://better-lyrics-docs.boidu.dev", "https://blog.boidu.dev"],
+    sameAs: [
+      SITE_ORIGIN,
+      "https://better-lyrics-docs.boidu.dev",
+      "https://blog.boidu.dev",
+    ],
   };
 }
 
-function softwareApplicationSchema(name: string, description: string, url: string) {
+function softwareApplicationSchema(
+  name: string,
+  description: string,
+  url: string,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -37,7 +45,8 @@ function softwareApplicationSchema(name: string, description: string, url: strin
     description,
     applicationCategory: "MultimediaApplication",
     operatingSystem: "Any",
-    browserRequirements: "Requires a modern web browser with JavaScript enabled",
+    browserRequirements:
+      "Requires a modern web browser with JavaScript enabled",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     publisher: { "@type": "Organization", name: ORG_NAME, url: ORG_URL },
   };
@@ -70,7 +79,12 @@ function howToSchema(name: string, description: string, steps: HowToStep[]) {
   };
 }
 
-function articleSchema(title: string, description: string, url: string, datePublished: string) {
+function articleSchema(
+  title: string,
+  description: string,
+  url: string,
+  datePublished: string,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "Article",

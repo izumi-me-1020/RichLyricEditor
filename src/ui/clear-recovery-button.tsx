@@ -1,6 +1,7 @@
 import { clearRecoveryStorage } from "@/lib/recovery";
 import { Button } from "@/ui/button";
 import { IconTrash } from "@tabler/icons-react";
+import { t } from "i18next";
 import { useState } from "react";
 
 // -- Constants ----------------------------------------------------------------
@@ -20,7 +21,7 @@ interface ClearRecoveryButtonProps {
 
 const ClearRecoveryButton: React.FC<ClearRecoveryButtonProps> = ({
   hint,
-  clearedMessage = "Cleared. Reload Composer to start fresh.",
+  clearedMessage = t("Cleared. Reload RichLyricEditor to start fresh."),
 }) => {
   const [status, setStatus] = useState<ClearStatus>("idle");
 
@@ -41,20 +42,22 @@ const ClearRecoveryButton: React.FC<ClearRecoveryButtonProps> = ({
 
   const label =
     status === "confirm"
-      ? "Confirm clear"
+      ? t("Confirm clear")
       : status === "clearing"
-        ? "Clearing…"
+        ? t("Clearing…")
         : status === "cleared"
-          ? "Cleared"
-          : "Clear saved data";
+          ? t("Cleared")
+          : t("Clear saved data");
 
   const message =
     status === "confirm"
-      ? "This wipes your autosave from this browser. Click again to confirm."
+      ? t("This wipes your autosave from this browser. Click again to confirm.")
       : status === "cleared"
         ? clearedMessage
         : status === "failed"
-          ? "Couldn't clear the save. Try again or open Composer's Export tab and use Clear."
+          ? t(
+              "Couldn't clear the save. Try again or open RichLyricEditor's Export tab and use Clear.",
+            )
           : null;
 
   return (
@@ -69,8 +72,16 @@ const ClearRecoveryButton: React.FC<ClearRecoveryButtonProps> = ({
         <IconTrash size={14} />
         {label}
       </Button>
-      {hint && status === "idle" && <p className="text-xs text-composer-text-muted text-center max-w-sm">{hint}</p>}
-      {message && <p className="text-xs text-composer-text-muted select-text text-center max-w-sm">{message}</p>}
+      {hint && status === "idle" && (
+        <p className="text-xs text-composer-text-muted text-center max-w-sm">
+          {hint}
+        </p>
+      )}
+      {message && (
+        <p className="text-xs text-composer-text-muted select-text text-center max-w-sm">
+          {message}
+        </p>
+      )}
     </div>
   );
 };

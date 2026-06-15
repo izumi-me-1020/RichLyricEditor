@@ -13,15 +13,21 @@ import {
 
 describe("normalizeBaseUrl", () => {
   it("preserves an already-clean URL", () => {
-    expect(normalizeBaseUrl("http://localhost:7777")).toBe("http://localhost:7777");
+    expect(normalizeBaseUrl("http://localhost:7777")).toBe(
+      "http://localhost:7777",
+    );
   });
 
   it("strips a single trailing slash", () => {
-    expect(normalizeBaseUrl("http://localhost:7777/")).toBe("http://localhost:7777");
+    expect(normalizeBaseUrl("http://localhost:7777/")).toBe(
+      "http://localhost:7777",
+    );
   });
 
   it("strips repeated trailing slashes", () => {
-    expect(normalizeBaseUrl("http://localhost:7777////")).toBe("http://localhost:7777");
+    expect(normalizeBaseUrl("http://localhost:7777////")).toBe(
+      "http://localhost:7777",
+    );
   });
 
   it("leaves an empty string empty", () => {
@@ -29,7 +35,9 @@ describe("normalizeBaseUrl", () => {
   });
 
   it("does not touch internal slashes", () => {
-    expect(normalizeBaseUrl("http://example.com/path/to/")).toBe("http://example.com/path/to");
+    expect(normalizeBaseUrl("http://example.com/path/to/")).toBe(
+      "http://example.com/path/to",
+    );
   });
 });
 
@@ -51,7 +59,9 @@ describe("decodeHeader", () => {
   it("decodes percent-encoded UTF-8 (the fullwidth comma the bridge had to escape)", () => {
     // 0xEF 0xBC 0x8C is the fullwidth comma. Regression: this was the actual
     // mojibake the user hit ("Tylerï¼Œ..." in the original Latin-1 read).
-    expect(decodeHeader("Tyler%EF%BC%8C%20The%20Creator")).toBe("Tyler， The Creator");
+    expect(decodeHeader("Tyler%EF%BC%8C%20The%20Creator")).toBe(
+      "Tyler， The Creator",
+    );
   });
 
   it("returns the raw string when decoding throws (malformed percent sequence)", () => {
@@ -210,7 +220,8 @@ describe("composeAbortSignals", () => {
     });
 
     afterEach(() => {
-      (AbortSignal as unknown as { any: typeof AbortSignal.any }).any = originalAny;
+      (AbortSignal as unknown as { any: typeof AbortSignal.any }).any =
+        originalAny;
     });
 
     it("aborts when the caller signal aborts (regression for the dropped-caller-signal bug)", () => {
@@ -304,12 +315,16 @@ describe("BridgeError", () => {
 
 describe("formatBridgeErrorForToast", () => {
   it("returns a start-the-bridge message for 'unreachable'", () => {
-    const msg = formatBridgeErrorForToast(new BridgeError("unreachable", "ECONNREFUSED"));
-    expect(msg).toMatch(/Composer Bridge is not running/);
+    const msg = formatBridgeErrorForToast(
+      new BridgeError("unreachable", "ECONNREFUSED"),
+    );
+    expect(msg).toMatch(/RichLyricEditor Bridge is not running/);
   });
 
   it("returns a timeout message for 'timeout'", () => {
-    const msg = formatBridgeErrorForToast(new BridgeError("timeout", "deadline exceeded"));
+    const msg = formatBridgeErrorForToast(
+      new BridgeError("timeout", "deadline exceeded"),
+    );
     expect(msg).toMatch(/timed out/);
   });
 
@@ -319,12 +334,16 @@ describe("formatBridgeErrorForToast", () => {
   });
 
   it("includes the HTTP status for 'http' errors", () => {
-    const msg = formatBridgeErrorForToast(new BridgeError("http", "bad gateway", 502));
+    const msg = formatBridgeErrorForToast(
+      new BridgeError("http", "bad gateway", 502),
+    );
     expect(msg).toMatch(/502/);
   });
 
   it("returns 'unknown' for non-BridgeError exceptions", () => {
-    expect(formatBridgeErrorForToast(new Error("boom"))).toMatch(/unknown reason/);
+    expect(formatBridgeErrorForToast(new Error("boom"))).toMatch(
+      /unknown reason/,
+    );
     expect(formatBridgeErrorForToast("string error")).toMatch(/unknown reason/);
     expect(formatBridgeErrorForToast(null)).toMatch(/unknown reason/);
   });

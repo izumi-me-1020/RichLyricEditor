@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/project";
 
-const BRAND = "Composer";
+const BRAND = "RichLyricEditor";
 const SEPARATOR = "・";
 
 function useDocumentTitle(): void {
@@ -13,7 +13,9 @@ function useDocumentTitle(): void {
       baseTitleRef.current = document.title;
     }
     const trimmed = songTitle.trim();
-    document.title = trimmed ? `${BRAND} ${SEPARATOR} ${trimmed}` : baseTitleRef.current;
+    document.title = trimmed
+      ? `${BRAND} ${SEPARATOR} ${trimmed}`
+      : baseTitleRef.current;
   }, [songTitle]);
 
   useEffect(() => {

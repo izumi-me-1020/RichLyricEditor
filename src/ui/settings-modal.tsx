@@ -19,6 +19,7 @@ import {
   IconPlugConnected,
   IconSettings,
 } from "@tabler/icons-react";
+import { t } from "i18next";
 import { useEffect, useState } from "react";
 
 // -- Types --------------------------------------------------------------------
@@ -28,19 +29,6 @@ interface SettingsModalProps {
   onClose: () => void;
   onResetTour: () => void;
 }
-
-// -- Sections -----------------------------------------------------------------
-
-const SECTIONS: ModalNavSection[] = [
-  { id: "general", label: "General", icon: IconSettings },
-  { id: "playback", label: "Playback", icon: IconPlayerPlay },
-  { id: "timeline", label: "Timeline", icon: IconLayoutRows },
-  { id: "sync", label: "Sync & Timing", icon: IconClock },
-  { id: "shortcuts", label: "Shortcuts", icon: IconKeyboard },
-  { id: "confirmations", label: "Confirmations", icon: IconAlertTriangle },
-  { id: "storage", label: "Save & Storage", icon: IconDeviceFloppy },
-  { id: "advanced", label: "Advanced", icon: IconPlugConnected },
-];
 
 // -- Section Map --------------------------------------------------------------
 
@@ -68,12 +56,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetT
   }, [isOpen, settingsHighlight]);
 
   const Content = SECTION_CONTENT[activeSection];
+  // -- Sections -----------------------------------------------------------------
 
+  const SECTIONS: ModalNavSection[] = [
+    { id: "general", label: t("General"), icon: IconSettings },
+    { id: "playback", label: t("Playback"), icon: IconPlayerPlay },
+    { id: "timeline", label: t("Timeline"), icon: IconLayoutRows },
+    { id: "sync", label: t("Sync & Timing"), icon: IconClock },
+    { id: "shortcuts", label: t("Shortcuts"), icon: IconKeyboard },
+    { id: "confirmations", label: t("Confirmations"), icon: IconAlertTriangle },
+    { id: "storage", label: t("Save & Storage"), icon: IconDeviceFloppy },
+    { id: "advanced", label: t("Advanced"), icon: IconPlugConnected },
+  ];
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Settings"
+      title={t("Settings")}
       className="max-w-3xl h-[70%] flex flex-col"
       bodyClassName="p-0 flex-1 min-h-0 flex flex-col"
     >
@@ -87,7 +86,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetT
       </ModalNavLayout>
 
       <div className="px-5 py-3 border-t border-composer-border text-xs text-composer-text-muted text-center shrink-0 select-none">
-        Settings are saved automatically
+        {t("Settings are saved automatically")}
       </div>
     </Modal>
   );

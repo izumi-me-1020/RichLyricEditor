@@ -4,14 +4,15 @@ import { type ShortcutScope, getShortcutsByScope } from "@/stores/shortcut-regis
 import { Button } from "@/ui/button";
 import { ShortcutRebindRow } from "@/ui/shortcut-rebind-row";
 import { IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
+import { t } from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // -- Constants ----------------------------------------------------------------
 
 const SCOPE_GROUPS: { scope: ShortcutScope; title: string }[] = [
-  { scope: "global", title: "General" },
-  { scope: "sync", title: "Sync Mode" },
-  { scope: "timeline", title: "Timeline Mode" },
+  { scope: "global", title: t("General") },
+  { scope: "sync", title: t("Sync Mode") },
+  { scope: "timeline", title: t("Timeline Mode") },
 ];
 
 // -- Component ----------------------------------------------------------------
@@ -59,9 +60,9 @@ const ShortcutsSettingsSection: React.FC = () => {
 
   const handleResetShortcuts = async () => {
     const ok = await confirm({
-      title: "Reset all shortcuts?",
-      description: "Clear every custom keyboard binding and restore the defaults.",
-      confirmLabel: "Reset",
+      title: t("Reset all shortcuts?"),
+      description: t("Clear every custom keyboard binding and restore the defaults."),
+      confirmLabel: t("Reset"),
       variant: "destructive",
       settingsKey: "confirmResetShortcuts",
     });
@@ -93,20 +94,20 @@ const ShortcutsSettingsSection: React.FC = () => {
         <input
           ref={inputRef}
           type="text"
-          aria-label="Search shortcuts"
+          aria-label={t("Search shortcuts")}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             scrollPanelToTop();
           }}
-          placeholder="Search shortcuts"
+          placeholder={t("Search shortcuts")}
           className="w-full h-7 pl-7 pr-7 text-xs rounded-md bg-composer-input border border-composer-border focus:outline-none focus:border-composer-accent text-composer-text placeholder:text-composer-text-muted"
         />
         {query.length > 0 && (
           <button
             type="button"
             onClick={() => setQuery("")}
-            aria-label="Clear search"
+            aria-label={t("Clear search")}
             className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded text-composer-text opacity-50 hover:opacity-100 hover:bg-composer-button cursor-pointer transition-opacity"
           >
             <IconX size={11} />
@@ -115,7 +116,9 @@ const ShortcutsSettingsSection: React.FC = () => {
       </div>
 
       {filteredScopes.length === 0 ? (
-        <p className="text-sm text-composer-text-muted text-center py-6">No shortcuts match "{query}".</p>
+        <p className="text-sm text-composer-text-muted text-center py-6">
+          {t('No shortcuts match "{{query}}".', { query })}
+        </p>
       ) : (
         filteredScopes.map(({ scope, title, shortcuts }) => (
           <div key={scope}>
@@ -131,12 +134,14 @@ const ShortcutsSettingsSection: React.FC = () => {
 
       <div className="flex items-center justify-between pt-2 border-t border-composer-border">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-composer-text">Reset all shortcuts</span>
-          <span className="text-xs text-composer-text-muted">Restore all keyboard shortcuts to their defaults.</span>
+          <span className="text-sm font-medium text-composer-text">{t("Reset all shortcuts")}</span>
+          <span className="text-xs text-composer-text-muted">
+            {t("Restore all keyboard shortcuts to their defaults.")}
+          </span>
         </div>
         <Button size="sm" variant="secondary" hasIcon onClick={handleResetShortcuts} disabled={!hasOverrides}>
           <IconRefresh size={14} />
-          Reset all
+          {t("Reset all")}
         </Button>
       </div>
     </div>

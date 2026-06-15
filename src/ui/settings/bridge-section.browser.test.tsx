@@ -33,7 +33,9 @@ describe("BridgeSection", () => {
   it("only renders the URL input once the bridge toggle is enabled", async () => {
     useSettingsStore.setState({ experiments: { youtubeBridge: false } });
     const screen = await render(withQueryClient(<BridgeSection />));
-    await expect.element(screen.getByRole("switch", { name: /Composer Bridge/ })).toBeInTheDocument();
+    await expect
+      .element(screen.getByRole("switch", { name: /RichLyricEditor Bridge/ }))
+      .toBeInTheDocument();
     expect(screen.container.querySelector('input[type="url"]')).toBeNull();
   });
 
@@ -54,14 +56,20 @@ describe("BridgeSection", () => {
       composerBridgeUrl: DEFAULT_BRIDGE_URL,
     });
     const screen = await render(withQueryClient(<BridgeSection />));
-    const input = screen.container.querySelector('input[type="url"]') as HTMLInputElement;
+    const input = screen.container.querySelector(
+      'input[type="url"]',
+    ) as HTMLInputElement;
 
     await userEvent.click(input);
     await userEvent.fill(input, "http://localhost:9999");
-    expect(useSettingsStore.getState().composerBridgeUrl).toBe(DEFAULT_BRIDGE_URL);
+    expect(useSettingsStore.getState().composerBridgeUrl).toBe(
+      DEFAULT_BRIDGE_URL,
+    );
 
     await userEvent.tab();
-    await expect.poll(() => useSettingsStore.getState().composerBridgeUrl).toBe("http://localhost:9999");
+    await expect
+      .poll(() => useSettingsStore.getState().composerBridgeUrl)
+      .toBe("http://localhost:9999");
   });
 
   it("commits the URL on Enter via the input's blur path", async () => {
@@ -70,13 +78,17 @@ describe("BridgeSection", () => {
       composerBridgeUrl: DEFAULT_BRIDGE_URL,
     });
     const screen = await render(withQueryClient(<BridgeSection />));
-    const input = screen.container.querySelector('input[type="url"]') as HTMLInputElement;
+    const input = screen.container.querySelector(
+      'input[type="url"]',
+    ) as HTMLInputElement;
 
     await userEvent.click(input);
     await userEvent.fill(input, "http://localhost:8000");
     await userEvent.keyboard("{Enter}");
 
-    await expect.poll(() => useSettingsStore.getState().composerBridgeUrl).toBe("http://localhost:8000");
+    await expect
+      .poll(() => useSettingsStore.getState().composerBridgeUrl)
+      .toBe("http://localhost:8000");
   });
 
   it("hides the reset button while the persisted URL matches the default", async () => {
@@ -85,7 +97,9 @@ describe("BridgeSection", () => {
       composerBridgeUrl: DEFAULT_BRIDGE_URL,
     });
     const screen = await render(withQueryClient(<BridgeSection />));
-    expect(screen.container.querySelector('button[type="button"]:not([role])')).toBeNull();
+    expect(
+      screen.container.querySelector('button[type="button"]:not([role])'),
+    ).toBeNull();
   });
 
   it("shows the reset button when persisted URL differs and reverts to default on click", async () => {
@@ -97,7 +111,9 @@ describe("BridgeSection", () => {
     const reset = screen.getByRole("button", { name: /Reset/ });
     await expect.element(reset).toBeInTheDocument();
     await reset.click();
-    await expect.poll(() => useSettingsStore.getState().composerBridgeUrl).toBe(DEFAULT_BRIDGE_URL);
+    await expect
+      .poll(() => useSettingsStore.getState().composerBridgeUrl)
+      .toBe(DEFAULT_BRIDGE_URL);
   });
 
   describe("highlight pulse", () => {
@@ -107,13 +123,17 @@ describe("BridgeSection", () => {
       const container = screen.getByTestId("bridge-section");
       await expect.element(container).toHaveClass("ring-2");
       await expect.element(container).toHaveClass("ring-composer-accent");
-      await expect.poll(() => container.element().className, { timeout: 4000 }).not.toContain("ring-2");
+      await expect
+        .poll(() => container.element().className, { timeout: 4000 })
+        .not.toContain("ring-2");
     });
 
     it("consumes the highlight by clearing the UI store flag so a stale signal cannot re-fire", async () => {
       await render(withQueryClient(<BridgeSection />));
       useUIStore.getState().openSettings("bridge-section");
-      await expect.poll(() => useUIStore.getState().settingsHighlight).toBeNull();
+      await expect
+        .poll(() => useUIStore.getState().settingsHighlight)
+        .toBeNull();
     });
 
     it("does not pulse on initial mount when settingsHighlight is null", async () => {
@@ -128,7 +148,9 @@ describe("BridgeSection", () => {
       useUIStore.getState().openSettings("bridge-section");
       const container = screen.getByTestId("bridge-section");
       await expect.element(container).toHaveClass("ring-2");
-      await expect.poll(() => container.element().className, { timeout: 4000 }).not.toContain("ring-2");
+      await expect
+        .poll(() => container.element().className, { timeout: 4000 })
+        .not.toContain("ring-2");
 
       useUIStore.getState().openSettings("bridge-section");
       await expect.element(container).toHaveClass("ring-2");

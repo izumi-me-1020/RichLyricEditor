@@ -5,7 +5,9 @@ const LandingFooter: React.FC = () => {
     <footer className="border-t border-composer-border px-6 py-12 mt-10">
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div>
-          <h3 className="font-semibold text-composer-text mb-3">Composer</h3>
+          <h3 className="font-semibold text-composer-text mb-3">
+            RichLyricEditor
+          </h3>
           <ul className="space-y-2 text-composer-text-secondary">
             <li>
               <Link to="/" className="hover:text-composer-text">
@@ -48,12 +50,18 @@ const LandingFooter: React.FC = () => {
           <h3 className="font-semibold text-composer-text mb-3">Platforms</h3>
           <ul className="space-y-2 text-composer-text-secondary">
             <li>
-              <Link to="/apple-music-synced-lyrics" className="hover:text-composer-text">
+              <Link
+                to="/apple-music-synced-lyrics"
+                className="hover:text-composer-text"
+              >
                 Apple Music lyrics
               </Link>
             </li>
             <li>
-              <Link to="/spotify-synced-lyrics" className="hover:text-composer-text">
+              <Link
+                to="/spotify-synced-lyrics"
+                className="hover:text-composer-text"
+              >
                 Spotify lyrics
               </Link>
             </li>
@@ -74,14 +82,14 @@ const LandingFooter: React.FC = () => {
                 rel="noopener noreferrer"
                 className="hover:text-composer-text"
               >
-                Better Lyrics extension
+                RichLyric extension
               </a>
             </li>
           </ul>
         </div>
       </div>
       <div className="max-w-6xl mx-auto mt-10 pt-6 border-t border-composer-border text-xs text-composer-text-muted flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <p>Composer by Better Lyrics ・ Free to use</p>
+        <p>RichLyricEditor by RichLyric ・ Free to use</p>
         <p>Open source ・ No tracking ・ No signup</p>
       </div>
     </footer>

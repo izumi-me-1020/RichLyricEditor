@@ -17,7 +17,7 @@ import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 // -- Constants -----------------------------------------------------------------
 
-const LOG_PREFIX = "[Composer]";
+const LOG_PREFIX = "[RichLyricEditor]";
 
 const ERROR_ICONS = [IconDiscOff, IconGhost2, IconBug] as const;
 
@@ -46,7 +46,9 @@ function describeError(error: unknown): ErrorDetails {
     const is404 = error.status === 404;
     return {
       title: is404 ? "404" : `${error.status}`,
-      subtitle: is404 ? "We couldn't find that page." : error.statusText || "The route returned an error response.",
+      subtitle: is404
+        ? "We couldn't find that page."
+        : error.statusText || "The route returned an error response.",
       status: error.status,
       statusText: error.statusText,
       responseData: error.data,
@@ -64,7 +66,8 @@ function describeError(error: unknown): ErrorDetails {
 
   return {
     title: "Something broke",
-    subtitle: typeof error === "string" ? error : "The view threw a non-Error value.",
+    subtitle:
+      typeof error === "string" ? error : "The view threw a non-Error value.",
     stack: safeStringify(error),
   };
 }
@@ -82,9 +85,14 @@ function safeStringify(value: unknown): string {
 const ErrorFallback: React.FC = () => {
   const error = useRouteError();
   const details = describeError(error);
-  const Icon = useMemo(() => ERROR_ICONS[Math.floor(Math.random() * ERROR_ICONS.length)], []);
+  const Icon = useMemo(
+    () => ERROR_ICONS[Math.floor(Math.random() * ERROR_ICONS.length)],
+    [],
+  );
   const [showDetails, setShowDetails] = useState(false);
-  const [recoveryStatus, setRecoveryStatus] = useState<"idle" | "downloading" | "success" | "empty" | "failed">("idle");
+  const [recoveryStatus, setRecoveryStatus] = useState<
+    "idle" | "downloading" | "success" | "empty" | "failed"
+  >("idle");
 
   console.error(LOG_PREFIX, "route error", error);
 
@@ -109,7 +117,7 @@ const ErrorFallback: React.FC = () => {
 
   const recoveryMessage =
     recoveryStatus === "success"
-      ? "Saved. Open Composer, head to the Export tab, and click Import Project to keep going."
+      ? "Saved. Open RichLyricEditor, head to the Export tab, and click Import Project to keep going."
       : recoveryStatus === "empty"
         ? "Nothing saved in this browser yet."
         : recoveryStatus === "failed"
@@ -117,18 +125,28 @@ const ErrorFallback: React.FC = () => {
           : null;
 
   const responseDataString =
-    details.responseData !== undefined && details.responseData !== null ? safeStringify(details.responseData) : null;
+    details.responseData !== undefined && details.responseData !== null
+      ? safeStringify(details.responseData)
+      : null;
   const hasDetails = !!(details.stack || responseDataString);
 
   return (
     <div className="min-h-screen bg-composer-bg text-composer-text flex items-center justify-center p-6 select-none">
       <div className="w-full max-w-lg flex flex-col items-center text-center gap-5">
-        <Icon size={56} strokeWidth={1.5} className="text-composer-text opacity-50" />
+        <Icon
+          size={56}
+          strokeWidth={1.5}
+          className="text-composer-text opacity-50"
+        />
 
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold text-composer-text">{details.title}</h1>
+          <h1 className="text-2xl font-semibold text-composer-text">
+            {details.title}
+          </h1>
           {details.errorName && details.errorName !== "Error" && (
-            <p className="text-xs font-mono text-composer-text-muted select-text">{details.errorName}</p>
+            <p className="text-xs font-mono text-composer-text-muted select-text">
+              {details.errorName}
+            </p>
           )}
           <p className="text-sm text-composer-text-secondary leading-relaxed select-text break-words">
             {details.subtitle}
@@ -144,14 +162,25 @@ const ErrorFallback: React.FC = () => {
             <IconHome2 size={16} />
             Go home
           </Button>
-          <Button variant="secondary" hasIcon onClick={handleRecover} disabled={recoveryStatus === "downloading"}>
+          <Button
+            variant="secondary"
+            hasIcon
+            onClick={handleRecover}
+            disabled={recoveryStatus === "downloading"}
+          >
             <IconDownload size={16} />
-            {recoveryStatus === "downloading" ? "Downloading…" : "Download my work"}
+            {recoveryStatus === "downloading"
+              ? "Downloading…"
+              : "Download my work"}
           </Button>
         </div>
-        {recoveryMessage && <p className="text-xs text-composer-text-muted select-text">{recoveryMessage}</p>}
+        {recoveryMessage && (
+          <p className="text-xs text-composer-text-muted select-text">
+            {recoveryMessage}
+          </p>
+        )}
         {recoveryStatus === "success" && (
-          <ClearRecoveryButton clearedMessage="Cleared. Reload Composer to start fresh." />
+          <ClearRecoveryButton clearedMessage="Cleared. Reload RichLyricEditor to start fresh." />
         )}
 
         {hasDetails && (
@@ -162,7 +191,11 @@ const ErrorFallback: React.FC = () => {
               className="inline-flex items-center gap-1 text-xs text-composer-text-muted hover:text-composer-text transition-colors cursor-pointer"
               aria-expanded={showDetails}
             >
-              {showDetails ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+              {showDetails ? (
+                <IconChevronDown size={14} />
+              ) : (
+                <IconChevronRight size={14} />
+              )}
               Technical details
             </button>
             {showDetails && (

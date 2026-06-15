@@ -1,9 +1,12 @@
 import { create } from "zustand";
-import { type LinkedDivergenceAction, useSettingsStore } from "@/stores/settings";
+import {
+  type LinkedDivergenceAction,
+  useSettingsStore,
+} from "@/stores/settings";
 
 // -- Constants ----------------------------------------------------------------
 
-const LOG_PREFIX = "[Composer]";
+const LOG_PREFIX = "[RichLyricEditor]";
 
 // -- Types --------------------------------------------------------------------
 
@@ -19,7 +22,10 @@ interface DivergenceStore {
   options: DivergenceOptions | null;
   resolve: ((value: DivergenceResolution) => void) | null;
   open: (options: DivergenceOptions) => Promise<DivergenceResolution>;
-  resolveAndClose: (value: DivergenceResolution, dontAskAgainAs: LinkedDivergenceAction | null) => void;
+  resolveAndClose: (
+    value: DivergenceResolution,
+    dontAskAgainAs: LinkedDivergenceAction | null,
+  ) => void;
 }
 
 // -- Store --------------------------------------------------------------------
@@ -35,7 +41,9 @@ const useDivergenceStore = create<DivergenceStore>((set, get) => ({
       return Promise.resolve(pref);
     }
     if (get().isOpen) {
-      console.warn(`${LOG_PREFIX} divergence modal already open; cancelling the second call`);
+      console.warn(
+        `${LOG_PREFIX} divergence modal already open; cancelling the second call`,
+      );
       return Promise.resolve("cancel");
     }
     return new Promise<DivergenceResolution>((resolve) => {

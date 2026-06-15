@@ -4,8 +4,15 @@ import { useBridgeThumb } from "@/hooks/useBridgeThumb";
 import { useAudioStore } from "@/stores/audio";
 import { useProjectStore } from "@/stores/project";
 import { useSettingsStore } from "@/stores/settings";
-import { IconBrandYoutube, IconClock, IconFile, IconLoader2, IconMusic } from "@tabler/icons-react";
+import {
+  IconBrandYoutube,
+  IconClock,
+  IconFile,
+  IconLoader2,
+  IconMusic,
+} from "@tabler/icons-react";
 import { useCallback } from "react";
+import { t } from "@/language/i18n";
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -33,15 +40,22 @@ const ROW_HEIGHT = 56;
 
 // -- Sub-components -----------------------------------------------------------
 
-const YouTubeSourceThumb: React.FC<{ videoId: string; loading: boolean }> = ({ videoId, loading }) => {
+const YouTubeSourceThumb: React.FC<{ videoId: string; loading: boolean }> = ({
+  videoId,
+  loading,
+}) => {
   const bridgeEnabled = useSettingsStore((s) => s.experiments.youtubeBridge);
   const persistedThumb = useProjectStore((s) => s.metadata.thumbnailDataUrl);
   const persistedFor = useProjectStore((s) => s.metadata.thumbnailForVideoId);
-  const hasMatchingPersistedThumb = Boolean(persistedThumb && persistedFor === videoId);
+  const hasMatchingPersistedThumb = Boolean(
+    persistedThumb && persistedFor === videoId,
+  );
   const thumbQuery = useBridgeThumb();
 
   if (hasMatchingPersistedThumb) {
-    return <img src={persistedThumb} alt="" className="size-full object-cover" />;
+    return (
+      <img src={persistedThumb} alt="" className="size-full object-cover" />
+    );
   }
   if (loading || (bridgeEnabled && thumbQuery.isFetching)) {
     return <div className="size-full bg-composer-bg-elevated animate-pulse" />;
@@ -65,11 +79,13 @@ const ReplaceControls: React.FC<ReplaceControlsProps> = ({ onFileDrop }) => (
   <div className="flex flex-col items-center gap-4 flex-1 p-6 w-full">
     <div className="w-full max-w-md flex-1 min-h-32">
       <FileDropZone accept="audio/*" onFileDrop={onFileDrop}>
-        <p className="text-sm text-composer-text-muted">Drop another file to replace</p>
+        <p className="text-sm text-composer-text-muted">
+          {t("Drop another file to replace")}
+        </p>
       </FileDropZone>
     </div>
     <OrDivider />
-    <YouTubeUrlInput placeholder="Or load a different YouTube URL" />
+    <YouTubeUrlInput placeholder={t("Or load a different YouTube URL")} />
   </div>
 );
 
@@ -81,12 +97,17 @@ interface SourceDurationProps {
 // Shown in the imported-source row. While the source is loading (a YouTube
 // download or an mp3 decode) it shows the spinner; once ready it shows the
 // clock and resolved duration.
-const SourceDuration: React.FC<SourceDurationProps> = ({ loading, duration }) => (
+const SourceDuration: React.FC<SourceDurationProps> = ({
+  loading,
+  duration,
+}) => (
   <div className="flex items-center gap-1.5">
     {loading ? (
       <>
         <IconLoader2 size={14} className="animate-spin text-composer-accent" />
-        <span className="text-sm font-mono text-composer-text-muted tabular-nums">--:--</span>
+        <span className="text-sm font-mono text-composer-text-muted tabular-nums">
+          --:--
+        </span>
       </>
     ) : (
       <>
@@ -123,7 +144,10 @@ const ImportPanel: React.FC = () => {
     const fileName = file.name.replace(/\.[^/.]+$/, "");
 
     return (
-      <div data-tour="import-dropzone" className="flex flex-col-reverse flex-1 size-full">
+      <div
+        data-tour="import-dropzone"
+        className="flex flex-col-reverse flex-1 size-full"
+      >
         <div className="flex border-t border-composer-border">
           <div
             className="shrink-0 flex items-center justify-center bg-composer-accent/10"
@@ -137,13 +161,17 @@ const ImportPanel: React.FC = () => {
             style={{ height: ROW_HEIGHT }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-composer-text select-text">{fileName}</p>
+              <p className="text-sm font-medium truncate text-composer-text select-text">
+                {fileName}
+              </p>
               <p className="text-xs text-composer-text-muted">{extension}</p>
             </div>
 
             <SourceDuration loading={isLoading} duration={duration} />
 
-            <div className="text-sm text-composer-text-muted">{formatFileSize(file.size)}</div>
+            <div className="text-sm text-composer-text-muted">
+              {formatFileSize(file.size)}
+            </div>
           </div>
         </div>
 
@@ -159,7 +187,10 @@ const ImportPanel: React.FC = () => {
     const titleLoading = downloading && !hasResolvedTitle;
 
     return (
-      <div data-tour="import-dropzone" className="flex flex-col-reverse flex-1 size-full">
+      <div
+        data-tour="import-dropzone"
+        className="flex flex-col-reverse flex-1 size-full"
+      >
         <div className="flex border-t border-composer-border">
           <div
             className="shrink-0 flex items-center justify-center bg-composer-accent/10 overflow-hidden"
@@ -181,7 +212,8 @@ const ImportPanel: React.FC = () => {
                 </p>
               )}
               <p className="text-xs text-composer-text-muted select-text">
-                {videoId} ・ {downloading ? "Downloading from YouTube" : "from YouTube"}
+                {videoId} ・{" "}
+                {downloading ? "Downloading from YouTube" : "from YouTube"}
               </p>
             </div>
 
@@ -195,13 +227,23 @@ const ImportPanel: React.FC = () => {
   }
 
   return (
-    <div data-tour="import-dropzone" className="flex flex-col items-center justify-center gap-6 flex-1 size-full p-6">
+    <div
+      data-tour="import-dropzone"
+      className="flex flex-col items-center justify-center gap-6 flex-1 size-full p-6"
+    >
       <div className="w-full max-w-md flex-1 max-h-72 min-h-40">
         <FileDropZone accept="audio/*" onFileDrop={handleFileDrop}>
-          <IconMusic className="size-12 mb-4 opacity-50 text-composer-text" stroke={1.5} />
+          <IconMusic
+            className="size-12 mb-4 opacity-50 text-composer-text"
+            stroke={1.5}
+          />
           <p className="text-composer-text-secondary">Drop audio file here</p>
-          <p className="mt-1 text-sm text-composer-text-muted">or click to browse</p>
-          <p className="mt-4 text-xs text-composer-text-muted">Supports MP3, WAV, M4A, OGG, FLAC</p>
+          <p className="mt-1 text-sm text-composer-text-muted">
+            {t("or click to browse")}
+          </p>
+          <p className="mt-4 text-xs text-composer-text-muted">
+            {t("Supports MP3, WAV, M4A, OGG, FLAC")}
+          </p>
         </FileDropZone>
       </div>
 

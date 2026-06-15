@@ -6,7 +6,8 @@ import { LyricsSearchError } from "@/utils/lyrics-search/types";
 // -- Network gating -----------------------------------------------------------
 
 const SKIP_NETWORK = process.env.SKIP_NETWORK_TESTS === "1";
-const ONLINE_PROBE_URL = "https://lyrics-api.boidu.dev/getLyrics?s=probe&a=probe&d=1&videoId=zzzzzzzzzzz";
+const ONLINE_PROBE_URL =
+  "https://lyrics-api.boidu.dev/getLyrics?s=probe&a=probe&d=1&videoId=zzzzzzzzzzz";
 const ONLINE_PROBE_TIMEOUT_MS = 5000;
 const NETWORK_TEST_TIMEOUT_MS = 30000;
 
@@ -25,7 +26,9 @@ async function probeOnline(): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ONLINE_PROBE_TIMEOUT_MS);
   try {
-    const response = await fetch(ONLINE_PROBE_URL, { signal: controller.signal });
+    const response = await fetch(ONLINE_PROBE_URL, {
+      signal: controller.signal,
+    });
     return response.status < 500;
   } catch {
     return false;
@@ -42,7 +45,9 @@ describeOnline("boiduLyricsProvider", () => {
   beforeAll(async () => {
     isOnline = await probeOnline();
     if (!isOnline) {
-      console.warn("[boidu-lyrics.test] Better Lyrics unreachable: tests will be skipped at runtime.");
+      console.warn(
+        "[boidu-lyrics.test] RichLyric unreachable: tests will be skipped at runtime.",
+      );
     }
   }, ONLINE_PROBE_TIMEOUT_MS + 1000);
 
@@ -57,9 +62,9 @@ describeOnline("boiduLyricsProvider", () => {
   // -- Metadata --------------------------------------------------------------
 
   describe("metadata", () => {
-    it("identifies as boidu-lyrics with the Better Lyrics source label", () => {
+    it("identifies as boidu-lyrics with the RichLyric source label", () => {
       expect(boiduLyricsProvider.name).toBe("boidu-lyrics");
-      expect(boiduLyricsProvider.sourceLabel).toBe("Better Lyrics");
+      expect(boiduLyricsProvider.sourceLabel).toBe("RichLyric");
     });
   });
 
@@ -150,15 +155,20 @@ describeOnline("boiduLyricsProvider", () => {
       async () => {
         if (skipIfOffline()) return;
         const controller = new AbortController();
-        const results = await boiduLyricsProvider.search(CACHED_QUERY, controller.signal);
+        const results = await boiduLyricsProvider.search(
+          CACHED_QUERY,
+          controller.signal,
+        );
         if (results.length === 0) {
-          console.warn("[boidu-lyrics.test] Cached query returned empty (cache miss); skipping assertions.");
+          console.warn(
+            "[boidu-lyrics.test] Cached query returned empty (cache miss); skipping assertions.",
+          );
           return;
         }
         expect(results).toHaveLength(1);
         const [result] = results;
         expect(result.source).toBe("boidu-lyrics");
-        expect(result.sourceLabel).toBe("Better Lyrics");
+        expect(result.sourceLabel).toBe("RichLyric");
         expect(result.payload.kind).toBe("ttml");
         if (result.payload.kind === "ttml") {
           expect(result.payload.xml.length).toBeGreaterThan(0);
@@ -173,7 +183,10 @@ describeOnline("boiduLyricsProvider", () => {
       async () => {
         if (skipIfOffline()) return;
         const controller = new AbortController();
-        const results = await boiduLyricsProvider.search(CACHED_QUERY, controller.signal);
+        const results = await boiduLyricsProvider.search(
+          CACHED_QUERY,
+          controller.signal,
+        );
         if (results.length === 0) return;
         expect(results[0].id).toBe(`boidu-lyrics-${CACHED_QUERY.videoId}`);
       },
@@ -185,7 +198,10 @@ describeOnline("boiduLyricsProvider", () => {
       async () => {
         if (skipIfOffline()) return;
         const controller = new AbortController();
-        const results = await boiduLyricsProvider.search(CACHED_QUERY, controller.signal);
+        const results = await boiduLyricsProvider.search(
+          CACHED_QUERY,
+          controller.signal,
+        );
         if (results.length === 0) return;
         expect(results[0].album).toBe(CACHED_QUERY.album);
       },
@@ -198,7 +214,10 @@ describeOnline("boiduLyricsProvider", () => {
         if (skipIfOffline()) return;
         const controller = new AbortController();
         const { album: _album, ...withoutAlbum } = CACHED_QUERY;
-        const results = await boiduLyricsProvider.search(withoutAlbum, controller.signal);
+        const results = await boiduLyricsProvider.search(
+          withoutAlbum,
+          controller.signal,
+        );
         if (results.length === 0) return;
         expect(results[0].album).toBeUndefined();
       },
@@ -235,7 +254,10 @@ describeOnline("boiduLyricsProvider", () => {
     it("resolves to [] when called with a pre-aborted signal", async () => {
       const controller = new AbortController();
       controller.abort();
-      const results = await boiduLyricsProvider.search(CACHED_QUERY, controller.signal);
+      const results = await boiduLyricsProvider.search(
+        CACHED_QUERY,
+        controller.signal,
+      );
       expect(results).toEqual([]);
     });
 
@@ -244,7 +266,10 @@ describeOnline("boiduLyricsProvider", () => {
       async () => {
         if (skipIfOffline()) return;
         const controller = new AbortController();
-        const pending = boiduLyricsProvider.search(CACHED_QUERY, controller.signal);
+        const pending = boiduLyricsProvider.search(
+          CACHED_QUERY,
+          controller.signal,
+        );
         controller.abort();
         const results = await pending;
         expect(results).toEqual([]);

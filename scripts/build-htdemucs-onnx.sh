@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build HTDemucs ONNX models for Composer's vocal separation feature.
+# Build HTDemucs ONNX models for RichLyricEditor's vocal separation feature.
 #
 # Pipeline:
 #   1. Clones github.com/sevagh/demucs.onnx (with its forked `demucs` submodule

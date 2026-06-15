@@ -1,7 +1,11 @@
 import { LandingLayout } from "@/pages/landing/landing-layout";
 import { BetterLyricsPromo } from "@/pages/landing/sections/better-lyrics-promo";
 import { PageHead } from "@/seo/page-head";
-import { articleSchema, breadcrumbListSchema, organizationSchema } from "@/seo/schemas";
+import {
+  articleSchema,
+  breadcrumbListSchema,
+  organizationSchema,
+} from "@/seo/schemas";
 import { Button } from "@/ui/button";
 import { IconArrowRight, IconChevronLeft } from "@tabler/icons-react";
 import type { ReactNode } from "react";
@@ -21,18 +25,25 @@ interface GuideLayoutProps {
   children: ReactNode;
 }
 
-const GuideLayout: React.FC<GuideLayoutProps> = ({ slug, title, description, datePublished, related, children }) => {
+const GuideLayout: React.FC<GuideLayoutProps> = ({
+  slug,
+  title,
+  description,
+  datePublished,
+  related,
+  children,
+}) => {
   const path = `/guides/${slug}`;
   return (
     <LandingLayout>
       <PageHead
-        title={`${title} ・ Composer`}
+        title={`${title} ・ RichLyricEditor`}
         description={description}
         path={path}
         jsonLd={[
           articleSchema(title, description, path, datePublished),
           breadcrumbListSchema([
-            { name: "Composer", path: "/" },
+            { name: "RichLyricEditor", path: "/" },
             { name: "Guides", path: "/guides" },
             { name: title, path },
           ]),
@@ -48,22 +59,32 @@ const GuideLayout: React.FC<GuideLayoutProps> = ({ slug, title, description, dat
           Back to all guides
         </Link>
         <header className="mb-10">
-          <h1 className="text-3xl md:text-5xl font-semibold text-composer-text mb-5 leading-tight">{title}</h1>
-          <p className="text-lg text-composer-text-secondary leading-relaxed">{description}</p>
+          <h1 className="text-3xl md:text-5xl font-semibold text-composer-text mb-5 leading-tight">
+            {title}
+          </h1>
+          <p className="text-lg text-composer-text-secondary leading-relaxed">
+            {description}
+          </p>
         </header>
-        <div className="prose-guide text-composer-text-secondary leading-relaxed space-y-6 select-text">{children}</div>
+        <div className="prose-guide text-composer-text-secondary leading-relaxed space-y-6 select-text">
+          {children}
+        </div>
         <div className="mt-14 pt-10 border-t border-composer-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <span className="text-sm text-composer-text-muted">Ready to try it?</span>
+          <span className="text-sm text-composer-text-muted">
+            Ready to try it?
+          </span>
           <Link to="/">
             <Button variant="primary" size="md" hasIcon>
-              Open Composer
+              Open RichLyricEditor
               <IconArrowRight size={14} />
             </Button>
           </Link>
         </div>
         {related.length > 0 ? (
           <aside className="mt-16">
-            <h2 className="text-lg font-semibold text-composer-text mb-4">Related guides</h2>
+            <h2 className="text-lg font-semibold text-composer-text mb-4">
+              Related guides
+            </h2>
             <ul className="space-y-2">
               {related.map((link) => (
                 <li key={link.path}>

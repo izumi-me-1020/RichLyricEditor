@@ -8,7 +8,9 @@ const LandingNav: React.FC = () => {
       <nav className="max-w-6xl mx-auto flex items-center justify-between gap-6">
         <Link to="/ttml-maker" className="flex items-center gap-2 select-none">
           <img src="/logo.svg" alt="" className="size-6" />
-          <span className="font-semibold text-composer-text">Composer</span>
+          <span className="font-semibold text-composer-text">
+            RichLyricEditor
+          </span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm text-composer-text-secondary">
           <Link to="/ttml-maker" className="hover:text-composer-text">

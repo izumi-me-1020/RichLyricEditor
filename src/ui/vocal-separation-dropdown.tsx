@@ -6,13 +6,14 @@ import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
 import { cn } from "@/utils/cn";
 import { IconCheck, type IconProps, IconLoader2, IconMicrophone, IconMusic, IconWaveSine } from "@tabler/icons-react";
+import { t } from "i18next";
 import { type ComponentType, useEffect } from "react";
 import type { Stem } from "@/audio/separation/types";
 
 const STEM_LABELS: Record<Stem, string> = {
-  original: "Original",
-  vocals: "Vocals",
-  instrumental: "Instrumental",
+  original: t("Original"),
+  vocals: t("Vocals"),
+  instrumental: t("Instrumental"),
 };
 
 const STEM_ICONS: Record<Stem, ComponentType<IconProps>> = {
@@ -76,7 +77,12 @@ const VocalSeparationDropdown: React.FC = () => {
     <Popover
       placement="top-end"
       trigger={
-        <Button variant="ghost" hasIcon className="group font-mono tabular-nums min-w-20" aria-label="Vocal separation">
+        <Button
+          variant="ghost"
+          hasIcon
+          className="group font-mono tabular-nums min-w-20"
+          aria-label={t("Vocal separation")}
+        >
           {triggerIcon}
           <span>{triggerLabel}</span>
         </Button>
@@ -99,7 +105,7 @@ const VocalSeparationDropdown: React.FC = () => {
 
             {status === "downloading" && (
               <ProgressState
-                title="Downloading model…"
+                title={t("Downloading model…")}
                 detail={`${formatMb(progress.loaded)} / ${formatMb(progress.total || (descriptor?.approxBytes ?? 0))}`}
                 pct={pct}
                 onCancel={cancel}
@@ -108,8 +114,12 @@ const VocalSeparationDropdown: React.FC = () => {
 
             {status === "processing" && (
               <ProgressState
-                title="Separating vocals…"
-                detail={progress.total > 0 ? `Chunk ${progress.loaded} of ${progress.total}` : "Preparing…"}
+                title={t("Separating vocals…")}
+                detail={
+                  progress.total > 0
+                    ? t("Chunk {{loaded}} of {{total}}", { loaded: progress.loaded, total: progress.total })
+                    : t("Preparing…")
+                }
                 pct={pct}
                 onCancel={cancel}
               />
@@ -142,7 +152,7 @@ const VocalSeparationDropdown: React.FC = () => {
             )}
 
             {status === "cancelled" && (
-              <p className="text-xs text-composer-text-muted">Cancelled. Open again to retry.</p>
+              <p className="text-xs text-composer-text-muted">{t("Cancelled. Open again to retry.")}</p>
             )}
           </div>
         );
@@ -163,7 +173,7 @@ const ProgressState: React.FC<{ title: string; detail: string; pct: number; onCa
     <ProgressBar pct={pct} />
     <div className="flex justify-end pt-1">
       <Button size="sm" variant="ghost" onClick={onCancel}>
-        Cancel
+        {t("Cancel")}
       </Button>
     </div>
   </div>
@@ -175,17 +185,19 @@ const IdleNoModelState: React.FC<{
   onSeparate: () => void;
 }> = ({ approxMb, onDownload, onSeparate }) => (
   <div className="flex flex-col gap-2">
-    <p className="text-sm font-medium text-composer-text">Vocal separation</p>
+    <p className="text-sm font-medium text-composer-text">{t("Vocal separation")}</p>
     <p className="text-xs text-composer-text-muted">
-      Isolate the vocals or hear an instrumental version of this track. Requires a one-time ~{approxMb} MB model
-      download.
+      {t(
+        "Isolate the vocals or hear an instrumental version of this track. Requires a one-time ~{{approxMb}} MB model download.",
+        { approxMb },
+      )}
     </p>
     <div className="flex gap-2 pt-1">
       <Button size="sm" variant="secondary" onClick={onDownload}>
-        Download model
+        {t("Download model")}
       </Button>
       <Button size="sm" variant="primary" onClick={onSeparate}>
-        Download &amp; separate
+        {t("Download & separate")}
       </Button>
     </div>
   </div>
@@ -200,7 +212,7 @@ const IdleReadyState: React.FC<{
   const hasSeparated = availableStems.includes("vocals");
   return (
     <div className="flex flex-col gap-2 min-w-60">
-      <p className="text-sm font-medium text-composer-text">Playback source</p>
+      <p className="text-sm font-medium text-composer-text">{t("Playback source")}</p>
       <div className="flex flex-col gap-0.5">
         {(["original", "vocals", "instrumental"] as Stem[]).map((stem) => {
           const enabled = stem === "original" || availableStems.includes(stem);
@@ -236,7 +248,7 @@ const IdleReadyState: React.FC<{
       </div>
       {!hasSeparated && (
         <Button size="sm" variant="primary" onClick={onSeparate} className="mt-1">
-          Separate now
+          {t("Separate now")}
         </Button>
       )}
     </div>
@@ -249,14 +261,14 @@ const ErrorState: React.FC<{ message: string; onRetry: () => void; onDismiss: ()
   onDismiss,
 }) => (
   <div className="flex flex-col gap-2">
-    <p className="text-sm font-medium text-composer-text">Vocal separation failed</p>
+    <p className="text-sm font-medium text-composer-text">{t("Vocal separation failed")}</p>
     <p className="text-xs text-composer-text-muted break-words">{message}</p>
     <div className="flex gap-2 pt-1 justify-end">
       <Button size="sm" variant="ghost" onClick={onDismiss}>
-        Dismiss
+        {t("Dismiss")}
       </Button>
       <Button size="sm" variant="primary" onClick={onRetry}>
-        Retry
+        {t("Retry")}
       </Button>
     </div>
   </div>

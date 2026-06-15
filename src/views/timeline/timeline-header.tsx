@@ -9,8 +9,15 @@ import { Button } from "@/ui/button";
 import { InlineKeyBadge } from "@/ui/inline-key-badge";
 import { cn } from "@/utils/cn";
 import { MOD_KEY } from "@/utils/platform";
-import { convertLineToWord, splitIntoWordsWithMeta } from "@/utils/sync-helpers";
-import { MAX_ZOOM, MIN_ZOOM, useTimelineStore } from "@/views/timeline/timeline-store";
+import {
+  convertLineToWord,
+  splitIntoWordsWithMeta,
+} from "@/utils/sync-helpers";
+import {
+  MAX_ZOOM,
+  MIN_ZOOM,
+  useTimelineStore,
+} from "@/views/timeline/timeline-store";
 import {
   IconArrowBarBoth,
   IconChevronsDown,
@@ -25,6 +32,7 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTimelineZoom } from "@/views/timeline/use-timeline-zoom";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -35,7 +43,10 @@ interface TimelineHeaderProps {
 
 // -- Component -----------------------------------------------------------------
 
-const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollContainerRef }) => {
+const TimelineHeader: React.FC<TimelineHeaderProps> = ({
+  onImportLyrics,
+  scrollContainerRef,
+}) => {
   const zoom = useTimelineStore((s) => s.zoom);
   const storeZoomIn = useTimelineStore((s) => s.zoomIn);
   const storeZoomOut = useTimelineStore((s) => s.zoomOut);
@@ -48,7 +59,9 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
   const previewSidebarOpen = useTimelineStore((s) => s.previewSidebarOpen);
   const togglePreviewSidebar = useTimelineStore((s) => s.togglePreviewSidebar);
   const rollingEditMode = useTimelineStore((s) => s.rollingEditMode);
-  const toggleRollingEditMode = useTimelineStore((s) => s.toggleRollingEditMode);
+  const toggleRollingEditMode = useTimelineStore(
+    (s) => s.toggleRollingEditMode,
+  );
   const showHints = useSettingsStore((s) => s.showShortcutHints);
   const snapEnabled = useSettingsStore((s) => s.timelineSnap);
   const setSetting = useSettingsStore((s) => s.set);
@@ -58,7 +71,10 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
   const collapsedInstances = useTimelineStore((s) => s.collapsedInstances);
   const setInstanceCollapsed = useTimelineStore((s) => s.setInstanceCollapsed);
 
-  const hasUnexpandedLines = useMemo(() => lines.some((l) => !l.words?.length && l.text.trim().length > 0), [lines]);
+  const hasUnexpandedLines = useMemo(
+    () => lines.some((l) => !l.words?.length && l.text.trim().length > 0),
+    [lines],
+  );
 
   const instanceKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -83,9 +99,13 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
   const handleExpandAll = useCallback(() => {
     const currentTime = useAudioStore.getState().currentTime;
     const wordDuration = useSettingsStore.getState().defaultWordDuration;
-    const updateLinesWithHistory = useProjectStore.getState().updateLinesWithHistory;
+    const updateLinesWithHistory =
+      useProjectStore.getState().updateLinesWithHistory;
 
-    const updates: Array<{ id: string; updates: { words?: WordTiming[]; begin?: undefined; end?: undefined } }> = [];
+    const updates: Array<{
+      id: string;
+      updates: { words?: WordTiming[]; begin?: undefined; end?: undefined };
+    }> = [];
 
     for (const line of lines) {
       if (line.words?.length) continue;
@@ -94,7 +114,14 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
       if (isLineSynced(line)) {
         const converted = convertLineToWord(line);
         if (converted.words) {
-          updates.push({ id: line.id, updates: { words: converted.words, begin: undefined, end: undefined } });
+          updates.push({
+            id: line.id,
+            updates: {
+              words: converted.words,
+              begin: undefined,
+              end: undefined,
+            },
+          });
         }
       } else {
         const { parts, trailingSpace } = splitIntoWordsWithMeta(line.text);
@@ -113,12 +140,22 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
 
       const lineIndexById = new Map<string, number>();
       for (let i = 0; i < lines.length; i++) lineIndexById.set(lines[i].id, i);
-      const newSelections: Array<{ lineId: string; lineIndex: number; wordIndex: number; type: "word" | "bg" }> = [];
+      const newSelections: Array<{
+        lineId: string;
+        lineIndex: number;
+        wordIndex: number;
+        type: "word" | "bg";
+      }> = [];
       for (const u of updates) {
         const lineIndex = lineIndexById.get(u.id);
         if (lineIndex === undefined || !u.updates.words) continue;
         for (let wi = 0; wi < u.updates.words.length; wi++) {
-          newSelections.push({ lineId: u.id, lineIndex, wordIndex: wi, type: "word" });
+          newSelections.push({
+            lineId: u.id,
+            lineIndex,
+            wordIndex: wi,
+            type: "word",
+          });
         }
       }
       if (newSelections.length > 0) {
@@ -133,11 +170,13 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
     return () => window.removeEventListener("timeline:expand-all", handler);
   }, [handleExpandAll]);
 
-  const zoomPercent = Math.round(((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100);
+  const zoomPercent = Math.round(
+    ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100,
+  );
 
   return (
     <div className="flex items-center justify-between px-6 py-3 border-b border-composer-border">
-      <h2 className="text-lg font-medium select-none">Timeline</h2>
+      <h2 className="text-lg font-medium select-none">{t("Timeline")}</h2>
 
       <div className="flex items-center gap-4">
         {/* Follow toggle */}
@@ -149,8 +188,12 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
           className={cn(!followEnabled && "opacity-60")}
         >
           <IconFocusCentered size={16} />
-          <span>Follow</span>
-          {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.toggleFollow")} />}
+          <span>{t("Follow")}</span>
+          {showHints && (
+            <InlineKeyBadge
+              keys={getEffectiveKeysArray("timeline.toggleFollow")}
+            />
+          )}
         </Button>
 
         {/* Rolling edit toggle */}
@@ -163,8 +206,12 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
           title="Rolling edit: drag a shared word boundary and both words move together"
         >
           <IconArrowBarBoth size={16} />
-          <span>Rolling</span>
-          {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.toggleRollingEdit")} />}
+          <span>{t("Rolling")}</span>
+          {showHints && (
+            <InlineKeyBadge
+              keys={getEffectiveKeysArray("timeline.toggleRollingEdit")}
+            />
+          )}
         </Button>
 
         {/* Preview sidebar toggle */}
@@ -176,38 +223,65 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
           className={cn(!previewSidebarOpen && "opacity-60")}
         >
           <IconEye size={16} />
-          <span>Preview</span>
-          {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.togglePreview")} />}
+          <span>{t("Preview")}</span>
+          {showHints && (
+            <InlineKeyBadge
+              keys={getEffectiveKeysArray("timeline.togglePreview")}
+            />
+          )}
         </Button>
 
         <Button
           variant={snapEnabled ? "primary" : "ghost"}
           size="sm"
           hasIcon
-          className={cn(!snapEnabled && "opacity-60", isBypassing && "opacity-50")}
+          className={cn(
+            !snapEnabled && "opacity-60",
+            isBypassing && "opacity-50",
+          )}
           onClick={() => setSetting("timelineSnap", !snapEnabled)}
           title={`Snap${toggleSnapKeys.length ? ` (${toggleSnapKeys.join(" ")})` : ""} · hold ${MOD_KEY} to bypass`}
         >
           <IconMagnet size={16} />
-          <span>Snap</span>
+          <span>{t("Snap")}</span>
           {showHints && <InlineKeyBadge keys={toggleSnapKeys} />}
         </Button>
 
         {/* Import lyrics */}
         {onImportLyrics && (
-          <Button variant="ghost" size="sm" onClick={onImportLyrics} hasIcon className="opacity-60">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onImportLyrics}
+            hasIcon
+            className="opacity-60"
+          >
             <IconTextPlus size={16} />
-            <span>Import</span>
-            {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.importLyrics")} />}
+            <span>{t("Import")}</span>
+            {showHints && (
+              <InlineKeyBadge
+                keys={getEffectiveKeysArray("timeline.importLyrics")}
+              />
+            )}
           </Button>
         )}
 
         {/* Expand all unexpanded lines */}
         {hasUnexpandedLines && (
-          <Button variant="ghost" size="sm" onClick={handleExpandAll} hasIcon className="opacity-60">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleExpandAll}
+            hasIcon
+            className="opacity-60"
+          >
             <IconLayoutDistributeHorizontal size={16} />
-            <span>Expand All</span>
-            {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.expandAll")} />}
+            <span>{t("Expand All")}</span>
+            {showHints && (
+              <InlineKeyBadge
+                keys={getEffectiveKeysArray("timeline.expandAll")}
+              />
+            )}
           </Button>
         )}
 
@@ -219,11 +293,21 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({ onImportLyrics, scrollC
             onClick={handleToggleAllCollapsed}
             hasIcon
             className="opacity-60"
-            title={anyExpanded ? "Collapse all groups" : "Expand all groups"}
+            title={
+              anyExpanded ? t("Collapse all groups") : t("Expand all groups")
+            }
           >
-            {anyExpanded ? <IconChevronsUp size={16} /> : <IconChevronsDown size={16} />}
-            <span>{anyExpanded ? "Collapse all" : "Expand all"}</span>
-            {showHints && <InlineKeyBadge keys={getEffectiveKeysArray("timeline.toggleAllCollapsed")} />}
+            {anyExpanded ? (
+              <IconChevronsUp size={16} />
+            ) : (
+              <IconChevronsDown size={16} />
+            )}
+            <span>{anyExpanded ? t("Collapse all") : t("Expand all")}</span>
+            {showHints && (
+              <InlineKeyBadge
+                keys={getEffectiveKeysArray("timeline.toggleAllCollapsed")}
+              />
+            )}
           </Button>
         )}
 

@@ -1,6 +1,7 @@
 import { IconArrowLeft, IconUpload } from "@tabler/icons-react";
 import { Button } from "@/ui/button";
 import { cn } from "@/utils/cn";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -28,23 +29,42 @@ function countNonEmptyLines(text: string): number {
 
 // -- Component ----------------------------------------------------------------
 
-const PasteSection: React.FC<PasteSectionProps> = ({ value, onChange, onSwitchToSearch, onSwitchToUpload }) => {
+const PasteSection: React.FC<PasteSectionProps> = ({
+  value,
+  onChange,
+  onSwitchToSearch,
+  onSwitchToUpload,
+}) => {
   const lineCount = countNonEmptyLines(value);
 
   return (
-    <div className={cn("flex flex-col gap-2.5 p-3 rounded-lg", "bg-composer-input border border-composer-border")}>
+    <div
+      className={cn(
+        "flex flex-col gap-2.5 p-3 rounded-lg",
+        "bg-composer-input border border-composer-border",
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
-        <Button variant="secondary" size="sm" hasIcon onClick={onSwitchToSearch}>
+        <Button
+          variant="secondary"
+          size="sm"
+          hasIcon
+          onClick={onSwitchToSearch}
+        >
           <IconArrowLeft size={14} stroke={2} />
-          Back to search
+          {t("Back to search")}
         </Button>
         <button
           type="button"
           onClick={onSwitchToUpload}
           className="inline-flex items-center gap-1.5 text-[11px] font-medium cursor-pointer bg-transparent border-none px-1 py-0.5 rounded text-composer-text-secondary hover:text-composer-text transition-colors"
         >
-          <IconUpload size={12} stroke={2} className="text-composer-text opacity-60" />
-          Upload file instead
+          <IconUpload
+            size={12}
+            stroke={2}
+            className="text-composer-text opacity-60"
+          />
+          {t("Upload file instead")}
         </button>
       </div>
       <textarea
@@ -64,15 +84,14 @@ const PasteSection: React.FC<PasteSectionProps> = ({ value, onChange, onSwitchTo
       />
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-composer-text-muted">
-          Use{" "}
-          <code className="font-mono text-[10.5px] px-1 py-px rounded bg-composer-input-hover text-composer-text-secondary">
-            |
-          </code>{" "}
-          to split syllables (e.g. beau|ti|ful)
+          {t("Use | to split syllables (e.g. beau|ti|ful)")}
         </span>
+
         {lineCount > 0 && (
           <span className="text-xs text-composer-text-muted select-text">
-            {lineCount} line{lineCount !== 1 ? "s" : ""}
+            {t("{{count}} lines", {
+              count: lineCount,
+            })}
           </span>
         )}
       </div>

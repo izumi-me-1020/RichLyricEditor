@@ -1,8 +1,13 @@
-import { IconArrowLeft, IconClipboardText, IconMusic } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconClipboardText,
+  IconMusic,
+} from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/ui/button";
 import { cn } from "@/utils/cn";
+import { t } from "i18next";
 
 // -- Types --------------------------------------------------------------------
 
@@ -16,11 +21,16 @@ interface UploadSectionProps {
 
 const ACCEPTED_EXTENSIONS = /\.(txt|lrc|srt|ttml|xml)$/i;
 const ACCEPTED_FILE_INPUT = ".txt,.lrc,.srt,.ttml,.xml";
-const UNSUPPORTED_TYPE_MESSAGE = "Unsupported file type. Use .txt .lrc .srt .ttml";
+const UNSUPPORTED_TYPE_MESSAGE =
+  "Unsupported file type. Use .txt .lrc .srt .ttml";
 
 // -- Component ----------------------------------------------------------------
 
-const UploadSection: React.FC<UploadSectionProps> = ({ onFile, onSwitchToSearch, onSwitchToPaste }) => {
+const UploadSection: React.FC<UploadSectionProps> = ({
+  onFile,
+  onSwitchToSearch,
+  onSwitchToPaste,
+}) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,19 +84,33 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFile, onSwitchToSearch,
   );
 
   return (
-    <div className={cn("flex flex-col gap-2.5 p-3 rounded-lg", "bg-composer-input border border-composer-border")}>
+    <div
+      className={cn(
+        "flex flex-col gap-2.5 p-3 rounded-lg",
+        "bg-composer-input border border-composer-border",
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
-        <Button variant="secondary" size="sm" hasIcon onClick={onSwitchToSearch}>
+        <Button
+          variant="secondary"
+          size="sm"
+          hasIcon
+          onClick={onSwitchToSearch}
+        >
           <IconArrowLeft size={14} stroke={2} />
-          Back to search
+          {t("Back to search")}
         </Button>
         <button
           type="button"
           onClick={onSwitchToPaste}
           className="inline-flex items-center gap-1.5 text-[11px] font-medium cursor-pointer bg-transparent border-none px-1 py-0.5 rounded text-composer-text-secondary hover:text-composer-text transition-colors"
         >
-          <IconClipboardText size={12} stroke={2} className="text-composer-text opacity-60" />
-          Paste lyrics instead
+          <IconClipboardText
+            size={12}
+            stroke={2}
+            className="text-composer-text opacity-60"
+          />
+          {t("Paste lyrics instead")}
         </button>
       </div>
       <button
@@ -106,12 +130,23 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onFile, onSwitchToSearch,
             : "border-composer-border hover:border-composer-border-strong",
         )}
       >
-        <IconMusic size={32} stroke={1.5} className="text-composer-text opacity-50 mb-0.5" />
-        <div className="text-sm font-medium text-composer-text">Drop a lyrics file here</div>
-        <div className="text-[11.5px] text-composer-text-muted">
-          or <span className="text-composer-accent-text underline decoration-composer-accent/40">click to browse</span>
+        <IconMusic
+          size={32}
+          stroke={1.5}
+          className="text-composer-text opacity-50 mb-0.5"
+        />
+        <div className="text-sm font-medium text-composer-text">
+          {t("Drop a lyrics file here")}
         </div>
-        <div className="mt-1 font-mono text-[10.5px] tracking-tight text-composer-text-muted">.txt .lrc .srt .ttml</div>
+        <div className="text-[11.5px] text-composer-text-muted">
+          {t("or")}{" "}
+          <span className="text-composer-accent-text underline decoration-composer-accent/40">
+            click to browse
+          </span>
+        </div>
+        <div className="mt-1 font-mono text-[10.5px] tracking-tight text-composer-text-muted">
+          .txt .lrc .srt .ttml
+        </div>
       </button>
       <input
         ref={fileInputRef}

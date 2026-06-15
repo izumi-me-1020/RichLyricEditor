@@ -14,7 +14,9 @@ interface ConverterViewProps {
   inputLabel: string;
   inputPlaceholder: string;
   sampleInput: string;
-  convert: (args: ConvertArgs) => { ttml: string; projectPayload: string } | { error: string };
+  convert: (
+    args: ConvertArgs,
+  ) => { ttml: string; projectPayload: string } | { error: string };
   downloadFilename: string;
 }
 
@@ -63,25 +65,31 @@ const ConverterView: React.FC<ConverterViewProps> = ({
       await navigator.clipboard.writeText(ttml);
       toast.success("Copied TTML to clipboard");
     } catch (clipboardError) {
-      console.error("[Composer] Failed to copy TTML", clipboardError);
+      console.error("[RichLyricEditor] Failed to copy TTML", clipboardError);
       toast.error("Could not copy to clipboard");
     }
   };
 
-  const openInComposerHref = projectPayload
+  const openInRichLyricEditorHref = projectPayload
     ? `/${OPEN_IN_COMPOSER_HASH_PREFIX}${encodeURIComponent(projectPayload)}`
     : "/";
 
   return (
     <section className="px-6 py-14 max-w-6xl mx-auto">
-      <h1 className="text-3xl md:text-5xl font-semibold text-composer-text text-center mb-4">{title}</h1>
+      <h1 className="text-3xl md:text-5xl font-semibold text-composer-text text-center mb-4">
+        {title}
+      </h1>
       <p className="text-composer-text-secondary text-center max-w-2xl mx-auto mb-10">
-        Paste your input on the left, download a standard TTML file on the right. Everything runs in your browser.
+        Paste your input on the left, download a standard TTML file on the
+        right. Everything runs in your browser.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-xl bg-composer-bg-elevated border border-composer-border p-4 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <label htmlFor="converter-input" className="text-sm font-medium text-composer-text select-none">
+            <label
+              htmlFor="converter-input"
+              className="text-sm font-medium text-composer-text select-none"
+            >
               {inputLabel}
             </label>
             <button
@@ -102,7 +110,10 @@ const ConverterView: React.FC<ConverterViewProps> = ({
             className="flex-1 min-h-[280px] md:min-h-[420px] font-mono text-sm bg-composer-bg-dark border border-composer-border rounded-lg p-3 text-composer-text placeholder:text-composer-text-muted resize-y focus:outline-none focus:border-composer-accent cursor-text select-text"
           />
           <div className="mt-3 flex items-center gap-2">
-            <label htmlFor="converter-filename" className="text-xs text-composer-text-muted select-none">
+            <label
+              htmlFor="converter-filename"
+              className="text-xs text-composer-text-muted select-none"
+            >
               Filename
             </label>
             {/* react-doctor-disable-next-line react-doctor/control-has-associated-label */}
@@ -117,13 +128,27 @@ const ConverterView: React.FC<ConverterViewProps> = ({
         </div>
         <div className="rounded-xl bg-composer-bg-elevated border border-composer-border p-4 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-composer-text select-none">TTML output</span>
+            <span className="text-sm font-medium text-composer-text select-none">
+              TTML output
+            </span>
             <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" onClick={copyTtml} disabled={!ttml} hasIcon>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={copyTtml}
+                disabled={!ttml}
+                hasIcon
+              >
                 <IconCopy size={12} />
                 Copy
               </Button>
-              <Button variant="secondary" size="sm" onClick={downloadTtml} disabled={!ttml} hasIcon>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={downloadTtml}
+                disabled={!ttml}
+                hasIcon
+              >
                 <IconDownload size={12} />
                 Download
               </Button>
@@ -140,10 +165,22 @@ const ConverterView: React.FC<ConverterViewProps> = ({
             {error || ttml || "Paste input to see TTML output"}
           </pre>
           <div className="mt-3 flex items-center justify-between gap-2">
-            <span className="text-xs text-composer-text-muted">Need to fine-tune timing against a waveform?</span>
-            <a href={openInComposerHref} className={cn(!projectPayload && "pointer-events-none opacity-50")}>
-              <Button variant="primary" size="sm" disabled={!projectPayload} hasIcon>
-                Open in Composer
+            <span className="text-xs text-composer-text-muted">
+              Need to fine-tune timing against a waveform?
+            </span>
+            <a
+              href={openInRichLyricEditorHref}
+              className={cn(
+                !projectPayload && "pointer-events-none opacity-50",
+              )}
+            >
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!projectPayload}
+                hasIcon
+              >
+                Open in RichLyricEditor
                 <IconExternalLink size={12} />
               </Button>
             </a>

@@ -6,15 +6,21 @@ import { seedProject } from "@/test/idb";
 describe("RecoverPanel", () => {
   it("shows the empty-state message when IndexedDB has no project", async () => {
     const screen = await render(<RecoverPanel />);
-    await expect.element(screen.getByText(/Nothing saved in this browser yet/)).toBeInTheDocument();
+    await expect
+      .element(screen.getByText(/Nothing saved in this browser yet/))
+      .toBeInTheDocument();
   });
 
   it("hides the Download button when there is nothing to recover", async () => {
     const screen = await render(<RecoverPanel />);
-    await expect.element(screen.getByText(/Nothing saved in this browser yet/)).toBeInTheDocument();
-    const buttons = Array.from(screen.container.querySelectorAll("button")).map((b) => b.textContent?.trim() ?? "");
+    await expect
+      .element(screen.getByText(/Nothing saved in this browser yet/))
+      .toBeInTheDocument();
+    const buttons = Array.from(screen.container.querySelectorAll("button")).map(
+      (b) => b.textContent?.trim() ?? "",
+    );
     expect(buttons.some((t) => /Download/.test(t))).toBe(false);
-    expect(buttons.some((t) => /Back to Composer/.test(t))).toBe(true);
+    expect(buttons.some((t) => /Back to RichLyricEditor/.test(t))).toBe(true);
   });
 
   it("auto-downloads and shows project metadata when a project is present", async () => {
@@ -56,7 +62,11 @@ describe("RecoverPanel", () => {
   });
 
   it("offers a Download again button after the auto-download succeeds", async () => {
-    await seedProject({ version: 1, metadata: { title: "Again" }, lines: [{ id: "a", text: "x", agentId: "v1" }] });
+    await seedProject({
+      version: 1,
+      metadata: { title: "Again" },
+      lines: [{ id: "a", text: "x", agentId: "v1" }],
+    });
     const originalCreate = document.createElement.bind(document);
     document.createElement = ((tag: string) => {
       const el = originalCreate(tag);
@@ -69,7 +79,9 @@ describe("RecoverPanel", () => {
     }) as any;
     try {
       const screen = await render(<RecoverPanel />);
-      await expect.element(screen.getByRole("button", { name: /Download again/ })).toBeInTheDocument();
+      await expect
+        .element(screen.getByRole("button", { name: /Download again/ }))
+        .toBeInTheDocument();
     } finally {
       document.createElement = originalCreate;
     }

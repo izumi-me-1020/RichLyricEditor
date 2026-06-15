@@ -4,6 +4,7 @@ import { Popover } from "@/ui/popover";
 import { SplitModeContent } from "@/views/sync/split-mode-content";
 import { useSyllableSplitterState } from "@/views/sync/use-syllable-splitter-state";
 import { IconScissors } from "@tabler/icons-react";
+import { t } from "i18next";
 
 // -- Interfaces ---------------------------------------------------------------
 
@@ -17,7 +18,13 @@ interface SyllableSplitterProps {
 
 // -- Components ---------------------------------------------------------------
 
-const SyllableSplitter: React.FC<SyllableSplitterProps> = ({ lineId, type, word, wordIndex, onSplit }) => {
+const SyllableSplitter: React.FC<SyllableSplitterProps> = ({
+  lineId,
+  type,
+  word,
+  wordIndex,
+  onSplit,
+}) => {
   const {
     splitPoints,
     applyToAll,
@@ -50,7 +57,9 @@ const SyllableSplitter: React.FC<SyllableSplitterProps> = ({ lineId, type, word,
     >
       {(close) => (
         <div className="p-5">
-          <h3 className="mb-4 text-lg font-medium">Split "{word.text.trimEnd()}"</h3>
+          <h3 className="mb-4 text-lg font-medium">
+            {t("Split")} "{word.text.trimEnd()}"
+          </h3>
           <SplitModeContent
             text={word.text.trimEnd()}
             splitPoints={splitPoints}

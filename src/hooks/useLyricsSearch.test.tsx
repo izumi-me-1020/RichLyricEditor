@@ -2,18 +2,31 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, act, createElement, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { LyricsSearchResult, ProviderName } from "@/domain/lyrics-search/result";
-import { useLyricsSearch, type UseLyricsSearchOptions, type UseLyricsSearchResult } from "@/hooks/useLyricsSearch";
+import type {
+  LyricsSearchResult,
+  ProviderName,
+} from "@/domain/lyrics-search/result";
+import {
+  useLyricsSearch,
+  type UseLyricsSearchOptions,
+  type UseLyricsSearchResult,
+} from "@/hooks/useLyricsSearch";
 import {
   registerProviderForTests,
   restoreProvidersForTests,
   snapshotProvidersForTests,
 } from "@/utils/lyrics-search/registry";
-import { LyricsSearchError, type LyricsSearchProvider, type LyricsSearchQuery } from "@/utils/lyrics-search/types";
+import {
+  LyricsSearchError,
+  type LyricsSearchProvider,
+  type LyricsSearchQuery,
+} from "@/utils/lyrics-search/types";
 
 // -- IS_REACT_ACT_ENVIRONMENT -----------------------------------------------
 
-(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 // -- Fixture provider ---------------------------------------------------------
 
@@ -63,7 +76,11 @@ function fakeProviderFactory(options: FakeProviderOptions): FakeProviderHandle {
   return { provider, unregister, calls, signalAtSettle };
 }
 
-function makeResult(id: string, source: ProviderName, track = "Track"): LyricsSearchResult {
+function makeResult(
+  id: string,
+  source: ProviderName,
+  track = "Track",
+): LyricsSearchResult {
   return {
     id,
     source,
@@ -110,7 +127,11 @@ function createHarness(initial: HookProps): HookHarness<UseLyricsSearchResult> {
   }
 
   function tree(props: HookProps): ReactNode {
-    return createElement(QueryClientProvider, { client }, createElement(HookHost, props));
+    return createElement(
+      QueryClientProvider,
+      { client },
+      createElement(HookHost, props),
+    );
   }
 
   act(() => {
@@ -143,7 +164,10 @@ async function advanceMicrotasks(rounds = 4): Promise<void> {
   }
 }
 
-async function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+async function waitUntil(
+  predicate: () => boolean,
+  timeoutMs = 2000,
+): Promise<void> {
   const start = Date.now();
   while (!predicate()) {
     if (Date.now() - start > timeoutMs) throw new Error("waitUntil: timeout");
@@ -169,7 +193,7 @@ afterEach(() => {
     try {
       fn();
     } catch (err) {
-      console.warn("[Composer] cleanup error", err);
+      console.warn("[RichLyricEditor] cleanup error", err);
     }
   }
   restoreProvidersForTests(originalSnapshot);
@@ -184,7 +208,12 @@ function track(handle: FakeProviderHandle): FakeProviderHandle {
 
 describe("useLyricsSearch", () => {
   it("returns empty results and does not call any provider when the query is empty", async () => {
-    const fake = track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")] }));
+    const fake = track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+      }),
+    );
     const h = createHarness({ query: {} });
     await advanceMicrotasks();
 
@@ -200,13 +229,22 @@ describe("useLyricsSearch", () => {
     const fake = track(
       fakeProviderFactory({
         name: "lrclib",
-        results: [makeResult("lrclib-1", "lrclib", "A"), makeResult("lrclib-2", "lrclib", "B")],
+        results: [
+          makeResult("lrclib-1", "lrclib", "A"),
+          makeResult("lrclib-2", "lrclib", "B"),
+        ],
       }),
     );
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 2);
 
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["lrclib-1", "lrclib-2"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "lrclib-1",
+      "lrclib-2",
+    ]);
     expect(h.result.current?.isFetching).toBe(false);
     expect(h.result.current?.errors.size).toBe(0);
     expect(fake.calls.length).toBe(1);
@@ -218,23 +256,37 @@ describe("useLyricsSearch", () => {
     const a = track(
       fakeProviderFactory({
         name: "lrclib",
-        results: [makeResult("lrclib-1", "lrclib"), makeResult("lrclib-2", "lrclib")],
+        results: [
+          makeResult("lrclib-1", "lrclib"),
+          makeResult("lrclib-2", "lrclib"),
+        ],
         delayMs: 30,
       }),
     );
     const b = track(
       fakeProviderFactory({
         name: "binimum",
-        results: [makeResult("binimum-1", "binimum"), makeResult("binimum-2", "binimum")],
+        results: [
+          makeResult("binimum-1", "binimum"),
+          makeResult("binimum-2", "binimum"),
+        ],
         delayMs: 30,
       }),
     );
     const start = Date.now();
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 4);
     const elapsed = Date.now() - start;
 
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["lrclib-1", "lrclib-2", "binimum-1", "binimum-2"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "lrclib-1",
+      "lrclib-2",
+      "binimum-1",
+      "binimum-2",
+    ]);
     expect(elapsed).toBeLessThan(120);
     expect(a.calls.length).toBe(1);
     expect(b.calls.length).toBe(1);
@@ -246,20 +298,33 @@ describe("useLyricsSearch", () => {
     track(
       fakeProviderFactory({
         name: "lrclib",
-        results: [makeResult("lrclib-1", "lrclib", "First"), makeResult("lrclib-2", "lrclib", "B")],
+        results: [
+          makeResult("lrclib-1", "lrclib", "First"),
+          makeResult("lrclib-2", "lrclib", "B"),
+        ],
       }),
     );
     track(
       fakeProviderFactory({
         name: "binimum",
-        results: [makeResult("lrclib-1", "binimum", "Duplicate"), makeResult("binimum-3", "binimum")],
+        results: [
+          makeResult("lrclib-1", "binimum", "Duplicate"),
+          makeResult("binimum-3", "binimum"),
+        ],
       }),
     );
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 3);
 
     const results = h.result.current?.results ?? [];
-    expect(results.map((r) => r.id)).toEqual(["lrclib-1", "lrclib-2", "binimum-3"]);
+    expect(results.map((r) => r.id)).toEqual([
+      "lrclib-1",
+      "lrclib-2",
+      "binimum-3",
+    ]);
     const first = results.find((r) => r.id === "lrclib-1");
     expect(first?.track).toBe("First");
     expect(first?.source).toBe("lrclib");
@@ -268,11 +333,19 @@ describe("useLyricsSearch", () => {
   });
 
   it("surfaces a per-provider error in the errors map and still returns other providers' results", async () => {
-    track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")] }));
+    track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+      }),
+    );
     const errorInstance = new LyricsSearchError("binimum", "boom");
     track(fakeProviderFactory({ name: "binimum", throwError: errorInstance }));
 
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.errors.size ?? 0) > 0);
 
     expect(h.result.current?.results.map((r) => r.id)).toEqual(["lrclib-1"]);
@@ -285,8 +358,16 @@ describe("useLyricsSearch", () => {
   });
 
   it("does not fire any queries when options.enabled is false", async () => {
-    const fake = track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")] }));
-    const h = createHarness({ query: { track: "hi" }, options: { enabled: false, debounceMs: 0 } });
+    const fake = track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+      }),
+    );
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { enabled: false, debounceMs: 0 },
+    });
     await advanceMicrotasks();
 
     expect(fake.calls.length).toBe(0);
@@ -311,7 +392,10 @@ describe("useLyricsSearch", () => {
         results: [makeResult("lrclib-1", "lrclib")],
       }),
     );
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 1);
 
     expect(skipping.calls.length).toBe(0);
@@ -322,7 +406,12 @@ describe("useLyricsSearch", () => {
   });
 
   it("debounces rapid query changes so only the final query fires", async () => {
-    const fake = track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-final", "lrclib")] }));
+    const fake = track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-final", "lrclib")],
+      }),
+    );
 
     const h = createHarness({ query: {}, options: { debounceMs: 50 } });
     await advanceMicrotasks();
@@ -345,14 +434,24 @@ describe("useLyricsSearch", () => {
 
   it("aborts the in-flight request when the query changes mid-fetch", async () => {
     const fake = track(
-      fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-x", "lrclib")], delayMs: 100 }),
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-x", "lrclib")],
+        delayMs: 100,
+      }),
     );
-    const h = createHarness({ query: { track: "first" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "first" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => fake.calls.length >= 1, 1000);
     const firstSignal = fake.calls[0]?.signal;
     expect(firstSignal?.aborted).toBe(false);
 
-    await h.rerender({ query: { track: "second" }, options: { debounceMs: 0 } });
+    await h.rerender({
+      query: { track: "second" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => firstSignal?.aborted === true, 1000);
     expect(firstSignal?.aborted).toBe(true);
 
@@ -364,7 +463,11 @@ describe("useLyricsSearch", () => {
 
   it("aborts pending requests on unmount and does not log errors", async () => {
     const fake = track(
-      fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")], delayMs: 200 }),
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+        delayMs: 200,
+      }),
     );
     const errors: unknown[] = [];
     const originalError = console.error;
@@ -372,7 +475,10 @@ describe("useLyricsSearch", () => {
       errors.push(args);
     };
 
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => fake.calls.length >= 1, 1000);
     const inflightSignal = fake.calls[0]?.signal;
     expect(inflightSignal?.aborted).toBe(false);
@@ -386,8 +492,17 @@ describe("useLyricsSearch", () => {
   });
 
   it("reports isFetching true while at least one provider's query is in-flight", async () => {
-    track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")], delayMs: 80 }));
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+        delayMs: 80,
+      }),
+    );
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => h.result.current?.isFetching === true, 1000);
 
     expect(h.result.current?.isFetching).toBe(true);
@@ -400,8 +515,16 @@ describe("useLyricsSearch", () => {
   });
 
   it("treats videoId-only queries as non-empty (does not gate on track)", async () => {
-    const fake = track(fakeProviderFactory({ name: "binimum", results: [makeResult("binimum-1", "binimum")] }));
-    const h = createHarness({ query: { videoId: "fJ9rUzIMcZQ" }, options: { debounceMs: 0 } });
+    const fake = track(
+      fakeProviderFactory({
+        name: "binimum",
+        results: [makeResult("binimum-1", "binimum")],
+      }),
+    );
+    const h = createHarness({
+      query: { videoId: "fJ9rUzIMcZQ" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => fake.calls.length >= 1, 1000);
 
     expect(fake.calls[0]?.query.videoId).toBe("fJ9rUzIMcZQ");
@@ -411,8 +534,16 @@ describe("useLyricsSearch", () => {
   });
 
   it("treats isrc-only queries as non-empty", async () => {
-    const fake = track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")] }));
-    const h = createHarness({ query: { isrc: "USQX91200002" }, options: { debounceMs: 0 } });
+    const fake = track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+      }),
+    );
+    const h = createHarness({
+      query: { isrc: "USQX91200002" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => fake.calls.length >= 1, 1000);
 
     expect(fake.calls[0]?.query.isrc).toBe("USQX91200002");
@@ -421,8 +552,16 @@ describe("useLyricsSearch", () => {
   });
 
   it("treats an artist-only or duration-only query as empty (still requires track/videoId/isrc)", async () => {
-    const fake = track(fakeProviderFactory({ name: "lrclib", results: [makeResult("lrclib-1", "lrclib")] }));
-    const h = createHarness({ query: { artist: "Queen", durationSec: 355 }, options: { debounceMs: 0 } });
+    const fake = track(
+      fakeProviderFactory({
+        name: "lrclib",
+        results: [makeResult("lrclib-1", "lrclib")],
+      }),
+    );
+    const h = createHarness({
+      query: { artist: "Queen", durationSec: 355 },
+      options: { debounceMs: 0 },
+    });
     await advanceMicrotasks();
 
     expect(fake.calls.length).toBe(0);
@@ -466,10 +605,18 @@ describe("useLyricsSearch sort order", () => {
         ],
       }),
     );
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 4);
 
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["syllable", "word", "line", "unsynced"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "syllable",
+      "word",
+      "line",
+      "unsynced",
+    ]);
 
     await h.unmount();
   });
@@ -492,7 +639,12 @@ describe("useLyricsSearch sort order", () => {
     });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 4);
 
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["exact", "two-below", "five-above", "far"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "exact",
+      "two-below",
+      "five-above",
+      "far",
+    ]);
 
     await h.unmount();
   });
@@ -508,7 +660,10 @@ describe("useLyricsSearch sort order", () => {
         ],
       }),
     );
-    const h = createHarness({ query: { track: "hi" }, options: { debounceMs: 0 } });
+    const h = createHarness({
+      query: { track: "hi" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 3);
 
     expect(h.result.current?.results.map((r) => r.id)).toEqual(["a", "b", "c"]);
@@ -520,7 +675,10 @@ describe("useLyricsSearch sort order", () => {
     track(
       fakeProviderFactory({
         name: "lrclib",
-        results: [makeResultFull("a", "lrclib", "line", 400), makeResultFull("b", "lrclib", "line", 200)],
+        results: [
+          makeResultFull("a", "lrclib", "line", 400),
+          makeResultFull("b", "lrclib", "line", 200),
+        ],
       }),
     );
     const h = createHarness({
@@ -550,7 +708,10 @@ describe("useLyricsSearch sort order", () => {
     });
     await waitUntil(() => (h.result.current?.results.length ?? 0) === 2);
 
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["syllable-far", "line-exact"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "syllable-far",
+      "line-exact",
+    ]);
 
     await h.unmount();
   });
@@ -583,7 +744,11 @@ function createSharedClientHarness(): SharedClientHarness<UseLyricsSearchResult>
   }
 
   function tree(props: HookProps): ReactNode {
-    return createElement(QueryClientProvider, { client }, createElement(HookHost, props));
+    return createElement(
+      QueryClientProvider,
+      { client },
+      createElement(HookHost, props),
+    );
   }
 
   return {
@@ -628,7 +793,9 @@ describe("useLyricsSearch cache lifetime", () => {
 
     await h.mount({ query: { track: "Bohemian" }, options: { debounceMs: 0 } });
     await advanceMicrotasks();
-    expect(h.result.current?.results.map((r) => r.id)).toEqual(["lrclib-cache-1"]);
+    expect(h.result.current?.results.map((r) => r.id)).toEqual([
+      "lrclib-cache-1",
+    ]);
     expect(fake.calls.length).toBe(1);
 
     await h.unmount();
@@ -645,7 +812,10 @@ describe("useLyricsSearch cache lifetime", () => {
     await h.mount({ query: { track: "Bohemian" }, options: { debounceMs: 0 } });
     await waitUntil(() => fake.calls.length === 1);
 
-    await h.rerender({ query: { track: "Stairway" }, options: { debounceMs: 0 } });
+    await h.rerender({
+      query: { track: "Stairway" },
+      options: { debounceMs: 0 },
+    });
     await waitUntil(() => fake.calls.length === 2);
     expect(fake.calls[0]?.query.track).toBe("Bohemian");
     expect(fake.calls[1]?.query.track).toBe("Stairway");

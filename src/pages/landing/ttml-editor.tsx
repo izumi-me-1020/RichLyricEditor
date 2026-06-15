@@ -5,7 +5,12 @@ import { FeatureGrid } from "@/pages/landing/sections/feature-grid";
 import { Hero } from "@/pages/landing/sections/hero";
 import { HowItWorks } from "@/pages/landing/sections/how-it-works";
 import { PageHead } from "@/seo/page-head";
-import { breadcrumbListSchema, faqPageSchema, organizationSchema, softwareApplicationSchema } from "@/seo/schemas";
+import {
+  breadcrumbListSchema,
+  faqPageSchema,
+  organizationSchema,
+  softwareApplicationSchema,
+} from "@/seo/schemas";
 import {
   IconAdjustmentsHorizontal,
   IconArrowsMoveHorizontal,
@@ -17,17 +22,18 @@ import {
 
 const FAQS = [
   {
-    question: "What makes Composer a real TTML editor and not just a generator?",
+    question:
+      "What makes RichLyricEditor a real TTML editor and not just a generator?",
     answer:
-      "Every word has a draggable boundary over a zoomable waveform. You can nudge timing by a single millisecond, split and merge syllables, swap agents, and edit background vocal spans in place. Generators only produce; Composer lets you shape.",
+      "Every word has a draggable boundary over a zoomable waveform. You can nudge timing by a single millisecond, split and merge syllables, swap agents, and edit background vocal spans in place. Generators only produce; RichLyricEditor lets you shape.",
   },
   {
     question: "Can I open an existing TTML file and edit it?",
     answer:
-      "Yes. Drop a TTML file in and Composer parses agents, word-level spans, background vocals, and metadata. You can refine it and re-export without losing structure.",
+      "Yes. Drop a TTML file in and RichLyricEditor parses agents, word-level spans, background vocals, and metadata. You can refine it and re-export without losing structure.",
   },
   {
-    question: "Does Composer support undo and history?",
+    question: "Does RichLyricEditor support undo and history?",
     answer:
       "Yes. Every timing adjustment, text edit, agent change, and split or merge is undoable. History is preserved per session.",
   },
@@ -39,7 +45,7 @@ const FAQS = [
   {
     question: "What file formats can I import into the TTML editor?",
     answer:
-      "TTML, LRC, eLRC (with inline word timing), SRT, and plain text. Composer detects the format and imports with maximum fidelity.",
+      "TTML, LRC, eLRC (with inline word timing), SRT, and plain text. RichLyricEditor detects the format and imports with maximum fidelity.",
   },
 ];
 
@@ -56,10 +62,14 @@ const TtmlEditorPage: React.FC = () => {
         description={DESCRIPTION}
         path={PATH}
         jsonLd={[
-          softwareApplicationSchema("Composer TTML Editor", DESCRIPTION, PATH),
+          softwareApplicationSchema(
+            "RichLyricEditor TTML Editor",
+            DESCRIPTION,
+            PATH,
+          ),
           faqPageSchema(FAQS),
           breadcrumbListSchema([
-            { name: "Composer", path: "/" },
+            { name: "RichLyricEditor", path: "/" },
             { name: "TTML Editor", path: PATH },
           ]),
           organizationSchema(),
@@ -74,12 +84,13 @@ const TtmlEditorPage: React.FC = () => {
       />
       <FeatureGrid
         title="Built for refining timing, not just producing files"
-        subtitle="Most TTML tools generate and hope. Composer lets you edit at the level of a single millisecond."
+        subtitle="Most TTML tools generate and hope. RichLyricEditor lets you edit at the level of a single millisecond."
         features={[
           {
             icon: IconWaveSine,
             title: "Waveform timeline",
-            description: "Every word sits above a real audio waveform. Drag boundaries with frame-accurate precision.",
+            description:
+              "Every word sits above a real audio waveform. Drag boundaries with frame-accurate precision.",
           },
           {
             icon: IconArrowsMoveHorizontal,
@@ -96,18 +107,20 @@ const TtmlEditorPage: React.FC = () => {
           {
             icon: IconLiveView,
             title: "Live preview",
-            description: "Watch the animated preview play back your edits in real time. No export required.",
+            description:
+              "Watch the animated preview play back your edits in real time. No export required.",
           },
           {
             icon: IconHistory,
             title: "Full undo history",
-            description: "Experiment freely. Every edit is reversible within the session.",
+            description:
+              "Experiment freely. Every edit is reversible within the session.",
           },
           {
             icon: IconFileImport,
             title: "Import any format",
             description:
-              "TTML, LRC, eLRC, SRT, plain text. Composer reads them all and gives you a single editing surface.",
+              "TTML, LRC, eLRC, SRT, plain text. RichLyricEditor reads them all and gives you a single editing surface.",
           },
         ]}
       />
@@ -116,19 +129,23 @@ const TtmlEditorPage: React.FC = () => {
         steps={[
           {
             title: "Import your file",
-            description: "Drop in a TTML, LRC, or SRT file. Composer parses timing and agents automatically.",
+            description:
+              "Drop in a TTML, LRC, or SRT file. RichLyricEditor parses timing and agents automatically.",
           },
           {
             title: "Load the audio",
-            description: "Add the matching audio file so the waveform lines up with the lyric timing.",
+            description:
+              "Add the matching audio file so the waveform lines up with the lyric timing.",
           },
           {
             title: "Edit with precision",
-            description: "Drag word boundaries, split syllables, reassign agents, and add background vocals.",
+            description:
+              "Drag word boundaries, split syllables, reassign agents, and add background vocals.",
           },
           {
             title: "Export clean TTML",
-            description: "Export a well-formed file ready for Apple Music, Spotify, or Better Lyrics.",
+            description:
+              "Export a well-formed file ready for Apple Music, Spotify, or RichLyric.",
           },
         ]}
       />

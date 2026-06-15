@@ -28,12 +28,23 @@ interface WordRendererProps {
 
 // -- Helper -------------------------------------------------------------------
 
-function renderWordContent(word: string, timing: WordTiming | undefined, isBackground: boolean, editMode: boolean) {
+function renderWordContent(
+  word: string,
+  timing: WordTiming | undefined,
+  isBackground: boolean,
+  editMode: boolean,
+) {
   const isSynced = !!timing;
   const baseClass = isBackground ? "italic" : "";
-  const syncedClass = isBackground ? "text-composer-text-muted/70" : "text-composer-text-muted";
-  const unsyncedClass = isBackground ? "text-composer-text-muted/50" : "text-composer-text";
-  const activeClass = isBackground ? "text-composer-accent-text/80" : "text-composer-accent-text";
+  const syncedClass = isBackground
+    ? "text-composer-text-muted/70"
+    : "text-composer-text-muted";
+  const unsyncedClass = isBackground
+    ? "text-composer-text-muted/50"
+    : "text-composer-text";
+  const activeClass = isBackground
+    ? "text-composer-accent-text/80"
+    : "text-composer-accent-text";
 
   if (editMode && isSynced) {
     return (
@@ -50,7 +61,13 @@ function renderWordContent(word: string, timing: WordTiming | undefined, isBackg
       </span>
     );
   }
-  return <span className={`whitespace-pre ${baseClass} ${isSynced ? syncedClass : unsyncedClass}`}>{word}</span>;
+  return (
+    <span
+      className={`whitespace-pre ${baseClass} ${isSynced ? syncedClass : unsyncedClass}`}
+    >
+      {word}
+    </span>
+  );
 }
 
 // -- Component ----------------------------------------------------------------
@@ -76,7 +93,9 @@ const WordRenderer: React.FC<WordRendererProps> = ({
   const maxEnd = nextWord?.begin ?? Number.POSITIVE_INFINITY;
 
   return (
-    <span className={`inline-flex flex-col items-start ${isBackground ? "italic" : ""}`}>
+    <span
+      className={`inline-flex flex-col items-start ${isBackground ? "italic" : ""}`}
+    >
       <span className="flex items-center gap-1 group/word">
         {renderWordContent(word, timing, isBackground, editMode)}
         {isSynced && timing && timing.end === timing.begin && (

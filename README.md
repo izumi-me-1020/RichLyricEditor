@@ -1,34 +1,34 @@
 <p align="center">
-  <img src="public/logo.svg" width="80" height="80" alt="Composer" />
+  <img src="public/logo.svg" width="80" height="80" alt="RichLyricEditor" />
 </p>
 
-<h1 align="center">Composer</h1>
+<h1 align="center">RichLyricEditor</h1>
 
 <p align="center">
-  The lyrics editor for <a href="https://betterlyrics.org">Better Lyrics</a>.<br/>
+  The lyrics editor for <a href="https://richlyric.izumy.me">RichLyric</a>.<br/>
   Create word-synced TTML lyrics with a visual timeline, tap-to-sync, and live preview.
 </p>
 
 <p align="center">
-  <a href="https://composer.boidu.dev"><img src="https://img.shields.io/badge/Open-composer.boidu.dev-F50032?style=flat-square" alt="Open Composer" /></a>
+  <a href="https://composer.boidu.dev"><img src="https://img.shields.io/badge/Open-composer.boidu.dev-F50032?style=flat-square" alt="Open RichLyricEditor" /></a>
   <a href="https://www.w3.org/TR/2018/REC-ttml1-20181108/"><img src="https://img.shields.io/badge/TTML%201-W3C%20Compliant-4caf50?style=flat-square" alt="TTML 1 W3C Compliant" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL%203.0-2196f3?style=flat-square" alt="AGPL 3.0 License" /></a>
-  <a href="https://betterlyrics.org"><img src="https://img.shields.io/badge/Built%20for-Better%20Lyrics-F50032?style=flat-square" alt="Built for Better Lyrics" /></a>
+  <a href="https://richlyric.izumy.me"><img src="https://img.shields.io/badge/Built%20for-Better%20Lyrics-F50032?style=flat-square" alt="Built for RichLyric" /></a>
 </p>
 
 ---
 
-## Why Composer
+## Why RichLyricEditor
 
 Tools like [AMLL TTML Tool](https://amll-ttml-tool.stevexmh.net/) are powerful and feature-rich. If you know what you're doing, they're great. But if you're new to lyrics syncing, the learning curve is steep. There's no clear starting point, the interface assumes familiarity with TTML structure, and you're expected to already understand concepts like word-level timing and agent roles.
 
-Composer takes a different approach. It's built around a linear mental model: import, edit, sync, export. Each tab is one step. You don't need to know what TTML is to get started. Just paste lyrics, tap along with the music, and you get a synced file.
+RichLyricEditor takes a different approach. It's built around a linear mental model: import, edit, sync, export. Each tab is one step. You don't need to know what TTML is to get started. Just paste lyrics, tap along with the music, and you get a synced file.
 
 For users who want more control, the Timeline view is a full GUI where you can do everything without leaving that single screen. Import audio, add lyrics, drag word blocks on the waveform, split syllables, assign agents, preview your work. It's designed so beginners start with the guided tabs and naturally graduate to the Timeline as they get comfortable.
 
 ## What it does
 
-Composer turns plain lyrics into precisely timed TTML files. You import audio, paste your lyrics, tap along to sync each word, then export the result. Everything runs in the browser with no server required.
+RichLyricEditor turns plain lyrics into precisely timed TTML files. You import audio, paste your lyrics, tap along to sync each word, then export the result. Everything runs in the browser with no server required.
 
 Four-step workflow:
 
@@ -48,7 +48,7 @@ Four-step workflow:
 - **Multiple agents** - Assign lines to different singers with distinct colors
 - **Background vocals** - Separate track for backing vocals with `x-bg` TTML role
 - **Syllable splitting** - Break words into individually timed syllables
-- **Live preview** - See your lyrics rendered in real time with Better Lyrics' engine
+- **Live preview** - See your lyrics rendered in real time with RichLyric' engine
 - **Lyrics import** - Drop .lrc, .srt, .ttml, or .txt files to get started quickly
 - **Project files** - Save and share your work as JSON
 - **Keyboard-driven** - Comprehensive shortcuts for every action
@@ -56,13 +56,13 @@ Four-step workflow:
 
 ## Standards
 
-Composer emits **TTML 1** ([W3C Recommendation, Nov 2018](https://www.w3.org/TR/2018/REC-ttml1-20181108/)) compliant XML. Linked groups and per-instance metadata are exposed via foreign-namespace extensions the spec explicitly permits, so files round-trip through any TTML 1 parser.
+RichLyricEditor emits **TTML 1** ([W3C Recommendation, Nov 2018](https://www.w3.org/TR/2018/REC-ttml1-20181108/)) compliant XML. Linked groups and per-instance metadata are exposed via foreign-namespace extensions the spec explicitly permits, so files round-trip through any TTML 1 parser.
 
 For the full breakdown, see **Help → TTML & standards** in-app.
 
 ## Self-hosting
 
-Composer is a static site with zero backend dependencies. All processing happens in the browser.
+RichLyricEditor is a static site with zero backend dependencies. All processing happens in the browser.
 
 ```bash
 pnpm install
@@ -92,7 +92,7 @@ pnpm typecheck         # Type check
 
 ## Vocal separation hosting
 
-Composer ships an optional HTDemucs (Hybrid Transformer Demucs v4) vocal-separation feature that runs entirely in the browser via ONNX Runtime Web (WebGPU primary, WASM fallback). The model file is too large for Cloudflare Pages' 25 MB asset limit, so it is **not** bundled — instead it's served from a public Cloudflare R2 bucket. Egress from R2 is free, and serving via a custom domain keeps the file cached at Cloudflare's edge without going through a Worker.
+RichLyricEditor ships an optional HTDemucs (Hybrid Transformer Demucs v4) vocal-separation feature that runs entirely in the browser via ONNX Runtime Web (WebGPU primary, WASM fallback). The model file is too large for Cloudflare Pages' 25 MB asset limit, so it is **not** bundled — instead it's served from a public Cloudflare R2 bucket. Egress from R2 is free, and serving via a custom domain keeps the file cached at Cloudflare's edge without going through a Worker.
 
 If `VITE_VOCAL_MODEL_BASE_URL` is unset, the vocal-separation dropdown is hidden entirely.
 
@@ -134,8 +134,8 @@ React, TypeScript, Vite, TailwindCSS v4, Zustand, Vitest
 
 ## License
 
-Composer is dual-licensed.
+RichLyricEditor is dual-licensed.
 
-The open-source license is [AGPL-3.0](LICENSE). You are free to use, modify, and self-host Composer under its terms.
+The open-source license is [AGPL-3.0](LICENSE). You are free to use, modify, and self-host RichLyricEditor under its terms.
 
-A commercial license is also available. It removes the AGPL copyleft obligations and covers commercial use of Composer's output, such as a record label or distributor publishing generated lyrics as part of a release. For commercial or enterprise licensing, reach out to composer@boidu.dev.
+A commercial license is also available. It removes the AGPL copyleft obligations and covers commercial use of RichLyricEditor's output, such as a record label or distributor publishing generated lyrics as part of a release. For commercial or enterprise licensing, reach out to composer@boidu.dev.

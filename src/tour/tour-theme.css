@@ -1,6 +1,6 @@
 @import "driver.js/dist/driver.css";
 
-/* -- Driver.js Dark Theme for Composer ---------------------------------------- */
+/* -- Driver.js Dark Theme for RichLyricEditor ---------------------------------------- */
 
 .driver-popover.composer-tour {
   background: var(--color-composer-bg-dark);
@@ -8,7 +8,9 @@
   border-radius: 12px;
   color: var(--color-composer-text);
   font-family: var(--font-family-sans);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
   max-width: 360px;
 }
 

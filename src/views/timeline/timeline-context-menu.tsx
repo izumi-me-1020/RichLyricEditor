@@ -13,19 +13,27 @@ import { useWordMenuActions } from "@/views/timeline/use-word-menu-actions";
 import { IconCommand } from "@tabler/icons-react";
 import { flip, FloatingPortal, shift, useFloating } from "@floating-ui/react";
 import { useEffect, useLayoutEffect } from "react";
+import { t } from "i18next";
 
 function MenuItem({
   label,
   onClick,
   danger,
   shortcut,
-}: { label: string; onClick: () => void; danger?: boolean; shortcut?: string[] }) {
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+  shortcut?: string[];
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`w-full flex items-center justify-between gap-4 px-3 py-1.5 text-sm cursor-pointer rounded-md transition-colors ${
-        danger ? "text-composer-error hover:bg-composer-error/10" : "text-composer-text hover:bg-composer-button"
+        danger
+          ? "text-composer-error hover:bg-composer-error/10"
+          : "text-composer-text hover:bg-composer-button"
       }`}
     >
       <span>{label}</span>
@@ -36,7 +44,11 @@ function MenuItem({
               key={key}
               className="inline-flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-medium rounded bg-white/10 text-composer-text-muted leading-none shadow-[0_2px_0_0_rgba(0,0,0,0.3)]"
             >
-              {key === "Mod" && isMac ? <IconCommand className="size-2.5" /> : formatKey(key)}
+              {key === "Mod" && isMac ? (
+                <IconCommand className="size-2.5" />
+              ) : (
+                formatKey(key)
+              )}
             </span>
           ))}
         </span>
@@ -57,7 +69,10 @@ const TimelineContextMenu: React.FC = () => {
 
   const { refs, floatingStyles } = useFloating({
     placement: "bottom-start",
-    middleware: [flip({ fallbackPlacements: ["top-start", "bottom-end", "top-end"] }), shift({ padding: 8 })],
+    middleware: [
+      flip({ fallbackPlacements: ["top-start", "bottom-end", "top-end"] }),
+      shift({ padding: 8 }),
+    ],
   });
 
   const agents = useProjectStore((s) => s.agents);
@@ -164,43 +179,52 @@ const TimelineContextMenu: React.FC = () => {
         {target.kind === "word" && (
           <>
             <MenuItem
-              label="Edit text"
+              label={t("Edit text")}
               shortcut={getEffectiveKeysArray("timeline.editWord")}
               onClick={handleEditWord}
             />
             <MenuItem
-              label="Split syllables"
+              label={t("Split syllables")}
               shortcut={getEffectiveKeysArray("timeline.splitSyllable")}
               onClick={handleSplitSyllables}
             />
             <MenuItem
-              label="Split word"
+              label={t("Split word")}
               shortcut={getEffectiveKeysArray("timeline.splitWord")}
               onClick={handleSplitWord}
             />
             {mergeInfo && (
               <MenuItem
-                label="Merge words"
+                label={t("Merge words")}
                 shortcut={getEffectiveKeysArray("timeline.mergeWords")}
                 onClick={handleMergeWords}
               />
             )}
             {groupedWordInfo && (
               <MenuItem
-                label="Merge syllables"
-                shortcut={getEffectiveKeysArray("timeline.mergeSyllablesIntoWord")}
+                label={t("Merge syllables")}
+                shortcut={getEffectiveKeysArray(
+                  "timeline.mergeSyllablesIntoWord",
+                )}
                 onClick={handleMergeSyllables}
               />
             )}
-            {snapNeededInfo && <MenuItem label="Snap syllables flush" onClick={handleSnapSyllables} />}
+            {snapNeededInfo && (
+              <MenuItem
+                label={t("Snap syllables flush")}
+                onClick={handleSnapSyllables}
+              />
+            )}
             {splitIntoWordsInfo && (
               <>
                 <MenuDivider />
                 <MenuItem
                   label={
                     splitIntoWordsInfo.count > 1
-                      ? `Split ${splitIntoWordsInfo.count} lines into words`
-                      : "Split into words"
+                      ? t("Split {{count}} lines into words", {
+                          count: splitIntoWordsInfo.count,
+                        })
+                      : t("Split into words")
                   }
                   shortcut={getEffectiveKeysArray("timeline.splitIntoWords")}
                   onClick={handleSplitIntoWords}
@@ -213,8 +237,16 @@ const TimelineContextMenu: React.FC = () => {
                 <MenuItem
                   label={
                     groupableSelection.count > 1
-                      ? `Group ${groupableSelection.count} lines${groupableSelection.addedFromGaps > 0 ? ` (incl. ${groupableSelection.addedFromGaps} gap)` : ""}`
-                      : "Group this line"
+                      ? t(
+                          groupableSelection.addedFromGaps > 0
+                            ? "Group {{count}} lines (incl. {{gapCount}} gap)"
+                            : "Group {{count}} lines",
+                          {
+                            count: groupableSelection.count,
+                            gapCount: groupableSelection.addedFromGaps,
+                          },
+                        )
+                      : t("Group this line")
                   }
                   shortcut={getEffectiveKeysArray("timeline.createGroup")}
                   onClick={handleCreateGroupFromSelection}
@@ -228,11 +260,15 @@ const TimelineContextMenu: React.FC = () => {
                   label={
                     explicitToggleContext.allMarked
                       ? explicitToggleContext.indices.length > 1
-                        ? `Unmark ${explicitToggleContext.indices.length} as explicit`
-                        : "Unmark explicit"
+                        ? t("Unmark {{count}} as explicit", {
+                            count: explicitToggleContext.indices.length,
+                          })
+                        : t("Unmark explicit")
                       : explicitToggleContext.indices.length > 1
-                        ? `Mark ${explicitToggleContext.indices.length} as explicit`
-                        : "Mark as explicit"
+                        ? t("Mark {{count}} as explicit", {
+                            count: explicitToggleContext.indices.length,
+                          })
+                        : t("Mark as explicit")
                   }
                   shortcut={getEffectiveKeysArray("timeline.toggleExplicit")}
                   onClick={handleToggleExplicit}
@@ -241,7 +277,7 @@ const TimelineContextMenu: React.FC = () => {
             )}
             <MenuDivider />
             <MenuItem
-              label={groupedWordInfo ? "Delete syllable" : "Delete word"}
+              label={groupedWordInfo ? t("Delete syllable") : t("Delete word")}
               shortcut={["Del"]}
               onClick={handleDeleteWord}
               danger
@@ -251,16 +287,33 @@ const TimelineContextMenu: React.FC = () => {
 
         {target.kind === "track" && (
           <>
-            <MenuItem label="Add word here" shortcut={["Double Click"]} onClick={handleAddWordHere} />
-            {placeLineHereInfo && <MenuItem label="Place line here" onClick={handlePlaceLineHere} />}
+            <MenuItem
+              label={t("Add word here")}
+              shortcut={["Double Click"]}
+              onClick={handleAddWordHere}
+            />
+            {placeLineHereInfo && (
+              <MenuItem
+                label={t("Place line here")}
+                onClick={handlePlaceLineHere}
+              />
+            )}
             {groupableSelection && (
               <>
                 <MenuDivider />
                 <MenuItem
                   label={
                     groupableSelection.count > 1
-                      ? `Group ${groupableSelection.count} lines${groupableSelection.addedFromGaps > 0 ? ` (incl. ${groupableSelection.addedFromGaps} gap)` : ""}`
-                      : "Group this line"
+                      ? t(
+                          groupableSelection.addedFromGaps > 0
+                            ? "Group {{count}} lines (incl. {{gapCount}} gap)"
+                            : "Group {{count}} lines",
+                          {
+                            count: groupableSelection.count,
+                            gapCount: groupableSelection.addedFromGaps,
+                          },
+                        )
+                      : t("Group this line")
                   }
                   shortcut={getEffectiveKeysArray("timeline.createGroup")}
                   onClick={handleCreateGroupFromSelection}
@@ -272,16 +325,32 @@ const TimelineContextMenu: React.FC = () => {
 
         {target.kind === "gutter" && (
           <>
-            <MenuItem label="Add line above" shortcut={["Shift", "N"]} onClick={() => handleAddLine("above")} />
-            <MenuItem label="Add line below" shortcut={["N"]} onClick={() => handleAddLine("below")} />
+            <MenuItem
+              label={t("Add line above")}
+              shortcut={["Shift", "N"]}
+              onClick={() => handleAddLine("above")}
+            />
+            <MenuItem
+              label={t("Add line below")}
+              shortcut={["N"]}
+              onClick={() => handleAddLine("below")}
+            />
             {groupableSelection && (
               <>
                 <MenuDivider />
                 <MenuItem
                   label={
                     groupableSelection.count > 1
-                      ? `Group ${groupableSelection.count} lines${groupableSelection.addedFromGaps > 0 ? ` (incl. ${groupableSelection.addedFromGaps} gap)` : ""}`
-                      : "Group this line"
+                      ? t(
+                          groupableSelection.addedFromGaps > 0
+                            ? "Group {{count}} lines (incl. {{gapCount}} gap)"
+                            : "Group {{count}} lines",
+                          {
+                            count: groupableSelection.count,
+                            gapCount: groupableSelection.addedFromGaps,
+                          },
+                        )
+                      : t("Group this line")
                   }
                   shortcut={getEffectiveKeysArray("timeline.createGroup")}
                   onClick={handleCreateGroupFromSelection}
@@ -291,7 +360,9 @@ const TimelineContextMenu: React.FC = () => {
             <MenuDivider />
             {agents.length > 1 && (
               <>
-                <p className="px-3 py-1 text-xs text-composer-text-muted">Assign agent</p>
+                <p className="px-3 py-1 text-xs text-composer-text-muted">
+                  {t("Assign agent")}
+                </p>
                 <div className="flex flex-col gap-px">
                   {agents.map((agent) => {
                     const color = getAgentColor(agent.id);
@@ -308,7 +379,10 @@ const TimelineContextMenu: React.FC = () => {
                             : "text-composer-text hover:bg-composer-button"
                         }`}
                       >
-                        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <span
+                          className="size-2 rounded-full shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
                         {agent.name || agent.id}
                       </button>
                     );
@@ -319,11 +393,18 @@ const TimelineContextMenu: React.FC = () => {
             )}
             {gutterLineGroupInfo && (
               <>
-                <MenuItem label="Detach this line" onClick={handleDetachLine} />
+                <MenuItem
+                  label={t("Detach this line")}
+                  onClick={handleDetachLine}
+                />
                 <MenuDivider />
               </>
             )}
-            <MenuItem label="Delete line" onClick={handleDeleteLine} danger />
+            <MenuItem
+              label={t("Delete line")}
+              onClick={handleDeleteLine}
+              danger
+            />
           </>
         )}
 
@@ -331,48 +412,64 @@ const TimelineContextMenu: React.FC = () => {
           <>
             <MenuItem
               label={
-                useTimelineStore.getState().collapsedInstances[`${target.groupId}:${target.instanceIdx}`]
-                  ? "Expand instance"
-                  : "Collapse instance"
+                useTimelineStore.getState().collapsedInstances[
+                  `${target.groupId}:${target.instanceIdx}`
+                ]
+                  ? t("Expand instance")
+                  : t("Collapse instance")
               }
-              shortcut={getEffectiveKeysArray("timeline.toggleCollapseInstance")}
+              shortcut={getEffectiveKeysArray(
+                "timeline.toggleCollapseInstance",
+              )}
               onClick={handleToggleCollapse}
             />
             <MenuItem
-              label={target.source === "gutter" ? "Jump to group" : "Jump to start"}
+              label={
+                target.source === "gutter"
+                  ? t("Jump to group")
+                  : t("Jump to start")
+              }
               shortcut={getEffectiveKeysArray("timeline.jumpToInstanceStart")}
               onClick={handleJumpToGroupFromBanner}
             />
             <MenuItem
-              label="Ping siblings"
+              label={t("Ping siblings")}
               shortcut={getEffectiveKeysArray("timeline.pingSiblings")}
               onClick={handlePingSiblings}
             />
             <MenuDivider />
             <MenuItem
-              label="Add instance at playhead"
+              label={t("Add instance at playhead")}
               shortcut={getEffectiveKeysArray("timeline.duplicateAsLinked")}
               onClick={handleAddInstanceAtPlayhead}
             />
             <MenuItem
-              label="Shift instance to playhead"
-              shortcut={getEffectiveKeysArray("timeline.shiftInstanceToPlayhead")}
+              label={t("Shift instance to playhead")}
+              shortcut={getEffectiveKeysArray(
+                "timeline.shiftInstanceToPlayhead",
+              )}
               onClick={handleShiftToPlayhead}
             />
             <MenuItem
-              label="Jump to previous instance"
+              label={t("Jump to previous instance")}
               shortcut={getEffectiveKeysArray("timeline.jumpPrevInstance")}
               onClick={handleJumpPrevInstance}
             />
             <MenuItem
-              label="Jump to next instance"
+              label={t("Jump to next instance")}
               shortcut={getEffectiveKeysArray("timeline.jumpNextInstance")}
               onClick={handleJumpNextInstance}
             />
             <MenuDivider />
-            <MenuItem label="Rename" shortcut={["Double Click"]} onClick={handleRenameStart} />
+            <MenuItem
+              label={t("Rename")}
+              shortcut={["Double Click"]}
+              onClick={handleRenameStart}
+            />
             <MenuDivider />
-            <p className="px-3 pt-1.5 pb-1 text-xs text-composer-text-muted">Recolor</p>
+            <p className="px-3 pt-1.5 pb-1 text-xs text-composer-text-muted">
+              {t("Recolor")}
+            </p>
             <div className="px-3 pb-1.5 grid grid-cols-5 gap-1.5">
               {GROUP_COLORS.map((c) => (
                 <button
@@ -387,12 +484,12 @@ const TimelineContextMenu: React.FC = () => {
             </div>
             <MenuDivider />
             <MenuItem
-              label="Detach instance"
+              label={t("Detach instance")}
               shortcut={getEffectiveKeysArray("timeline.detachInstance")}
               onClick={handleDetachInstance}
             />
             <MenuItem
-              label="Delete group"
+              label={t("Delete group")}
               shortcut={getEffectiveKeysArray("timeline.deleteGroup")}
               onClick={handleDeleteGroup}
               danger

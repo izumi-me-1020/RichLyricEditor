@@ -2,6 +2,7 @@ import { Button } from "@/ui/button";
 import { cn } from "@/utils/cn";
 import { displayHostFromUrl, ensureHttpScheme, isValidHttpUrl } from "@/utils/url";
 import { useState } from "react";
+import { t } from "i18next";
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ const CobaltInstanceEditRow: React.FC<{
         <input
           ref={focusOnMount}
           type="text"
-          aria-label="Instance name"
+          aria-label={t("Instance name")}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -54,7 +55,7 @@ const CobaltInstanceEditRow: React.FC<{
         <input
           type="url"
           inputMode="url"
-          aria-label="Instance URL"
+          aria-label={t("Instance URL")}
           value={url}
           onChange={(e) => setUrl(e.target.value.replace(/\s+/g, ""))}
           onKeyDown={handleKeyDown}
@@ -64,13 +65,13 @@ const CobaltInstanceEditRow: React.FC<{
           )}
         />
         <Button size="sm" variant="primary" onClick={submit} disabled={!canSave} className="h-6 px-2.5">
-          Save
+          {t("Save")}
         </Button>
         <Button size="sm" variant="secondary" onClick={onCancel} className="h-6 px-2.5">
-          Cancel
+          {t("Cancel")}
         </Button>
       </div>
-      {showUrlError && <span className="text-[11px] text-composer-error-text">Enter a valid http(s) URL.</span>}
+      {showUrlError && <span className="text-[11px] text-composer-error-text">{t("Enter a valid http(s) URL.")}</span>}
     </div>
   );
 };
@@ -111,8 +112,8 @@ const CobaltInstanceAddForm: React.FC<{
       <div className="flex items-center gap-2">
         <input
           type="text"
-          aria-label="Instance name"
-          placeholder="Name"
+          aria-label={t("Instance name")}
+          placeholder={t("Name")}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -121,8 +122,8 @@ const CobaltInstanceAddForm: React.FC<{
         <input
           type="url"
           inputMode="url"
-          aria-label="Instance URL"
-          placeholder="https://your-cobalt-instance"
+          aria-label={t("Instance URL")}
+          placeholder={t("https://your-cobalt-instance")}
           value={url}
           onChange={handleUrlChange}
           onKeyDown={handleKeyDown}
@@ -132,10 +133,10 @@ const CobaltInstanceAddForm: React.FC<{
           )}
         />
         <Button size="sm" variant="primary" onClick={submit} disabled={!canAdd}>
-          Add
+          {t("Add")}
         </Button>
       </div>
-      {showUrlError && <span className="text-[11px] text-composer-error-text">Enter a valid http(s) URL.</span>}
+      {showUrlError && <span className="text-[11px] text-composer-error-text">{t("Enter a valid http(s) URL.")}</span>}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import { decideAddInstancePlacement } from "@/views/timeline/decide-add-instance
 import { instanceToTemplate } from "@/views/timeline/group-ops";
 import { scrollToInstanceHeader } from "@/views/timeline/scroll-helpers";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
+import { t } from "i18next";
 import { useCallback } from "react";
 import { toast } from "sonner";
 
@@ -22,14 +23,16 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
     if (!contextMenu || contextMenu.target.kind !== "group-banner") return;
     const { groupId, instanceIdx } = contextMenu.target;
     useProjectStore.getState().removeInstance(groupId, instanceIdx);
-    showGroupActionToast("Instance detached");
+    showGroupActionToast(t("Instance detached"));
     clearContextMenu();
   }, [contextMenu, clearContextMenu]);
 
   const handleToggleCollapse = useCallback(() => {
     if (!contextMenu || contextMenu.target.kind !== "group-banner") return;
     const { groupId, instanceIdx } = contextMenu.target;
-    useTimelineStore.getState().toggleInstanceCollapsed(`${groupId}:${instanceIdx}`);
+    useTimelineStore
+      .getState()
+      .toggleInstanceCollapsed(`${groupId}:${instanceIdx}`);
     clearContextMenu();
   }, [contextMenu, clearContextMenu]);
 
@@ -37,11 +40,12 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
     if (!contextMenu || contextMenu.target.kind !== "group-banner") return;
     const { groupId, instanceIdx } = contextMenu.target;
     const audioEl = useAudioStore.getState().audioElement;
-    const playheadTime = audioEl?.currentTime ?? useAudioStore.getState().currentTime;
+    const playheadTime =
+      audioEl?.currentTime ?? useAudioStore.getState().currentTime;
     const projectLines = useProjectStore.getState().lines;
     const template = instanceToTemplate(projectLines, groupId, instanceIdx);
     if (template.length === 0) {
-      toast.error("Could not derive instance template");
+      toast.error(t("Could not derive instance template"));
       return;
     }
     const placement = decideAddInstancePlacement({
@@ -52,13 +56,24 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
     });
     if (placement.kind === "fill") {
       useProjectStore.getState().setLinesWithHistory(placement.updatedLines);
-      toast.success("Linked instance placed in empty rows");
+      toast.success(t("Linked instance placed in empty rows"));
     } else if (placement.kind === "insert") {
-      useProjectStore.getState().addInstance(groupId, template, placement.instanceStart, placement.insertAtIndex);
-      toast.success("Linked instance added at playhead");
+      useProjectStore
+        .getState()
+        .addInstance(
+          groupId,
+          template,
+          placement.instanceStart,
+          placement.insertAtIndex,
+        );
+      toast.success(t("Linked instance added at playhead"));
     } else {
       copyInstanceToClipboardAndPreview(projectLines, groupId, instanceIdx);
-      toast(`No room at the playhead. ${MOD_KEY}+V to paste somewhere clear.`);
+      toast(
+        t("No room at the playhead. {{MOD_KEY}}+V to paste somewhere clear.", {
+          MOD_KEY,
+        }),
+      );
     }
     clearContextMenu();
   }, [contextMenu, clearContextMenu]);
@@ -67,7 +82,8 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
     if (!contextMenu || contextMenu.target.kind !== "group-banner") return;
     const { groupId, instanceIdx } = contextMenu.target;
     const audioEl = useAudioStore.getState().audioElement;
-    const playheadTime = audioEl?.currentTime ?? useAudioStore.getState().currentTime;
+    const playheadTime =
+      audioEl?.currentTime ?? useAudioStore.getState().currentTime;
     const projectLines = useProjectStore.getState().lines;
     const instanceLines = linesOfInstance(projectLines, groupId, instanceIdx);
     const bounds = instanceBounds(instanceLines);
@@ -96,7 +112,8 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
       const projectLines = useProjectStore.getState().lines;
       const indices = new Set<number>();
       for (const l of projectLines) {
-        if (l.groupId === groupId && l.instanceIdx !== undefined) indices.add(l.instanceIdx);
+        if (l.groupId === groupId && l.instanceIdx !== undefined)
+          indices.add(l.instanceIdx);
       }
       const sorted = Array.from(indices).sort((a, b) => a - b);
       if (sorted.length < 2) return;
@@ -107,10 +124,20 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
         const line = projectLines[li];
         if (line.groupId !== groupId || line.instanceIdx !== next) continue;
         for (let wi = 0; wi < (line.words?.length ?? 0); wi++) {
-          wordsInNext.push({ lineId: line.id, lineIndex: li, wordIndex: wi, type: "word" });
+          wordsInNext.push({
+            lineId: line.id,
+            lineIndex: li,
+            wordIndex: wi,
+            type: "word",
+          });
         }
         for (let wi = 0; wi < (line.backgroundWords?.length ?? 0); wi++) {
-          wordsInNext.push({ lineId: line.id, lineIndex: li, wordIndex: wi, type: "bg" });
+          wordsInNext.push({
+            lineId: line.id,
+            lineIndex: li,
+            wordIndex: wi,
+            type: "bg",
+          });
         }
       }
       useTimelineStore.getState().setSelectedWords(wordsInNext);
@@ -120,8 +147,14 @@ function useInstanceMenuActions(clearContextMenu: () => void) {
     [contextMenu, clearContextMenu],
   );
 
-  const handleJumpPrevInstance = useCallback(() => handleJumpToInstanceOffset(-1), [handleJumpToInstanceOffset]);
-  const handleJumpNextInstance = useCallback(() => handleJumpToInstanceOffset(1), [handleJumpToInstanceOffset]);
+  const handleJumpPrevInstance = useCallback(
+    () => handleJumpToInstanceOffset(-1),
+    [handleJumpToInstanceOffset],
+  );
+  const handleJumpNextInstance = useCallback(
+    () => handleJumpToInstanceOffset(1),
+    [handleJumpToInstanceOffset],
+  );
 
   return {
     handleDetachInstance,

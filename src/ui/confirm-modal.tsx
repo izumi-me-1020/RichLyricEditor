@@ -4,6 +4,7 @@ import { Button } from "@/ui/button";
 import { Modal } from "@/ui/modal";
 import { cn } from "@/utils/cn";
 import { MOD_KEY } from "@/utils/platform";
+import { t } from "i18next";
 
 // -- Component ----------------------------------------------------------------
 
@@ -28,8 +29,8 @@ const ConfirmModalHost: React.FC = () => {
   const {
     title,
     description,
-    confirmLabel = "Confirm",
-    cancelLabel = "Cancel",
+    confirmLabel = t("Confirm"),
+    cancelLabel = t("Cancel"),
     variant = "destructive",
     settingsKey,
     recoverable = false,
@@ -43,7 +44,11 @@ const ConfirmModalHost: React.FC = () => {
         {description && (
           <div className="text-sm text-composer-text-secondary leading-relaxed select-text">{description}</div>
         )}
-        {recoverable && <div className="text-xs text-composer-text-muted">This can be undone with {MOD_KEY}+Z.</div>}
+        {recoverable && (
+          <div className="text-xs text-composer-text-muted">
+            {t("This can be undone with {{shortcut}}.", { shortcut: `${MOD_KEY}+Z` })}
+          </div>
+        )}
 
         <div className={cn("flex items-center pt-2", showDontAskAgain ? "justify-between" : "justify-end")}>
           {showDontAskAgain && (
@@ -55,7 +60,7 @@ const ConfirmModalHost: React.FC = () => {
                 onChange={(e) => setDontAskAgain(e.target.checked)}
                 className="size-3.5 rounded accent-composer-accent cursor-pointer"
               />
-              Don't ask again
+              {t("Don't ask again")}
             </label>
           )}
           <div className="flex gap-2 select-none">

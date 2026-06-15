@@ -5,7 +5,12 @@ import { FeatureGrid } from "@/pages/landing/sections/feature-grid";
 import { Hero } from "@/pages/landing/sections/hero";
 import { HowItWorks } from "@/pages/landing/sections/how-it-works";
 import { PageHead } from "@/seo/page-head";
-import { breadcrumbListSchema, faqPageSchema, organizationSchema, softwareApplicationSchema } from "@/seo/schemas";
+import {
+  breadcrumbListSchema,
+  faqPageSchema,
+  organizationSchema,
+  softwareApplicationSchema,
+} from "@/seo/schemas";
 import {
   IconBrandApple,
   IconMicrophone2,
@@ -19,32 +24,32 @@ const FAQS = [
   {
     question: "What format does Apple Music use for synced lyrics?",
     answer:
-      "Apple Music uses TTML (Timed Text Markup Language) with word-level spans, ttm:agent declarations for multi-voice songs, and ttm:role='x-bg' for background vocals. Composer produces exactly this structure.",
+      "Apple Music uses TTML (Timed Text Markup Language) with word-level spans, ttm:agent declarations for multi-voice songs, and ttm:role='x-bg' for background vocals. RichLyricEditor produces exactly this structure.",
   },
   {
     question: "How do I submit synced lyrics to Apple Music?",
     answer:
-      "Rights holders submit lyrics through Apple's Content Collector tools or directly via an aggregator. Composer handles the authoring side; the platform you use for delivery to Apple handles ingestion.",
+      "Rights holders submit lyrics through Apple's Content Collector tools or directly via an aggregator. RichLyricEditor handles the authoring side; the platform you use for delivery to Apple handles ingestion.",
   },
   {
-    question: "Can Composer handle duets and featured artists?",
+    question: "Can RichLyricEditor handle duets and featured artists?",
     answer:
-      "Yes. Every line is assigned to an agent. Add as many agents as the song needs, including 'person', 'group', or 'character' types, and Composer serializes them into the TTML ttm:agent metadata Apple Music expects.",
+      "Yes. Every line is assigned to an agent. Add as many agents as the song needs, including 'person', 'group', or 'character' types, and RichLyricEditor serializes them into the TTML ttm:agent metadata Apple Music expects.",
   },
   {
     question: "How are background vocals and ad libs represented?",
     answer:
-      "Composer wraps them in a ttm:role='x-bg' container span. Inner word spans carry the timing. This matches the structure Apple Music uses for the smaller, muted lyric line shown alongside the main line.",
+      "RichLyricEditor wraps them in a ttm:role='x-bg' container span. Inner word spans carry the timing. This matches the structure Apple Music uses for the smaller, muted lyric line shown alongside the main line.",
   },
   {
     question: "Do I need to time every single word for Apple Music?",
     answer:
-      "Apple Music supports both line-synced and word-synced lyrics. Word-synced gets the animated 'sing-along' presentation. Composer lets you choose the granularity and switch whenever you want.",
+      "Apple Music supports both line-synced and word-synced lyrics. Word-synced gets the animated 'sing-along' presentation. RichLyricEditor lets you choose the granularity and switch whenever you want.",
   },
 ];
 
 const PATH = "/apple-music-synced-lyrics";
-const TITLE = "Make Apple Music Synced Lyrics ・ Composer";
+const TITLE = "Make Apple Music Synced Lyrics ・ RichLyricEditor";
 const DESCRIPTION =
   "Author Apple Music ready synced lyrics. Multi-agent duets, background vocals, word-level timing, and correct TTML output all in one browser tool.";
 
@@ -56,10 +61,14 @@ const AppleMusicLyricsPage: React.FC = () => {
         description={DESCRIPTION}
         path={PATH}
         jsonLd={[
-          softwareApplicationSchema("Composer for Apple Music Synced Lyrics", DESCRIPTION, PATH),
+          softwareApplicationSchema(
+            "RichLyricEditor for Apple Music Synced Lyrics",
+            DESCRIPTION,
+            PATH,
+          ),
           faqPageSchema(FAQS),
           breadcrumbListSchema([
-            { name: "Composer", path: "/" },
+            { name: "RichLyricEditor", path: "/" },
             { name: "Apple Music Synced Lyrics", path: PATH },
           ]),
           organizationSchema(),
@@ -68,13 +77,16 @@ const AppleMusicLyricsPage: React.FC = () => {
       <Hero
         eyebrow="For Apple Music ready TTML"
         headline="Author the exact TTML Apple Music expects."
-        subhead="Composer handles multi-agent duets, background vocals with x-bg, and word-level timing the way Apple Music ingests it. No XML, no guesswork."
+        subhead="RichLyricEditor handles multi-agent duets, background vocals with x-bg, and word-level timing the way Apple Music ingests it. No XML, no guesswork."
         primaryCta={{ label: "Start authoring", to: "/" }}
-        secondaryCta={{ label: "See the guide", to: "/guides/how-to-make-apple-music-synced-lyrics" }}
+        secondaryCta={{
+          label: "See the guide",
+          to: "/guides/how-to-make-apple-music-synced-lyrics",
+        }}
       />
       <FeatureGrid
         title="Everything Apple Music lyrics need, in one editor"
-        subtitle="Apple Music has specific TTML requirements. Composer meets them by default."
+        subtitle="Apple Music has specific TTML requirements. RichLyricEditor meets them by default."
         features={[
           {
             icon: IconBrandApple,
@@ -85,18 +97,20 @@ const AppleMusicLyricsPage: React.FC = () => {
           {
             icon: IconUsers,
             title: "Agents for duets",
-            description: "Assign each line to a named agent. Duets, group vocals, and featured verses carry correctly.",
+            description:
+              "Assign each line to a named agent. Duets, group vocals, and featured verses carry correctly.",
           },
           {
             icon: IconWindmill,
             title: "Background vocals",
-            description: "Add x-bg spans with their own word-level timing, matching how Apple Music renders ad libs.",
+            description:
+              "Add x-bg spans with their own word-level timing, matching how Apple Music renders ad libs.",
           },
           {
             icon: IconWaveSine,
             title: "Millisecond precision",
             description:
-              "Drag word boundaries against the waveform. Apple Music expects precise timing; Composer delivers it.",
+              "Drag word boundaries against the waveform. Apple Music expects precise timing; RichLyricEditor delivers it.",
           },
           {
             icon: IconMicrophone2,
@@ -107,7 +121,8 @@ const AppleMusicLyricsPage: React.FC = () => {
           {
             icon: IconWriting,
             title: "Edit existing TTML",
-            description: "Import Apple Music TTML you already have and refine without losing structure or metadata.",
+            description:
+              "Import Apple Music TTML you already have and refine without losing structure or metadata.",
           },
         ]}
       />
@@ -116,19 +131,23 @@ const AppleMusicLyricsPage: React.FC = () => {
         steps={[
           {
             title: "Set up the song",
-            description: "Add the audio, paste the lyrics, and define agents for every vocalist on the track.",
+            description:
+              "Add the audio, paste the lyrics, and define agents for every vocalist on the track.",
           },
           {
             title: "Assign lines to agents",
-            description: "Tag each line with the correct voice. Composer writes ttm:agent for you.",
+            description:
+              "Tag each line with the correct voice. RichLyricEditor writes ttm:agent for you.",
           },
           {
             title: "Sync timing",
-            description: "Tap through the track, then refine word boundaries for the sing-along sections.",
+            description:
+              "Tap through the track, then refine word boundaries for the sing-along sections.",
           },
           {
             title: "Add background vocals",
-            description: "Mark ad libs and backing parts with x-bg so Apple Music shows them as the secondary lyric.",
+            description:
+              "Mark ad libs and backing parts with x-bg so Apple Music shows them as the secondary lyric.",
           },
         ]}
       />

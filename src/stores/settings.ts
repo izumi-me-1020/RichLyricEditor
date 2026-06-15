@@ -77,16 +77,24 @@ interface SettingsState {
 
   experiments: ExperimentFlags;
   composerBridgeUrl: string;
+  language: string;
 }
 
 interface SettingsActions {
   set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
   resetToDefaults: () => void;
   addCobaltInstance: (instance: Omit<CobaltInstance, "id">) => void;
-  updateCobaltInstance: (id: string, updates: Partial<Omit<CobaltInstance, "id">>) => void;
+  updateCobaltInstance: (
+    id: string,
+    updates: Partial<Omit<CobaltInstance, "id">>,
+  ) => void;
   removeCobaltInstance: (id: string) => void;
   selectCobaltInstance: (id: string) => void;
-  recordCobaltInstanceResult: (id: string, status: "success" | "error", errorMessage?: string) => void;
+  recordCobaltInstanceResult: (
+    id: string,
+    status: "success" | "error",
+    errorMessage?: string,
+  ) => void;
 }
 
 // -- Defaults -----------------------------------------------------------------
@@ -141,25 +149,28 @@ const DEFAULTS: SettingsState = {
 
   experiments: { youtubeBridge: false },
   composerBridgeUrl: DEFAULT_BRIDGE_URL,
+  language: "ja",
 };
 
 const BUILTIN_COBALT_INSTANCE: CobaltInstance = {
   id: DEFAULT_COBALT_INSTANCE_ID,
-  label: "Composer",
+  label: "RichLyricEditor",
   url: "https://cobalt.boidu.dev",
 };
 
 const SETTINGS_PERSIST_VERSION = 3;
 
 function migrateSettings(persistedState: unknown, version: number): unknown {
-  if (!persistedState || typeof persistedState !== "object") return persistedState;
+  if (!persistedState || typeof persistedState !== "object")
+    return persistedState;
   const state = persistedState as Partial<SettingsState>;
   const next: Partial<SettingsState> = { ...state };
   if (version < 2 || next.vocalModelVariant === "fp16") {
     next.vocalModelVariant = "fp32";
   }
   if (next.defaultRollingEdit === undefined) next.defaultRollingEdit = false;
-  if (next.defaultPreviewSidebar === undefined) next.defaultPreviewSidebar = false;
+  if (next.defaultPreviewSidebar === undefined)
+    next.defaultPreviewSidebar = false;
   return next;
 }
 
@@ -192,11 +203,15 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
       addCobaltInstance: (instance) =>
         set((state) => {
           const id = crypto.randomUUID();
-          return { cobaltInstances: [...state.cobaltInstances, { ...instance, id }] };
+          return {
+            cobaltInstances: [...state.cobaltInstances, { ...instance, id }],
+          };
         }),
       updateCobaltInstance: (id, updates) =>
         set((state) => ({
-          cobaltInstances: state.cobaltInstances.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+          cobaltInstances: state.cobaltInstances.map((i) =>
+            i.id === id ? { ...i, ...updates } : i,
+          ),
         })),
       removeCobaltInstance: (id) =>
         set((state) => {
@@ -205,7 +220,9 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           return {
             cobaltInstances: state.cobaltInstances.filter((i) => i.id !== id),
             selectedCobaltInstanceId:
-              state.selectedCobaltInstanceId === id ? DEFAULT_COBALT_INSTANCE_ID : state.selectedCobaltInstanceId,
+              state.selectedCobaltInstanceId === id
+                ? DEFAULT_COBALT_INSTANCE_ID
+                : state.selectedCobaltInstanceId,
             cobaltInstanceStatus: nextStatus,
           };
         }),
@@ -218,21 +235,31 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           },
         })),
     }),
-    { name: "composer-settings", version: SETTINGS_PERSIST_VERSION, migrate: migrateSettings },
+    {
+      name: "composer-settings",
+      version: SETTINGS_PERSIST_VERSION,
+      migrate: migrateSettings,
+    },
   ),
 );
 
 function getActiveCobaltInstance(): CobaltInstance {
   const state = useSettingsStore.getState();
-  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID) return BUILTIN_COBALT_INSTANCE;
-  const found = state.cobaltInstances.find((i) => i.id === state.selectedCobaltInstanceId);
+  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID)
+    return BUILTIN_COBALT_INSTANCE;
+  const found = state.cobaltInstances.find(
+    (i) => i.id === state.selectedCobaltInstanceId,
+  );
   return found ?? BUILTIN_COBALT_INSTANCE;
 }
 
 function isUsingDefaultCobaltInstance(): boolean {
   const state = useSettingsStore.getState();
-  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID) return true;
-  return !state.cobaltInstances.some((i) => i.id === state.selectedCobaltInstanceId);
+  if (state.selectedCobaltInstanceId === DEFAULT_COBALT_INSTANCE_ID)
+    return true;
+  return !state.cobaltInstances.some(
+    (i) => i.id === state.selectedCobaltInstanceId,
+  );
 }
 
 // -- Exports ------------------------------------------------------------------
@@ -246,4 +273,9 @@ export {
   isUsingDefaultCobaltInstance,
   migrateSettings as migrateSettingsForTest,
 };
-export type { SettingsState, CobaltInstanceStatus, LinkedDivergenceAction, VocalModelVariant };
+export type {
+  SettingsState,
+  CobaltInstanceStatus,
+  LinkedDivergenceAction,
+  VocalModelVariant,
+};

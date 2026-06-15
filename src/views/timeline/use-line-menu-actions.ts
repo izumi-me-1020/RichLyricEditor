@@ -5,6 +5,7 @@ import { splitIntoWordsWithMeta } from "@/utils/sync-helpers";
 import { splitLinesIntoWords } from "@/views/timeline/split-lines-into-words";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
 import type { useContextMenuTargets } from "@/views/timeline/use-context-menu-targets";
+import { t } from "i18next";
 import { useCallback } from "react";
 
 // -- Interfaces ---------------------------------------------------------------
@@ -13,7 +14,10 @@ type ContextMenuTargets = ReturnType<typeof useContextMenuTargets>;
 
 // -- Hook ---------------------------------------------------------------------
 
-function useLineMenuActions(targets: ContextMenuTargets, clearContextMenu: () => void) {
+function useLineMenuActions(
+  targets: ContextMenuTargets,
+  clearContextMenu: () => void,
+) {
   const { lines, gutterLineGroupInfo } = targets;
   const contextMenu = useTimelineStore((s) => s.contextMenu);
   const selectedWords = useTimelineStore((s) => s.selectedWords);
@@ -48,7 +52,11 @@ function useLineMenuActions(targets: ContextMenuTargets, clearContextMenu: () =>
       const targetIndex = rawLines.findIndex((l) => l.id === lineId);
       if (targetIndex === -1) return;
       const defaultAgentId = agents?.[0]?.id ?? "v1";
-      const newLine = { id: crypto.randomUUID(), text: "", agentId: defaultAgentId };
+      const newLine = {
+        id: crypto.randomUUID(),
+        text: "",
+        agentId: defaultAgentId,
+      };
       const newLines = [...rawLines];
       const insertIndex = position === "above" ? targetIndex : targetIndex + 1;
       newLines.splice(insertIndex, 0, newLine);
@@ -69,7 +77,7 @@ function useLineMenuActions(targets: ContextMenuTargets, clearContextMenu: () =>
   const handleDetachLine = useCallback(() => {
     if (!gutterLineGroupInfo) return;
     useProjectStore.getState().detachLine(gutterLineGroupInfo.lineId);
-    showGroupActionToast("Line detached");
+    showGroupActionToast(t("Line detached"));
     clearContextMenu();
   }, [gutterLineGroupInfo, clearContextMenu]);
 
@@ -88,7 +96,10 @@ function useLineMenuActions(targets: ContextMenuTargets, clearContextMenu: () =>
     const { lineId } = contextMenu.target;
 
     const selectedLineIds = new Set(selectedWords.map((w) => w.lineId));
-    const targetIds = selectedLineIds.has(lineId) && selectedLineIds.size > 0 ? [...selectedLineIds] : [lineId];
+    const targetIds =
+      selectedLineIds.has(lineId) && selectedLineIds.size > 0
+        ? [...selectedLineIds]
+        : [lineId];
 
     splitLinesIntoWords(targetIds, lines);
     clearContextMenu();
