@@ -1,19 +1,17 @@
 import { useConfirm } from "@/stores/confirm-store";
-import { getEffectiveKeysArray, useShortcutBindingsStore } from "@/stores/shortcut-bindings";
-import { type ShortcutScope, getShortcutsByScope } from "@/stores/shortcut-registry";
+import {
+  getEffectiveKeysArray,
+  useShortcutBindingsStore,
+} from "@/stores/shortcut-bindings";
+import {
+  type ShortcutScope,
+  getShortcutsByScope,
+} from "@/stores/shortcut-registry";
 import { Button } from "@/ui/button";
 import { ShortcutRebindRow } from "@/ui/shortcut-rebind-row";
 import { IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
 import { t } from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-// -- Constants ----------------------------------------------------------------
-
-const SCOPE_GROUPS: { scope: ShortcutScope; title: string }[] = [
-  { scope: "global", title: t("General") },
-  { scope: "sync", title: t("Sync Mode") },
-  { scope: "timeline", title: t("Timeline Mode") },
-];
 
 // -- Component ----------------------------------------------------------------
 
@@ -61,14 +59,22 @@ const ShortcutsSettingsSection: React.FC = () => {
   const handleResetShortcuts = async () => {
     const ok = await confirm({
       title: t("Reset all shortcuts?"),
-      description: t("Clear every custom keyboard binding and restore the defaults."),
+      description: t(
+        "Clear every custom keyboard binding and restore the defaults.",
+      ),
       confirmLabel: t("Reset"),
       variant: "destructive",
       settingsKey: "confirmResetShortcuts",
     });
     if (ok) resetAllBindings();
   };
+  // -- Constants ----------------------------------------------------------------
 
+  const SCOPE_GROUPS: { scope: ShortcutScope; title: string }[] = [
+    { scope: "global", title: t("General") },
+    { scope: "sync", title: t("Sync Mode") },
+    { scope: "timeline", title: t("Timeline Mode") },
+  ];
   const filteredScopes = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
     return SCOPE_GROUPS.flatMap(({ scope, title }) => {
@@ -122,7 +128,9 @@ const ShortcutsSettingsSection: React.FC = () => {
       ) : (
         filteredScopes.map(({ scope, title, shortcuts }) => (
           <div key={scope}>
-            <h3 className="mb-1 text-xs font-medium tracking-wide text-composer-text-muted">{title}</h3>
+            <h3 className="mb-1 text-xs font-medium tracking-wide text-composer-text-muted">
+              {title}
+            </h3>
             <div className="divide-y divide-composer-border">
               {shortcuts.map((def) => (
                 <ShortcutRebindRow key={def.id} definition={def} />
@@ -134,12 +142,20 @@ const ShortcutsSettingsSection: React.FC = () => {
 
       <div className="flex items-center justify-between pt-2 border-t border-composer-border">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-composer-text">{t("Reset all shortcuts")}</span>
+          <span className="text-sm font-medium text-composer-text">
+            {t("Reset all shortcuts")}
+          </span>
           <span className="text-xs text-composer-text-muted">
             {t("Restore all keyboard shortcuts to their defaults.")}
           </span>
         </div>
-        <Button size="sm" variant="secondary" hasIcon onClick={handleResetShortcuts} disabled={!hasOverrides}>
+        <Button
+          size="sm"
+          variant="secondary"
+          hasIcon
+          onClick={handleResetShortcuts}
+          disabled={!hasOverrides}
+        >
           <IconRefresh size={14} />
           {t("Reset all")}
         </Button>

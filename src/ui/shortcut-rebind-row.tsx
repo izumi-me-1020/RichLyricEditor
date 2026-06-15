@@ -1,10 +1,19 @@
-import { getEffectiveKeysArray, useShortcutBindingsStore } from "@/stores/shortcut-bindings";
-import type { ShortcutBinding, ShortcutDefinition } from "@/stores/shortcut-registry";
+import {
+  getEffectiveKeysArray,
+  useShortcutBindingsStore,
+} from "@/stores/shortcut-bindings";
+import type {
+  ShortcutBinding,
+  ShortcutDefinition,
+} from "@/stores/shortcut-registry";
 import { Button } from "@/ui/button";
 import { KeyBadge } from "@/ui/shortcut-reference";
 import { Modal } from "@/ui/modal";
 import { isMac } from "@/utils/platform";
-import { detectConflicts, isReservedBrowserShortcut } from "@/utils/shortcut-matcher";
+import {
+  detectConflicts,
+  isReservedBrowserShortcut,
+} from "@/utils/shortcut-matcher";
 import { t } from "i18next";
 import { useCallback, useEffect, useState } from "react";
 
@@ -18,12 +27,20 @@ type CaptureState =
   | { status: "idle" }
   | { status: "listening" }
   | { status: "warning"; newBinding: ShortcutBinding }
-  | { status: "conflict"; newBinding: ShortcutBinding; conflicts: ShortcutDefinition[] };
+  | {
+      status: "conflict";
+      newBinding: ShortcutBinding;
+      conflicts: ShortcutDefinition[];
+    };
 
 // -- Component ----------------------------------------------------------------
 
-const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => {
-  const [captureState, setCaptureState] = useState<CaptureState>({ status: "idle" });
+const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({
+  definition,
+}) => {
+  const [captureState, setCaptureState] = useState<CaptureState>({
+    status: "idle",
+  });
   const setBinding = useShortcutBindingsStore((s) => s.setBinding);
   const resetBinding = useShortcutBindingsStore((s) => s.resetBinding);
   const overrides = useShortcutBindingsStore((s) => s.overrides);
@@ -75,7 +92,13 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
         return;
       }
 
-      if (e.key === "Shift" || e.key === "Alt" || e.key === "Control" || e.key === "Meta") return;
+      if (
+        e.key === "Shift" ||
+        e.key === "Alt" ||
+        e.key === "Control" ||
+        e.key === "Meta"
+      )
+        return;
 
       const modPressed = isMac ? e.metaKey : e.ctrlKey;
       const rawCtrl = isMac ? e.ctrlKey : false;
@@ -111,7 +134,9 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
   return (
     <>
       <div className="flex items-center justify-between py-2.5">
-        <span className="text-sm text-composer-text-secondary">{definition.description}</span>
+        <span className="text-sm text-composer-text-secondary">
+          {t(definition.description)}
+        </span>
         <div className="flex items-center gap-2">
           {isOverridden && (
             <button
@@ -128,7 +153,9 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
             className="flex items-center gap-1 cursor-pointer rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-composer-button/50"
           >
             {keys.length === 0 ? (
-              <span className="text-xs text-composer-text-muted italic">{t("Unbound")}</span>
+              <span className="text-xs text-composer-text-muted italic">
+                {t("Unbound")}
+              </span>
             ) : (
               keys.map((key) => <KeyBadge key={key} keyName={key} />)
             )}
@@ -136,10 +163,18 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
         </div>
       </div>
 
-      <Modal isOpen={captureState.status === "listening"} onClose={cancelCapture} title={t("Rebind shortcut")}>
+      <Modal
+        isOpen={captureState.status === "listening"}
+        onClose={cancelCapture}
+        title={t("Rebind shortcut")}
+      >
         <div className="text-center py-4">
-          <p className="text-sm text-composer-text-secondary mb-1">{t("Press a new key combination")}</p>
-          <p className="text-xs text-composer-text-muted">{t("Press Escape to cancel")}</p>
+          <p className="text-sm text-composer-text-secondary mb-1">
+            {t("Press a new key combination")}
+          </p>
+          <p className="text-xs text-composer-text-muted">
+            {t("Press Escape to cancel")}
+          </p>
         </div>
       </Modal>
 
@@ -155,7 +190,9 @@ const ShortcutRebindRow: React.FC<ShortcutRebindRowProps> = ({ definition }) => 
         <ConflictModal
           newBinding={captureState.newBinding}
           conflicts={captureState.conflicts}
-          onReplace={() => applyBinding(captureState.newBinding, captureState.conflicts)}
+          onReplace={() =>
+            applyBinding(captureState.newBinding, captureState.conflicts)
+          }
           onCancel={cancelCapture}
         />
       )}
@@ -188,7 +225,9 @@ const BrowserWarningModal: React.FC<{
               <KeyBadge key={key} keyName={key} />
             ))}
           </span>
-          <span className="text-composer-text-secondary">{t("may be reserved by the browser.")}</span>
+          <span className="text-composer-text-secondary">
+            {t("may be reserved by the browser.")}
+          </span>
         </div>
         <p className="text-xs text-composer-text-muted">
           {t(
@@ -240,14 +279,23 @@ const ConflictModal: React.FC<{
               <KeyBadge key={key} keyName={key} />
             ))}
           </span>
-          <span className="text-composer-text-secondary">{t("is already used by:")}</span>
+          <span className="text-composer-text-secondary">
+            {t("is already used by:")}
+          </span>
         </div>
 
         <div className="rounded-lg bg-composer-bg-elevated border border-composer-border divide-y divide-composer-border">
           {conflicts.map((c) => (
-            <div key={c.id} className="flex items-center justify-between px-3 py-2.5">
-              <span className="text-sm text-composer-text">{c.description}</span>
-              <span className="text-xs text-composer-text-muted">{SCOPE_LABELS[c.scope] ?? c.scope}</span>
+            <div
+              key={c.id}
+              className="flex items-center justify-between px-3 py-2.5"
+            >
+              <span className="text-sm text-composer-text">
+                {c.description}
+              </span>
+              <span className="text-xs text-composer-text-muted">
+                {SCOPE_LABELS[c.scope] ?? c.scope}
+              </span>
             </div>
           ))}
         </div>

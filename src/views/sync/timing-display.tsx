@@ -1,5 +1,6 @@
 import { useAudioStore } from "@/stores/audio";
 import { formatTimeMs } from "@/utils/sync-helpers";
+import { t } from "i18next";
 import { useEffect, useRef } from "react";
 
 // -- Interfaces ---------------------------------------------------------------
@@ -20,7 +21,8 @@ const TimingDisplay: React.FC<TimingDisplayProps> = ({ lastSyncedTime }) => {
       const el = currentTimeRef.current;
       if (el) {
         const audioEl = useAudioStore.getState().audioElement;
-        const time = audioEl?.currentTime ?? useAudioStore.getState().currentTime;
+        const time =
+          audioEl?.currentTime ?? useAudioStore.getState().currentTime;
         el.textContent = formatTimeMs(time);
       }
       rafRef.current = requestAnimationFrame(update);
@@ -35,15 +37,21 @@ const TimingDisplay: React.FC<TimingDisplayProps> = ({ lastSyncedTime }) => {
   return (
     <div className="flex items-center justify-center gap-8 font-mono text-sm select-text tabular-nums">
       <div className="text-center">
-        <div className="mb-1 text-xs text-composer-text-muted">Current</div>
+        <div className="mb-1 text-xs text-composer-text-muted">
+          {t("Current")}
+        </div>
         <div ref={currentTimeRef} className="text-xl text-composer-text">
           0:00.000
         </div>
       </div>
       {lastSyncedTime !== undefined && (
         <div className="text-center">
-          <div className="mb-1 text-xs text-composer-text-muted">Last Synced</div>
-          <div className="text-xl text-composer-accent-text">{formatTimeMs(lastSyncedTime)}</div>
+          <div className="mb-1 text-xs text-composer-text-muted">
+            {t("Last Synced")}
+          </div>
+          <div className="text-xl text-composer-accent-text">
+            {formatTimeMs(lastSyncedTime)}
+          </div>
         </div>
       )}
     </div>
