@@ -103,7 +103,7 @@ const BridgeStoppedHint: React.FC = () => (
     <p className="mt-2">
       {t("If you don't have it yet, grab a binary from")}{" "}
       <a
-        href="https://github.com/izumi-me-1020/RichLyricEditor-bridge/releases"
+        href="https://github.com/better-lyrics/composer-bridge/releases"
         target="_blank"
         rel="noopener noreferrer"
         className="text-composer-accent-text hover:text-composer-accent underline"
@@ -215,12 +215,12 @@ const BridgeSection: React.FC = () => {
               "Route YouTube imports through a small local binary running on your machine instead of Cobalt. Uses your residential IP, so YouTube doesn't block it. Requires running",
             )}{" "}
             <a
-              href="https://github.com/izumi-me-1020/RichLyricEditor-bridge"
+              href="https://github.com/better-lyrics/composer-bridge"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 transition-colors hover:text-composer-text"
             >
-              RichLyricEditor Bridge
+              Composer Bridge
             </a>
             .
           </span>

@@ -802,7 +802,10 @@ const EditPanel: React.FC = () => {
     },
     [handleDroppedFile],
   );
+
   const language = useSettingsStore((s) => s.language);
+
+  const [mobileTab, setMobileTab] = useState<"input" | "preview">("input");
   return (
     <div
       data-tour="edit-panel"
@@ -810,31 +813,40 @@ const EditPanel: React.FC = () => {
       onDrop={handleDrop}
       onDragOver={preventDefaultDragOver}
     >
-      <div className="flex items-center justify-between select-none">
-        <h2 className="text-lg font-medium">{t("Lyrics Editor")}</h2>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between select-none">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-lg font-medium">{t("Lyrics Editor")}</h2>
           <span className="text-sm text-composer-text-muted">
             {nonEmptyCount} {t("line")}
             {language == "en" && nonEmptyCount !== 1 ? "s" : ""}
           </span>
-          <Button
-            hasIcon
-            variant="secondary"
-            onClick={handleExtractBackgroundVocals}
-            disabled={!canExtractBackgroundVocals}
-          >
-            <IconMicrophone className="size-4" />
-            {t("Extract background vocals")}
-          </Button>
-          <Button
-            hasIcon
-            onClick={importTriggers.onClick}
-            onDoubleClick={importTriggers.onDoubleClick}
-            title="Click to search, paste, or upload. Double-click to upload a file directly."
-          >
-            <IconFileImport className="size-4" />
-            {t("Import Lyrics")}
-          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+          <div className="flex gap-2">
+            <Button
+              hasIcon
+              variant="secondary"
+              onClick={handleExtractBackgroundVocals}
+              disabled={!canExtractBackgroundVocals}
+              className="flex-1 md:flex-none"
+            >
+              <IconMicrophone className="size-4" />
+              <span className="inline">{t("Extract background vocals")}</span>
+            </Button>
+
+            <Button
+              hasIcon
+              onClick={importTriggers.onClick}
+              onDoubleClick={importTriggers.onDoubleClick}
+              title="Click to search, paste, or upload. Double-click to upload a file directly."
+              className="flex-1 md:flex-none"
+            >
+              <IconFileImport className="size-4" />
+              <span className="inline">{t("Import Lyrics")}</span>
+            </Button>
+          </div>
+
           {importTriggers.fileInput}
         </div>
       </div>
@@ -850,10 +862,36 @@ const EditPanel: React.FC = () => {
       <BracketWarning count={bracketCount} />
 
       <AgentManager />
+      <div className="md:hidden flex border border-composer-border rounded-lg overflow-hidden">
+        <button
+          className={`flex-1 py-1 text-sm ${
+            mobileTab === "input"
+              ? "bg-composer-accent text-white"
+              : "bg-composer-bg-dark"
+          }`}
+          onClick={() => setMobileTab("input")}
+        >
+          {t("Input")}
+        </button>
 
+        <button
+          className={`flex-1 py-1 text-sm ${
+            mobileTab === "preview"
+              ? "bg-composer-accent text-white"
+              : "bg-composer-bg-dark"
+          }`}
+          onClick={() => setMobileTab("preview")}
+        >
+          {t("Preview")}
+        </button>
+      </div>
       <div className="flex flex-1 min-h-0 gap-4">
         {/* Input */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div
+          className={`flex flex-col flex-1 min-w-0 ${
+            mobileTab !== "input" ? "hidden md:flex" : ""
+          }`}
+        >
           <label
             htmlFor={textareaId}
             className="mb-2 text-sm font-medium select-none text-composer-text-secondary"
@@ -878,7 +916,11 @@ const EditPanel: React.FC = () => {
         </div>
 
         {/* Preview */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div
+          className={`flex flex-col flex-1 min-w-0 ${
+            mobileTab !== "preview" ? "hidden md:flex" : ""
+          }`}
+        >
           <div className="flex items-center justify-between h-5 mb-2">
             <span className="text-sm font-medium select-none text-composer-text-secondary">
               {t("Preview")}

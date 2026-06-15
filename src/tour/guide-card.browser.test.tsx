@@ -11,23 +11,23 @@ describe("GuideCard", () => {
   it("renders the current task and step label when state is provided", async () => {
     const screen = await render(
       <GuideCard
-        state={{ task: "Click Import", stepLabel: "Step 1 of 3", stepIndex: 0, isComplete: false }}
+        state={{ task: "インポートをクリック", stepLabel: "ステップ 1 / 3", stepIndex: 0, isComplete: false }}
         onSkip={() => {}}
       />,
     );
-    expect(screen.container.textContent).toContain("Click Import");
-    expect(screen.container.textContent).toContain("Step 1 of 3");
+    expect(screen.container.textContent).toContain("インポートをクリック");
+    expect(screen.container.textContent).toContain("ステップ 1 / 3");
   });
 
   it("calls onSkip when the Skip button is clicked", async () => {
     let skipped = 0;
     const screen = await render(
       <GuideCard
-        state={{ task: "Do thing", stepLabel: "Step 1", stepIndex: 0, isComplete: false }}
+        state={{ task: "操作する", stepLabel: "ステップ 1", stepIndex: 0, isComplete: false }}
         onSkip={() => skipped++}
       />,
     );
-    await screen.getByRole("button", { name: "Skip" }).click();
+    await screen.getByRole("button", { name: "スキップ" }).click();
     expect(skipped).toBe(1);
   });
 });

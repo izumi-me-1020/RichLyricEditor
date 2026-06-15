@@ -17,30 +17,50 @@ const TabBar: React.FC = () => {
     { id: "export", label: t("Export") },
   ];
   return (
-    <nav
-      data-tour="tab-bar"
-      className="flex border-b border-composer-border select-none"
-    >
-      {TABS.map((tab, index) => {
-        const isActive = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            data-tour={`tab-${tab.id}`}
-            onClick={() => setActiveTab(tab.id)}
-            className={`cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
-              isActive
-                ? "border-b-2 border-composer-accent text-composer-text"
-                : "text-composer-text-muted hover:text-composer-text-secondary"
-            }`}
-          >
-            {tab.label}
-            {showHints && <InlineKeyBadge keys={["Mod", String(index + 1)]} />}
-          </button>
-        );
-      })}
-    </nav>
+    <>
+      {/* PC */}
+      <nav
+        data-tour="tab-bar"
+        className="hidden md:flex border-b border-composer-border select-none"
+      >
+        {TABS.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
+                isActive
+                  ? "border-b-2 border-composer-accent text-composer-text"
+                  : "text-composer-text-muted hover:text-composer-text-secondary"
+              }`}
+            >
+              {tab.label}
+              {showHints && (
+                <InlineKeyBadge keys={["Mod", String(index + 1)]} />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Mobile */}
+      <div className="md:hidden px-3 pt-3">
+        <select
+          value={activeTab}
+          onChange={(e) => setActiveTab(e.target.value as SimpleTab)}
+          className="w-full h-8 px-3 rounded-lg bg-composer-input text-composer-text border border-composer-border"
+        >
+          {TABS.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
   );
 };
 

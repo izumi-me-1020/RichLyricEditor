@@ -35,6 +35,7 @@ interface LineRowProps {
     adjacentIndex?: number,
     adjacentUpdates?: Partial<WordTiming>,
   ) => void;
+  isMobileGestureMode?: boolean;
 }
 
 // -- Constants -----------------------------------------------------------------
@@ -82,6 +83,7 @@ const LineRow: React.FC<LineRowProps> = ({
   duration,
   onUpdateWord,
   onUpdateBgWord,
+  isMobileGestureMode = false,
 }) => {
   const color = getAgentColor(line.agentId);
   const groups = useProjectStore((s) => s.groups);
@@ -215,6 +217,7 @@ const LineRow: React.FC<LineRowProps> = ({
               duration={duration}
               height={rowHeight}
               onUpdateWord={onUpdateWord}
+              isMobileGestureMode={isMobileGestureMode}
             />
           ) : (
             <div
@@ -313,6 +316,7 @@ const LineRow: React.FC<LineRowProps> = ({
               duration={duration}
               height={rowHeight}
               onUpdateWord={onUpdateBgWord}
+              isMobileGestureMode={isMobileGestureMode}
             />
           </div>
         ) : (

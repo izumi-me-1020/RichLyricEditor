@@ -332,52 +332,57 @@ const TimelineInfoPanel: React.FC = () => {
   const itemDuration = selectedItem.end - selectedItem.begin;
 
   return (
-    <div className="relative flex items-center gap-6 px-6 py-3 border-t border-composer-border bg-composer-bg-elevated">
-      {groupHighlight && (
-        <span
-          className="flex items-center gap-1 px-2 h-5 rounded-md text-[11px] font-medium select-none"
-          style={{
-            background: `color-mix(in srgb, ${groupHighlight.accentColor} 22%, transparent)`,
-            color: groupHighlight.accentColor,
-          }}
-          title={t("This word belongs to a linked group")}
-        >
-          <IconLink className="size-3" />
-          <span className="tabular-nums">{groupHighlight.label}</span>
-        </span>
-      )}
-      <div className="flex items-center gap-2">
-        <div
-          className="size-2.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-        <span className="text-sm text-composer-text-muted">
-          {t("Line")} {selectedWord.lineIndex + 1}
-        </span>
+    <div className="relative flex flex-col gap-3 px-4 py-3 border-t border-composer-border bg-composer-bg-elevated md:flex-row md:items-center md:gap-6 md:px-6">
+      <div className="flex flex-wrap items-center gap-2">
+        {groupHighlight && (
+          <span
+            className="flex items-center gap-1 px-2 h-5 rounded-md text-[11px] font-medium select-none"
+            style={{
+              background: `color-mix(in srgb, ${groupHighlight.accentColor} 22%, transparent)`,
+              color: groupHighlight.accentColor,
+            }}
+            title={t("This word belongs to a linked group")}
+          >
+            <IconLink className="size-3" />
+            <span className="tabular-nums">{groupHighlight.label}</span>
+          </span>
+        )}
+
+        <div className="flex items-center gap-2">
+          <div
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+          <span className="text-sm text-composer-text-muted">
+            {t("Line")} {selectedWord.lineIndex + 1}
+          </span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-composer-text">
+      <div className="min-w-0">
+        <span className="block truncate text-sm font-medium text-composer-text md:max-w-64">
           {selectedWord.type === "bg"
             ? `(${selectedItem.text})`
             : selectedItem.text}
         </span>
       </div>
 
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-1">
+      <div className="grid grid-cols-3 gap-2 text-xs md:flex md:items-center md:gap-4 md:text-sm">
+        <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:gap-1">
           <span className="text-composer-text-muted">{t("Begin")}:</span>
           <span className="font-mono text-composer-text select-text">
             {formatTime(selectedItem.begin)}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:gap-1">
           <span className="text-composer-text-muted">{t("End")}:</span>
           <span className="font-mono text-composer-text select-text">
             {formatTime(selectedItem.end)}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex flex-col gap-0.5 md:flex-row md:items-center md:gap-1">
           <span className="text-composer-text-muted">{t("Duration")}:</span>
           <span className="font-mono text-composer-text select-text">
             {formatTime(itemDuration)}
@@ -385,28 +390,33 @@ const TimelineInfoPanel: React.FC = () => {
         </div>
       </div>
 
-      <BackgroundTextEditor
-        lineId={line.id}
-        backgroundText={line.backgroundText}
-      />
+      <div className="min-w-0 md:flex-1">
+        <BackgroundTextEditor
+          lineId={line.id}
+          backgroundText={line.backgroundText}
+        />
+      </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 md:ml-auto">
         <Button
           variant="secondary"
           size="sm"
           hasIcon
           onClick={handleSetBeginToCursor}
           title="Set begin to cursor ([)"
+          className="flex-1 md:flex-none"
         >
           <IconBracketsContainStart className="size-3.5" />
           <span>{t("Set Begin")}</span>
         </Button>
+
         <Button
           variant="secondary"
           size="sm"
           hasIcon
           onClick={handleSetEndToCursor}
           title="Set end to cursor (])"
+          className="flex-1 md:flex-none"
         >
           <IconBracketsContainEnd className="size-3.5" />
           <span>{t("Set End")}</span>

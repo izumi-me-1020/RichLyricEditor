@@ -41,7 +41,7 @@
   "from the link. Other instances stay linked.": "のリンクを解除します。他のインスタンスとのリンクは維持されます。",
   "Detach and apply": "リンクを解除して適用",
   "Lyrics Editor": "歌詞エディター",
-  "Extract background vocals": "バックコーラスを抽出",
+  "Extract background vocals": "バックコーラス抽出",
   "Import Lyrics": "歌詞をインポート",
   "Paste or type lyrics": "歌詞を貼り付けまたは入力",
   "Paste your lyrics here, one line at a time...\nOr drag and drop a lyrics file (.txt, .lrc, .srt, .ttml)": "ここに歌詞を入力してください（1行ずつ）...\n\nまたは歌詞ファイル（.txt、.lrc、.srt、.ttml）をドラッグ＆ドロップ",
@@ -931,5 +931,8 @@
   ", originally created by Boidu. This project includes modifications and additional features developed by RichLyric. Special thanks to the Composer contributors and community members whose work, feedback, bug reports, and support made this project possible.": "（Boidu によって開発されたプロジェクト）をフォークして作成されています。このプロジェクトには RichLyric による改変および追加機能が含まれています。また、Composer の開発に貢献したすべてのコントリビューター、フィードバックやバグ報告を寄せてくださったコミュニティの皆様に感謝いたします。皆様の支援と貢献があったからこそ、このプロジェクトが成り立っています。",
   "Loading RichLyricEditor": "RichLyricEditorを読み込み中",
   "Last Synced": "最新同期",
-  "Current": "現在"
+  "Current": "現在",
+  "Input": "入力",
+  "Timeline Settings": "タイムライン設定",
+  "Actions": ""
 }

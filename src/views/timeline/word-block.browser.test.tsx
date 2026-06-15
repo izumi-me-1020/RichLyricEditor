@@ -47,7 +47,7 @@ describe("WordBlock", () => {
     expect(clicks).toBe(1);
   });
 
-  it("fires onResizeStart with 'right' and the starting clientX when the right handle is mousedowned", async () => {
+  it("fires onResizeStart with 'right' and the starting clientX when the right handle is pressed", async () => {
     let edge: string | null = null;
     let startX = -1;
     await render(
@@ -61,12 +61,19 @@ describe("WordBlock", () => {
       { dndContext: true },
     );
     const rightEdge = document.querySelector('[data-edge="right"]') as HTMLElement;
-    rightEdge.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, clientX: 142 }));
+    rightEdge.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        clientX: 142,
+        pointerType: "mouse",
+      }),
+    );
     expect(edge).toBe("right");
     expect(startX).toBe(142);
   });
 
-  it("fires onResizeStart with 'left' when the left handle is mousedowned", async () => {
+  it("fires onResizeStart with 'left' when the left handle is pressed", async () => {
     let edge: string | null = null;
     await render(
       <WordBlock
@@ -78,7 +85,13 @@ describe("WordBlock", () => {
       { dndContext: true },
     );
     const leftEdge = document.querySelector('[data-edge="left"]') as HTMLElement;
-    leftEdge.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+    leftEdge.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 0,
+        pointerType: "mouse",
+      }),
+    );
     expect(edge).toBe("left");
   });
 
@@ -94,7 +107,13 @@ describe("WordBlock", () => {
       { dndContext: true },
     );
     const rightEdge = document.querySelector('[data-edge="right"]') as HTMLElement;
-    rightEdge.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 2 }));
+    rightEdge.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        button: 2,
+        pointerType: "mouse",
+      }),
+    );
     expect(edge).toBeNull();
   });
 

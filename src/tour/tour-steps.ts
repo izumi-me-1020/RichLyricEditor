@@ -22,7 +22,7 @@ function switchTab(tabId: string) {
     );
 }
 
-const YOUTUBE_EMBED_HTML = `<div class="composer-tour-video-embed"><iframe src="https://www.youtube.com/embed/to138zXZ0nc?rel=0" title="RichLyricEditor demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" allowfullscreen></iframe></div>`;
+const YOUTUBE_EMBED_HTML = `<div class="composer-tour-video-embed"><iframe src="https://www.youtube.com/embed/to138zXZ0nc?rel=0" title="RichLyricEditor デモ" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" allowfullscreen></iframe></div>`;
 
 // -- Gate checks --------------------------------------------------------------
 
@@ -40,9 +40,9 @@ function createTourSteps(): DriveStep[] {
     // 0: Welcome
     {
       popover: {
-        title: "Welcome to RichLyricEditor",
+        title: "RichLyricEditor へようこそ",
         description:
-          "A tool for creating synchronized lyrics in TTML format. Let's walk through the workflow together.",
+          "TTML 形式の同期歌詞を作成するためのツールです。基本の流れを一緒に見ていきましょう。",
         popoverClass: "composer-tour composer-tour-modal",
         showButtons: ["next", "close"],
         showProgress: false,
@@ -53,9 +53,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="import-dropzone"]') as Element,
       popover: {
-        title: "Bring in your audio",
+        title: "音声を読み込む",
         description:
-          "Drop an audio file (MP3, WAV, M4A, OGG, FLAC) onto this area, or paste a YouTube URL below to pull the audio straight from a video.",
+          "このエリアに音声ファイル（MP3, WAV, M4A, OGG, FLAC）をドロップするか、下に YouTube URL を貼り付けて動画から音声を取り込めます。",
         side: "bottom",
         align: "center",
       },
@@ -66,8 +66,8 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="import-dropzone"]') as Element,
       popover: {
-        title: "Import your audio",
-        description: "Drop an audio file or paste a YouTube URL to continue.",
+        title: "音声を読み込んでください",
+        description: "続けるには音声ファイルをドロップするか、YouTube URL を貼り付けてください。",
         showButtons: [],
       },
       onHighlightStarted: () => switchTab("import"),
@@ -77,9 +77,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="edit-panel"]') as Element,
       popover: {
-        title: "Type or paste lyrics",
+        title: "歌詞を入力または貼り付け",
         description:
-          "Enter your lyrics in the text area on the left. Each line becomes a sync target.",
+          "左側のテキストエリアに歌詞を入力してください。各行が同期対象になります。",
         side: "right",
         align: "start",
       },
@@ -90,8 +90,8 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="edit-panel"]') as Element,
       popover: {
-        title: "Add your lyrics",
-        description: "Type or paste at least one line to continue.",
+        title: "歌詞を追加してください",
+        description: "続けるには 1 行以上の歌詞を入力または貼り付けてください。",
         showButtons: [],
       },
       onHighlightStarted: () => switchTab("edit"),
@@ -101,9 +101,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="sync-panel"]') as Element,
       popover: {
-        title: "Sync your lyrics",
+        title: "歌詞を同期する",
         description:
-          "Press Start, then tap Space in time with each line or word. Use the granularity toggle for line vs word precision.",
+          "Start を押して、各行または単語のタイミングに合わせて Space を押します。粒度の切り替えで行単位と単語単位を選べます。",
         side: "left",
         align: "start",
       },
@@ -114,9 +114,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="sync-panel"]') as Element,
       popover: {
-        title: "Sync at least one line",
+        title: "少なくとも 1 行同期する",
         description:
-          "Press Start, play the audio, then tap Space to set timing.",
+          "Start を押して音声を再生し、Space を押してタイミングを設定してください。",
         showButtons: [],
       },
       onHighlightStarted: () => switchTab("sync"),
@@ -126,8 +126,8 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="timeline-panel"]') as Element,
       popover: {
-        title: "Fine-tune on the timeline",
-        description: `Drag words to adjust timing, or select words and nudge them with the arrow keys. ${MOD_KEY} + scroll to zoom, F to toggle playhead follow. Group repeating sections with ${MOD_KEY}+G, then duplicate them as linked instances with ${MOD_KEY}+D so edits propagate everywhere.`,
+        title: "Timeline で微調整",
+        description: `単語をドラッグしてタイミングを調整したり、選択して矢印キーで少しずつ移動できます。${MOD_KEY} + スクロールでズーム、F で再生ヘッド追従を切り替えます。繰り返し部分は ${MOD_KEY}+G でグループ化し、${MOD_KEY}+D でリンク付きインスタンスとして複製すると、編集をまとめて反映できます。`,
         side: "top",
         align: "center",
       },
@@ -138,9 +138,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="preview-panel"]') as Element,
       popover: {
-        title: "Preview your work",
+        title: "プレビューで確認",
         description:
-          "Watch lyrics play back in sync with the audio. Click any line to jump there.",
+          "歌詞が音声に合わせて再生される様子を確認できます。任意の行をクリックするとその位置へ移動します。",
         side: "left",
         align: "start",
       },
@@ -151,9 +151,9 @@ function createTourSteps(): DriveStep[] {
       element: () =>
         document.querySelector('[data-tour="export-panel"]') as Element,
       popover: {
-        title: "Export your TTML",
+        title: "TTML を書き出す",
         description:
-          "Copy or download the finished TTML file. You can also export the full project as JSON.",
+          "完成した TTML ファイルをコピーまたはダウンロードできます。プロジェクト全体を JSON として書き出すこともできます。",
         side: "left",
         align: "start",
       },
@@ -162,11 +162,11 @@ function createTourSteps(): DriveStep[] {
     // 10: Outro with video
     {
       popover: {
-        title: "See a full walkthrough",
-        description: `You're all set! Here's a video of the full process.${YOUTUBE_EMBED_HTML}`,
+        title: "全体の流れを見る",
+        description: `これで準備完了です。作業の流れ全体を動画で確認できます。${YOUTUBE_EMBED_HTML}`,
         popoverClass: "composer-tour composer-tour-video",
         showButtons: ["previous", "close"],
-        doneBtnText: "Done",
+        doneBtnText: "完了",
         showProgress: false,
       },
     },
@@ -178,19 +178,19 @@ function createTourSteps(): DriveStep[] {
 const TOUR_GATED_STEPS: GatedStep[] = [
   {
     stepIndex: 2,
-    task: "Drop an audio file",
+    task: "音声ファイルをドロップ",
     gateCheck: gateAudioLoaded,
     tabId: "import",
   },
   {
     stepIndex: 4,
-    task: "Type or paste lyrics",
+    task: "歌詞を入力または貼り付け",
     gateCheck: gateLyricsExist,
     tabId: "edit",
   },
   {
     stepIndex: 6,
-    task: "Sync at least one line",
+    task: "少なくとも 1 行同期する",
     gateCheck: gateFirstLineSynced,
     tabId: "sync",
   },

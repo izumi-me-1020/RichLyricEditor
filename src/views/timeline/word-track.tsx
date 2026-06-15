@@ -32,6 +32,7 @@ interface WordTrackProps {
     adjacentIndex?: number,
     adjacentUpdates?: Partial<WordTiming>,
   ) => void;
+  isMobileGestureMode?: boolean;
 }
 
 interface DragState {
@@ -59,6 +60,7 @@ const WordTrack: React.FC<WordTrackProps> = ({
   duration,
   height,
   onUpdateWord,
+  isMobileGestureMode = false,
 }) => {
   const zoom = useTimelineStore((s) => s.zoom);
   const selectedWords = useTimelineStore((s) => s.selectedWords);
@@ -429,6 +431,7 @@ const WordTrack: React.FC<WordTrackProps> = ({
             onEdgeHover={(edge, hovering) => handleEdgeHover(wordIndex, edge, hovering)}
             onDoubleClick={() => handleWordDoubleClick(wordIndex)}
             onContextMenu={(e) => handleWordContextMenu(wordIndex, e)}
+            isMobileGestureMode={isMobileGestureMode}
           />
         );
       })}

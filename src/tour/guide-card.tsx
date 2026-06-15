@@ -39,7 +39,7 @@ const GuideCard: React.FC<GuideCardProps> = ({ state, onSkip }) => {
                 {state.isComplete ? (
                   <span className="flex items-center gap-1.5">
                     <IconCheck className="size-4 text-green-400" />
-                    Done!
+                    完了しました
                   </span>
                 ) : (
                   state.task
@@ -49,7 +49,7 @@ const GuideCard: React.FC<GuideCardProps> = ({ state, onSkip }) => {
             </div>
             {!state.isComplete && (
               <Button size="sm" variant="ghost" onClick={onSkip}>
-                Skip
+                スキップ
               </Button>
             )}
           </div>

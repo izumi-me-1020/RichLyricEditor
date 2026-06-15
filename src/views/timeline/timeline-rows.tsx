@@ -17,6 +17,7 @@ import { Virtuoso } from "react-virtuoso";
 
 interface TimelineRowsProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  isMobileGestureMode?: boolean;
 }
 
 // -- Constants -----------------------------------------------------------------
@@ -25,7 +26,10 @@ const BG_DROP_ZONE_HEIGHT = 24;
 
 // -- Component -----------------------------------------------------------------
 
-const TimelineRows: React.FC<TimelineRowsProps> = ({ scrollContainerRef }) => {
+const TimelineRows: React.FC<TimelineRowsProps> = ({
+  scrollContainerRef,
+  isMobileGestureMode = false,
+}) => {
   const lines = useProjectStore((s) => s.lines);
   const groups = useProjectStore((s) => s.groups);
   const updateLineWithHistory = useProjectStore((s) => s.updateLineWithHistory);
@@ -176,6 +180,7 @@ const TimelineRows: React.FC<TimelineRowsProps> = ({ scrollContainerRef }) => {
               line={line}
               lineIndex={row.lineIndex}
               duration={duration}
+              isMobileGestureMode={isMobileGestureMode}
               onUpdateWord={(wordIndex, updates, adjacentIndex, adjacentUpdates) =>
                 handleUpdateWord(line.id, wordIndex, updates, adjacentIndex, adjacentUpdates)
               }

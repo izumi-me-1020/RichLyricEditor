@@ -26,6 +26,8 @@ import {
 import { Highlight, themes } from "prism-react-renderer";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { t } from "i18next";
+import { Popover } from "@/ui/popover";
+import { Settings, FileUp } from "lucide-react";
 
 // -- Components ---------------------------------------------------------------
 
@@ -288,14 +290,113 @@ const ExportPanel: React.FC = () => {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border">
-        <div className="flex items-baseline gap-3">
+        <div className="flex flex-col md:flex-row items-baseline md:gap-3">
           <h2 className="text-lg font-medium">{t("Export")}</h2>
           <span className="text-sm text-composer-text-muted">
             {syncedLineCount}/{lines.length} {t("lines synced")}
             {editedContent !== null && " · edited"}
           </span>
+          <div className="flex items-center gap-2 mt-2">
+            <Popover
+              placement="bottom-end"
+              trigger={
+                <Button
+                  variant="secondary"
+                  className="md:hidden"
+                  aria-label="ExportActions"
+                  hasIcon
+                >
+                  {t("エクスポート")}
+                  <FileUp className="size-4" />
+                </Button>
+              }
+            >
+              <div className="w-56 p-3">
+                <div className="flex flex-col items-stretch gap-2">
+                  {editedContent !== null && (
+                    <Button hasIcon onClick={handleRegenerate}>
+                      <IconRefresh className="size-4" />
+                      {t("Regenerate")}
+                    </Button>
+                  )}
+
+                  <Button
+                    hasIcon
+                    variant={isEditing ? "primary" : "secondary"}
+                    onClick={handleEdit}
+                  >
+                    <IconEdit className="size-4" />
+                    {isEditing ? t("Done") : t("Edit")}
+                  </Button>
+
+                  <Button hasIcon onClick={handleCopy}>
+                    {copied ? (
+                      <IconCheck className="size-4" />
+                    ) : (
+                      <IconCopy className="size-4" />
+                    )}
+                    {copied ? t("Copied") : t("Copy")}
+                  </Button>
+
+                  <Button hasIcon variant="primary" onClick={handleDownload}>
+                    <IconDownload className="size-4" />
+                    {t("Download TTML")}
+                  </Button>
+                </div>
+              </div>
+            </Popover>
+            <Popover
+              placement="bottom-end"
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                  hasIcon
+                  aria-label="ProjectActions"
+                >
+                  {t("Project")}
+                  <Settings className="size-4" />
+                </Button>
+              }
+            >
+              <div className="w-58 p-3">
+                <div className="flex flex-col items-stretch gap-2">
+                  <Button
+                    hasIcon
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <IconFolderOpen className="size-4 text-composer-text opacity-50" />
+                    {t("Import Project")}
+                  </Button>
+
+                  <Button
+                    hasIcon
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleExportProject}
+                  >
+                    <IconUpload className="size-4 text-composer-text opacity-50" />
+                    {t("Export Project")}
+                  </Button>
+
+                  <Button
+                    hasIcon
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearProject}
+                  >
+                    <IconTrash className="size-4 text-composer-text opacity-50" />
+                    {t("Clear")}
+                  </Button>
+                </div>
+              </div>
+            </Popover>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="md:flex items-center gap-2 hidden">
           {editedContent !== null && (
             <Button hasIcon onClick={handleRegenerate}>
               <IconRefresh className="size-4" />
@@ -326,7 +427,7 @@ const ExportPanel: React.FC = () => {
       </div>
 
       {/* Project management */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-composer-border bg-composer-bg-elevated/50">
+      <div className="hidden md:flex items-center justify-between px-6 py-3 border-b border-composer-border bg-composer-bg-elevated/50">
         <span className="text-sm text-composer-text-muted">{t("Project")}</span>
         <div className="flex items-center gap-2">
           {projectFileInput}

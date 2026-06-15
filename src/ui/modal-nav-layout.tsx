@@ -28,34 +28,55 @@ const ModalNavLayout: React.FC<ModalNavLayoutProps> = ({
   sidebarClassName,
   contentClassName,
 }) => (
-  <div className="flex flex-1 min-h-0">
-    <Scroll className={cn("w-44 shrink-0 border-r border-composer-border select-none", sidebarClassName)}>
-      <div className="flex flex-col gap-px p-2">
-        {sections.map((section) => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.id;
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => onSectionChange(section.id)}
-              className={cn(
-                "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
-                isActive
-                  ? "bg-composer-button text-composer-text font-medium"
-                  : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
-              )}
-            >
-              <Icon size={16} className="shrink-0" />
-              {section.label}
-            </button>
-          );
-        })}
-      </div>
-    </Scroll>
+  <>
+    <div className="block md:hidden px-4 pt-3">
+      <select
+        value={activeSection}
+        onChange={(e) => onSectionChange(e.target.value)}
+        className="md:hidden w-full h-8 px-3 rounded-lg bg-composer-input text-composer-text border border-composer-border"
+      >
+        {sections.map((tab) => (
+          <option key={tab.id} value={tab.id}>
+            {tab.label}
+          </option>
+        ))}
+      </select>
+    </div>
 
-    <Scroll className={cn("flex-1", contentClassName)}>{children}</Scroll>
-  </div>
+    <div className="flex flex-1 min-h-0">
+      <Scroll
+        className={cn(
+          "!hidden md:!block w-44 shrink-0 border-r border-composer-border select-none",
+          sidebarClassName,
+        )}
+      >
+        <div className="flex flex-col gap-px p-2">
+          {sections.map((section) => {
+            const Icon = section.icon;
+            const isActive = activeSection === section.id;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => onSectionChange(section.id)}
+                className={cn(
+                  "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-left cursor-pointer transition-colors",
+                  isActive
+                    ? "bg-composer-button text-composer-text font-medium"
+                    : "text-composer-text-secondary hover:bg-composer-button/50 hover:text-composer-text",
+                )}
+              >
+                <Icon size={16} className="shrink-0" />
+                {section.label}
+              </button>
+            );
+          })}
+        </div>
+      </Scroll>
+
+      <Scroll className={cn("flex-1", contentClassName)}>{children}</Scroll>
+    </div>
+  </>
 );
 
 // -- Exports ------------------------------------------------------------------

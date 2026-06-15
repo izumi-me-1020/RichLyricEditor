@@ -72,9 +72,9 @@ function useTour() {
         smoothScroll: false,
         showProgress: true,
         progressText: "{{current}} / {{total}}",
-        nextBtnText: "Next",
-        prevBtnText: "Back",
-        doneBtnText: "Done",
+        nextBtnText: "次へ",
+        prevBtnText: "戻る",
+        doneBtnText: "完了",
         allowClose: true,
         onHighlighted: (_el, _step, opts) => {
           const idx = opts.state.activeIndex;
@@ -95,7 +95,7 @@ function useTour() {
       clearGateInterval();
 
       const nextStepIndex = gatedStep.stepIndex + 1;
-      const stepLabel = `Step ${gatedStep.stepIndex + 1} / ${totalSteps}`;
+      const stepLabel = `ステップ ${gatedStep.stepIndex + 1} / ${totalSteps}`;
 
       setGuideCard({ task: gatedStep.task, stepLabel, stepIndex: gatedStep.stepIndex, isComplete: false });
       saveResumeState(gatedStep.stepIndex);

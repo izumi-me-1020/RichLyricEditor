@@ -13,7 +13,14 @@ import {
   type DragData,
 } from "@/views/timeline/drag-handlers";
 import { useTimelineStore } from "@/views/timeline/timeline-store";
-import { type DragEndEvent, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  type DragEndEvent,
+  type DragStartEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // -- Hook ----------------------------------------------------------------------
@@ -34,9 +41,15 @@ function useTimelineDnd(lines: LyricLine[]) {
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 220,
+        tolerance: 10,
       },
     }),
   );

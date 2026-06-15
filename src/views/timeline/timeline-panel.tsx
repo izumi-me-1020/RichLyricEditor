@@ -30,6 +30,7 @@ import {
 } from "@/views/timeline/timeline-store";
 import { TimelineWaveform } from "@/views/timeline/timeline-waveform";
 import { useMarquee } from "@/views/timeline/use-marquee";
+import { useIsMobileViewport } from "@/hooks/useIsMobileViewport";
 import {
   expandSelectionToGroupmates,
   getSyllablePositions,
@@ -159,6 +160,9 @@ const TimelinePanel: React.FC = () => {
   const pasteMode = useTimelineStore((s) => s.pasteMode);
   const editingWord = useTimelineStore((s) => s.editingWord);
   const ghostSnapped = useTimelineStore((s) => s.snappedBlockId !== null);
+  const selectedWords = useTimelineStore((s) => s.selectedWords);
+  const clearSelection = useTimelineStore((s) => s.clearSelection);
+  const isMobileGestureMode = useIsMobileViewport();
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -286,6 +290,24 @@ const TimelinePanel: React.FC = () => {
   const handleAudioDrop = useCallback((file: File) => {
     useAudioStore.getState().setSource({ type: "file", file });
   }, []);
+
+  const handleSelectAllWords = useCallback(() => {
+    const allSelections = effectiveLines.flatMap((line, lineIndex) => [
+      ...(line.words?.map((_, wordIndex) => ({
+        lineId: line.id,
+        lineIndex,
+        wordIndex,
+        type: "word" as const,
+      })) ?? []),
+      ...(line.backgroundWords?.map((_, wordIndex) => ({
+        lineId: line.id,
+        lineIndex,
+        wordIndex,
+        type: "bg" as const,
+      })) ?? []),
+    ]);
+    useTimelineStore.getState().setSelectedWords(allSelections);
+  }, [effectiveLines]);
 
   const dragColor = activeDrag
     ? getAgentColor(
@@ -587,7 +609,10 @@ const TimelinePanel: React.FC = () => {
                 </div>
                 <TimelineWaveform />
 
-                <TimelineRows scrollContainerRef={scrollContainerRef} />
+                <TimelineRows
+                  scrollContainerRef={scrollContainerRef}
+                  isMobileGestureMode={isMobileGestureMode}
+                />
               </div>
 
               <TimelinePlayhead
@@ -620,6 +645,29 @@ const TimelinePanel: React.FC = () => {
                 />
               )}
             </div>
+
+            {isMobileGestureMode && selectedWords.length > 0 && (
+              <div className="border-t border-composer-border bg-composer-bg-elevated px-4 py-3 md:hidden">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllWords}
+                      className="rounded-lg border border-composer-border bg-composer-bg px-3 py-2 text-sm font-medium text-composer-text"
+                    >
+                      {t("Select all")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="rounded-lg border border-composer-border bg-composer-bg px-3 py-2 text-sm font-medium text-composer-text-muted"
+                    >
+                      {t("Clear")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <TimelineInfoPanel />
           </div>

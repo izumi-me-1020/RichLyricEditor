@@ -33,7 +33,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTimelineZoom } from "@/views/timeline/use-timeline-zoom";
 import { t } from "i18next";
-
+import { Popover } from "@/ui/popover";
+import { Settings } from "lucide-react";
 // -- Types --------------------------------------------------------------------
 
 interface TimelineHeaderProps {
@@ -175,10 +176,10 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({
   );
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-composer-border">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center justify-between px-6 py-3 border-b border-composer-border">
       <h2 className="text-lg font-medium select-none">{t("Timeline")}</h2>
 
-      <div className="flex items-center gap-4">
+      <div className="hidden items-center gap-4 md:flex">
         {/* Follow toggle */}
         <Button
           variant={followEnabled ? "primary" : "ghost"}
@@ -342,6 +343,157 @@ const TimelineHeader: React.FC<TimelineHeaderProps> = ({
           </Button>
         </div>
       </div>
+      <Popover
+        placement="top-end"
+        trigger={
+          <Button
+            variant="secondary"
+            className="md:hidden"
+            aria-label="TimelineSettings"
+          >
+            {t("Timeline Settings")}
+            <Settings className="size-4" />
+          </Button>
+        }
+      >
+        <div className="p-3 w-40">
+          <div className="flex flex-col items-center gap-4 ">
+            {/* Follow toggle */}
+            <Button
+              variant={followEnabled ? "primary" : "ghost"}
+              size="sm"
+              onClick={toggleFollow}
+              hasIcon
+              className={cn(!followEnabled && "opacity-60")}
+            >
+              <IconFocusCentered size={16} />
+              <span>{t("Follow")}</span>
+            </Button>
+
+            {/* Rolling edit toggle */}
+            <Button
+              variant={rollingEditMode ? "primary" : "ghost"}
+              size="sm"
+              onClick={toggleRollingEditMode}
+              hasIcon
+              className={cn(!rollingEditMode && "opacity-60")}
+              title="Rolling edit: drag a shared word boundary and both words move together"
+            >
+              <IconArrowBarBoth size={16} />
+              <span>{t("Rolling")}</span>
+            </Button>
+
+            {/* Preview sidebar toggle */}
+            <Button
+              variant={previewSidebarOpen ? "primary" : "ghost"}
+              size="sm"
+              onClick={togglePreviewSidebar}
+              hasIcon
+              className={cn(!previewSidebarOpen && "opacity-60")}
+            >
+              <IconEye size={16} />
+              <span>{t("Preview")}</span>
+            </Button>
+
+            <Button
+              variant={snapEnabled ? "primary" : "ghost"}
+              size="sm"
+              hasIcon
+              className={cn(
+                !snapEnabled && "opacity-60",
+                isBypassing && "opacity-50",
+              )}
+              onClick={() => setSetting("timelineSnap", !snapEnabled)}
+              title={`Snap${toggleSnapKeys.length ? ` (${toggleSnapKeys.join(" ")})` : ""} · hold ${MOD_KEY} to bypass`}
+            >
+              <IconMagnet size={16} />
+              <span>{t("Snap")}</span>
+            </Button>
+
+            {/* Import lyrics */}
+            {onImportLyrics && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onImportLyrics}
+                hasIcon
+                className="opacity-60"
+              >
+                <IconTextPlus size={16} />
+                <span>{t("Import")}</span>
+              </Button>
+            )}
+
+            {/* Expand all unexpanded lines */}
+            {hasUnexpandedLines && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExpandAll}
+                hasIcon
+                className="opacity-60"
+              >
+                <IconLayoutDistributeHorizontal size={16} />
+                <span>{t("Expand All")}</span>
+              </Button>
+            )}
+
+            {/* Collapse / expand all groups */}
+            {hasGroups && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleAllCollapsed}
+                hasIcon
+                className="opacity-60"
+                title={
+                  anyExpanded
+                    ? t("Collapse all groups")
+                    : t("Expand all groups")
+                }
+              >
+                {anyExpanded ? (
+                  <IconChevronsUp size={16} />
+                ) : (
+                  <IconChevronsDown size={16} />
+                )}
+                <span>{anyExpanded ? t("Collapse all") : t("Expand all")}</span>
+              </Button>
+            )}
+
+            {/* Zoom controls */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomOut}
+                disabled={zoom <= MIN_ZOOM}
+                className="size-7"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
+                <IconMinus size={16} />
+              </Button>
+
+              <span className="w-12 text-center text-xs text-composer-text-muted select-none tabular-nums">
+                {zoomPercent}%
+              </span>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomIn}
+                disabled={zoom >= MAX_ZOOM}
+                className="size-7"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
+                <IconPlus size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Popover>
     </div>
   );
 };

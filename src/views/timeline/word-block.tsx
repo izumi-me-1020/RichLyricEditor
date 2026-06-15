@@ -31,6 +31,7 @@ interface WordBlockProps {
   onEdgeHover?: (edge: "left" | "right", hovering: boolean) => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
+  isMobileGestureMode?: boolean;
 }
 
 // -- Component -----------------------------------------------------------------
@@ -67,11 +68,17 @@ const WordBlock: React.FC<WordBlockProps> = ({
   onEdgeHover,
   onDoubleClick,
   onContextMenu,
+  isMobileGestureMode = false,
 }) => {
   const left = begin * zoom;
   const naturalWidth = (end - begin) * zoom;
   const width = Math.max(naturalWidth, 4);
   const showText = naturalWidth >= 20;
+  const minCenterDragWidth = isMobileGestureMode ? 18 : 0;
+  const maxEdgeWidth = Math.max(0, (width - minCenterDragWidth) / 2);
+  const edgeHandleWidth = isMobileGestureMode
+    ? Math.max(4, Math.min(12, Math.floor(Math.min(width / 4, maxEdgeWidth))))
+    : 8;
 
   const myKey = selfKey(lineId, wordIndex, trackType);
   const isSnapped = useTimelineStore((s) => s.snappedBlockId === myKey);
@@ -90,12 +97,53 @@ const WordBlock: React.FC<WordBlockProps> = ({
     },
   });
 
-  const handleResizeStart = (e: React.MouseEvent<HTMLDivElement>) => {
+  const startResize = (
+    target: EventTarget | null,
+    clientX: number,
+    stopPropagation: () => void,
+    preventDefault: () => void,
+  ) => {
+    const edgeTarget = target as HTMLDivElement | null;
+    const edge = edgeTarget?.dataset.edge as "left" | "right" | undefined;
+    if (!edge) return;
+    stopPropagation();
+    preventDefault();
+    onResizeStart(edge, clientX);
+  };
+
+  const handleResizePointerStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startResize(
+      e.currentTarget,
+      e.clientX,
+      () => e.stopPropagation(),
+      () => e.preventDefault(),
+    );
+  };
+
+  const handleResizeTouchStartCapture = (
+    e: React.TouchEvent<HTMLDivElement>,
+  ) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    startResize(
+      e.currentTarget,
+      touch.clientX,
+      () => e.stopPropagation(),
+      () => e.preventDefault(),
+    );
+  };
+
+  const handleResizeMouseDownCapture = (
+    e: React.MouseEvent<HTMLDivElement>,
+  ) => {
     if (e.button !== 0) return;
-    e.stopPropagation();
-    e.preventDefault();
-    const edge = e.currentTarget.dataset.edge as "left" | "right";
-    onResizeStart(edge, e.clientX);
+    startResize(
+      e.currentTarget,
+      e.clientX,
+      () => e.stopPropagation(),
+      () => e.preventDefault(),
+    );
   };
 
   const syllableBorder: React.CSSProperties = {};
@@ -119,6 +167,7 @@ const WordBlock: React.FC<WordBlockProps> = ({
       className={cn(
         "absolute top-1 bottom-1 flex items-center justify-center",
         "text-xs text-white truncate select-none cursor-grab",
+        isMobileGestureMode ? "touch-none" : "touch-manipulation",
         "border transition-opacity duration-100",
         SYLLABLE_RADIUS[syllablePosition],
         isDimmed && "opacity-30",
@@ -131,7 +180,13 @@ const WordBlock: React.FC<WordBlockProps> = ({
         width,
         backgroundColor: isSelected ? `${color}60` : `${color}40`,
         borderColor: isSelected ? `${color}B0` : `${color}70`,
+        WebkitTouchCallout: isMobileGestureMode ? "none" : undefined,
         ...syllableBorder,
+      }}
+      onContextMenuCapture={(e) => {
+        if (!isMobileGestureMode) return;
+        e.preventDefault();
+        e.stopPropagation();
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -160,14 +215,16 @@ const WordBlock: React.FC<WordBlockProps> = ({
         aria-orientation="vertical"
         aria-hidden="true"
         className={cn(
-          "absolute left-0 top-0 bottom-0 w-2 z-10 hover:bg-white/10",
+          "absolute left-0 top-0 bottom-0 z-10 hover:bg-white/10 touch-none",
           syllablePosition === "middle" || syllablePosition === "last" || leftConjoined
             ? "cursor-col-resize"
             : "cursor-ew-resize",
           leftHighlighted && "bg-white/10",
         )}
-        onMouseDown={handleResizeStart}
-        onPointerDown={(e) => e.stopPropagation()}
+        style={{ width: edgeHandleWidth }}
+        onPointerDown={handleResizePointerStart}
+        onTouchStartCapture={handleResizeTouchStartCapture}
+        onMouseDownCapture={handleResizeMouseDownCapture}
         onMouseEnter={() => onEdgeHover?.("left", true)}
         onMouseLeave={() => onEdgeHover?.("left", false)}
       />
@@ -180,14 +237,16 @@ const WordBlock: React.FC<WordBlockProps> = ({
         aria-orientation="vertical"
         aria-hidden="true"
         className={cn(
-          "absolute right-0 top-0 bottom-0 w-2 z-10 hover:bg-white/10",
+          "absolute right-0 top-0 bottom-0 z-10 hover:bg-white/10 touch-none",
           syllablePosition === "first" || syllablePosition === "middle" || rightConjoined
             ? "cursor-col-resize"
             : "cursor-ew-resize",
           rightHighlighted && "bg-white/10",
         )}
-        onMouseDown={handleResizeStart}
-        onPointerDown={(e) => e.stopPropagation()}
+        style={{ width: edgeHandleWidth }}
+        onPointerDown={handleResizePointerStart}
+        onTouchStartCapture={handleResizeTouchStartCapture}
+        onMouseDownCapture={handleResizeMouseDownCapture}
         onMouseEnter={() => onEdgeHover?.("right", true)}
         onMouseLeave={() => onEdgeHover?.("right", false)}
       />

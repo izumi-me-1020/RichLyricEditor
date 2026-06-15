@@ -32,7 +32,10 @@ interface SettingsModalProps {
 
 // -- Section Map --------------------------------------------------------------
 
-const SECTION_CONTENT: Record<string, React.FC<{ onResetTour: () => void; onClose: () => void }>> = {
+const SECTION_CONTENT: Record<
+  string,
+  React.FC<{ onResetTour: () => void; onClose: () => void }>
+> = {
   playback: PlaybackSection,
   timeline: TimelineSection,
   sync: SyncSection,
@@ -45,7 +48,11 @@ const SECTION_CONTENT: Record<string, React.FC<{ onResetTour: () => void; onClos
 
 // -- Settings Modal -----------------------------------------------------------
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onResetTour }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  isOpen,
+  onClose,
+  onResetTour,
+}) => {
   const [activeSection, setActiveSection] = useState("general");
   const settingsHighlight = useUIStore((s) => s.settingsHighlight);
 

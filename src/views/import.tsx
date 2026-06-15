@@ -167,10 +167,12 @@ const ImportPanel: React.FC = () => {
               <p className="text-xs text-composer-text-muted">{extension}</p>
             </div>
 
-            <SourceDuration loading={isLoading} duration={duration} />
+            <div className="hidden md:flex items-center gap-4">
+              <SourceDuration loading={isLoading} duration={duration} />
 
-            <div className="text-sm text-composer-text-muted">
-              {formatFileSize(file.size)}
+              <div className="text-sm text-composer-text-muted">
+                {formatFileSize(file.size)}
+              </div>
             </div>
           </div>
         </div>

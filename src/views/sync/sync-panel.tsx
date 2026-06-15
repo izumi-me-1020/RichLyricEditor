@@ -81,6 +81,7 @@ const SyncPanel: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const heldKeyCodeRef = useRef<string | null>(null);
+  const holdPointerIdRef = useRef<number | null>(null);
 
   const linesRef = useRef(lines);
   linesRef.current = lines;
@@ -266,6 +267,54 @@ const SyncPanel: React.FC = () => {
     return currentLine.words[currentLine.words.length - 1]?.begin;
   }, [granularity, currentLine?.words, prevLine?.words, prevLine?.begin]);
 
+  const triggerTapSync = useCallback(() => {
+    if (editMode) return;
+    if (isHolding && isPlaying) {
+      handleHoldTap();
+    } else if (!syncState.isActive && lines.length > 0) {
+      handleStartSync();
+    } else if (isPlaying) {
+      handleTap();
+    }
+  }, [
+    editMode,
+    isHolding,
+    isPlaying,
+    handleHoldTap,
+    syncState.isActive,
+    lines.length,
+    handleStartSync,
+    handleTap,
+  ]);
+
+  const triggerHoldSyncStart = useCallback(() => {
+    if (editMode) return false;
+    if (!syncState.isActive && lines.length > 0) {
+      handleStartSync();
+      handleHoldStart();
+      setIsHolding(true);
+      return true;
+    }
+    if (isPlaying) {
+      handleHoldStart();
+      setIsHolding(true);
+      return true;
+    }
+    return false;
+  }, [
+    editMode,
+    syncState.isActive,
+    lines.length,
+    handleStartSync,
+    handleHoldStart,
+    isPlaying,
+  ]);
+
+  const triggerHoldSyncEnd = useCallback(() => {
+    handleHoldEnd();
+    setIsHolding(false);
+  }, [handleHoldEnd]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeTab !== "sync") return;
@@ -289,27 +338,12 @@ const SyncPanel: React.FC = () => {
       switch (matched) {
         case "sync.tap":
           e.preventDefault();
-          if (editMode) return;
-          if (isHolding && isPlaying) {
-            handleHoldTap();
-          } else if (!syncState.isActive && lines.length > 0) {
-            handleStartSync();
-          } else if (isPlaying) {
-            handleTap();
-          }
+          triggerTapSync();
           break;
         case "sync.holdSync":
           e.preventDefault();
-          if (editMode) return;
           heldKeyCodeRef.current = e.code;
-          if (!syncState.isActive && lines.length > 0) {
-            handleStartSync();
-            handleHoldStart();
-            setIsHolding(true);
-          } else if (isPlaying) {
-            handleHoldStart();
-            setIsHolding(true);
-          }
+          if (!triggerHoldSyncStart()) heldKeyCodeRef.current = null;
           break;
         case "sync.nudgeLeft":
           e.preventDefault();
@@ -329,16 +363,15 @@ const SyncPanel: React.FC = () => {
       if (e.code === heldKeyCodeRef.current) {
         e.preventDefault();
         heldKeyCodeRef.current = null;
-        handleHoldEnd();
-        setIsHolding(false);
+        triggerHoldSyncEnd();
       }
     };
 
     const handleBlur = () => {
       if (isHolding) {
         heldKeyCodeRef.current = null;
-        handleHoldEnd();
-        setIsHolding(false);
+        holdPointerIdRef.current = null;
+        triggerHoldSyncEnd();
       }
     };
 
@@ -354,11 +387,9 @@ const SyncPanel: React.FC = () => {
     activeTab,
     syncState.isActive,
     lines.length,
-    handleStartSync,
-    handleTap,
-    handleHoldStart,
-    handleHoldEnd,
-    handleHoldTap,
+    triggerTapSync,
+    triggerHoldSyncStart,
+    triggerHoldSyncEnd,
     isPlaying,
     undo,
     redo,
@@ -366,6 +397,33 @@ const SyncPanel: React.FC = () => {
     editMode,
     isHolding,
   ]);
+
+  const handleHoldButtonPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      if (holdPointerIdRef.current !== null) return;
+      if (!triggerHoldSyncStart()) return;
+      holdPointerIdRef.current = e.pointerId;
+    },
+    [triggerHoldSyncStart],
+  );
+
+  const handleHoldButtonPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      if (holdPointerIdRef.current !== e.pointerId) return;
+      holdPointerIdRef.current = null;
+      if (isHolding) triggerHoldSyncEnd();
+    },
+    [isHolding, triggerHoldSyncEnd],
+  );
+
+  const handleHoldButtonPointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      if (holdPointerIdRef.current !== e.pointerId) return;
+      holdPointerIdRef.current = null;
+      if (isHolding) triggerHoldSyncEnd();
+    },
+    [isHolding, triggerHoldSyncEnd],
+  );
 
   const showScrollableView = !isPlaying || editMode;
 
@@ -397,7 +455,7 @@ const SyncPanel: React.FC = () => {
       className="flex flex-col flex-1 overflow-hidden select-none"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-composer-border flex-col md:flex-row gap-4 md:gap-0">
         <div className="flex items-baseline gap-3">
           <h2 className="text-lg font-medium">{t("")}</h2>
           <span className="font-mono text-sm text-composer-text-muted tabular-nums">
@@ -575,54 +633,65 @@ const SyncPanel: React.FC = () => {
       )}
 
       {/* Bottom panel */}
-      <div className="px-6 py-4 border-t border-composer-border bg-composer-bg-dark">
-        <div className="flex items-center justify-between h-14">
+      <div className="px-4 py-3 md:px-6 md:py-4 border-t border-composer-border bg-composer-bg-dark">
+        <div className="flex min-h-14 flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <TimingDisplay lastSyncedTime={lastSyncedTime} />
 
           {!isComplete && isPlaying && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
               {currentWord && (
-                <span className="text-xl font-medium text-composer-text">
+                <span className="text-[clamp(1rem,4vw,1.25rem)] font-medium text-composer-text break-words text-center">
                   {currentWord}
                 </span>
               )}
-              <div className="flex items-center gap-2">
-                <m.div
+
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <m.button
+                  type="button"
+                  aria-label={t("Hold sync")}
+                  onPointerDown={handleHoldButtonPointerDown}
+                  onPointerUp={handleHoldButtonPointerUp}
+                  onPointerCancel={handleHoldButtonPointerCancel}
+                  onPointerLeave={handleHoldButtonPointerCancel}
                   variants={syncPulseVariants}
                   initial={false}
                   animate={isHolding ? "pulse" : "idle"}
                   transition={syncCarouselTransition}
-                  className={`flex items-center justify-center border-2 rounded-full size-14 ${
+                  className={`flex size-12 md:size-14 h-20 items-center justify-center rounded-md md:rounded-full border-2 flex-1 touch-manipulation cursor-pointer ${
                     isHolding
                       ? "bg-composer-accent/20 border-composer-accent"
                       : "bg-composer-bg-elevated"
                   }`}
                 >
-                  <span className="text-xs font-medium text-composer-text-muted">
+                  <span className="text-[10px] md:text-xs font-medium text-composer-text-muted">
                     {getEffectiveKeysArray("sync.holdSync")
                       .map((k) => k.toUpperCase())
                       .join(" ")}
                   </span>
-                </m.div>
-                <m.div
+                </m.button>
+
+                <m.button
+                  type="button"
+                  aria-label={t("Tap sync")}
+                  onClick={triggerTapSync}
                   variants={syncPulseVariants}
                   initial={false}
                   animate={showPulse ? "pulse" : "idle"}
                   transition={syncCarouselTransition}
-                  className="flex items-center justify-center border-2 rounded-full size-14 bg-composer-bg-elevated"
+                  className="flex size-12 md:size-14 h-20 items-center justify-center rounded-md md:rounded-full border-2 flex-1 bg-composer-bg-elevated touch-manipulation cursor-pointer"
                 >
-                  <span className="text-xs font-medium text-composer-text-muted">
+                  <span className="text-[10px] md:text-xs font-medium text-composer-text-muted">
                     {getEffectiveKeysArray("sync.tap")
                       .map((k) => k.toUpperCase())
                       .join(" ")}
                   </span>
-                </m.div>
+                </m.button>
               </div>
             </div>
           )}
 
           {!isComplete && !isPlaying && syncState.isActive && (
-            <div className="text-sm text-composer-text-muted">
+            <div className="text-xs md:text-sm text-composer-text-muted text-center">
               {t("Paused ・ Click a line to jump, or play to continue")}
             </div>
           )}

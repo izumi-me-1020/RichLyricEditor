@@ -8,6 +8,7 @@ import { useTimelineStore } from "@/views/timeline/timeline-store";
 import { createAudioFile } from "@/test/audio-fixtures";
 import { createLine, createWord } from "@/test/factories";
 import { render } from "@/test/render";
+import { afterEach, beforeEach } from "vitest";
 
 // -- Helpers ------------------------------------------------------------------
 
@@ -59,6 +60,16 @@ function dispatchWheel(
 }
 
 describe("TimelinePanel", () => {
+  const originalMatchMedia = window.matchMedia;
+
+  beforeEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
   it("shows the audio drop zone when no source is loaded", async () => {
     useAudioStore.setState({ source: null });
     useProjectStore.setState({ lines: [] });
@@ -73,6 +84,35 @@ describe("TimelinePanel", () => {
     });
     const screen = await render(<TimelinePanel />);
     await expect.element(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
+  });
+
+  it("shows mobile selection actions when a word is selected on a mobile viewport", async () => {
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: query === "(max-width: 767px) and (pointer: coarse)",
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList) as typeof window.matchMedia;
+
+    const line = createLine({
+      id: "line-mobile",
+      text: "first lyric",
+      words: [createWord({ text: "first", begin: 0, end: 1 })],
+    });
+    useAudioStore.setState({ source: { type: "file", file: createAudioFile() }, duration: 30 });
+    useProjectStore.setState({ lines: [line] });
+    useTimelineStore.setState({
+      selectedWords: [{ lineId: line.id, lineIndex: 0, wordIndex: 0, type: "word" }],
+    });
+
+    const screen = await render(<TimelinePanel />);
+    await expect.element(screen.getByRole("button", { name: "Select all" })).toBeInTheDocument();
+    await expect.element(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
   });
 });
 
