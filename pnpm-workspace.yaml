@@ -1,5 +1,22 @@
+packages:
+  - .
+
 allowBuilds:
-  '@biomejs/biome': set this to true or false
-  esbuild: set this to true or false
-  protobufjs: set this to true or false
-  sharp: set this to true or false
+  '@biomejs/biome': true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+
+onlyBuiltDependencies:
+  - "@biomejs/biome"
+  - esbuild
+  - protobufjs
+  - sharp
+
+overrides:
+  "@braccato/parsers": "^0.1.2"
+
+peerDependencyRules:
+  allowedVersions:
+    react-helmet-async>react: "19"
+    react-helmet-async>react-dom: "19"
