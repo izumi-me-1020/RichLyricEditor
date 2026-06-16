@@ -61,10 +61,11 @@ const ExplicitSuggestionsBanner: React.FC = () => {
       iconClass="text-composer-warning"
       accentClass="bg-composer-warning/8"
       modalTitle={t("Explicit-word suggestions")}
-      multiText={(count) => {
-        (t("Found {{count}} possibly explicit words across your lyrics"),
-          { count });
-      }}
+      multiText={(count) =>
+        t("Found {{count}} possibly explicit words across your lyrics", {
+          count,
+        })
+      }
       modalCountText={(count) =>
         t("{{count}} possibly explicit words detected", {
           count,

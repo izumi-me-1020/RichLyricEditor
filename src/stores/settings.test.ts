@@ -13,20 +13,23 @@ describe("preview renderer settings", () => {
     useSettingsStore.setState({ ...DEFAULTS });
   });
 
-  it("defaults YouTube imports to the RichLyricEditor Bridge", () => {
-    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(true);
+  it("defaults YouTube imports to cobalt with the local bridge URL unset by toggle", () => {
+    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(false);
     expect(useSettingsStore.getState().composerBridgeUrl).toBe(
-      "https://composer-bridge.izumy.me/",
+      "http://localhost:7777",
     );
   });
 
   it("resetToDefaults restores the bridge defaults", () => {
-    useSettingsStore.getState().set("composerBridgeUrl", "http://localhost:7777");
-    useSettingsStore.getState().set("experiments", { youtubeBridge: false });
-    useSettingsStore.getState().resetToDefaults();
-    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(true);
-    expect(useSettingsStore.getState().composerBridgeUrl).toBe(
+    useSettingsStore.getState().set(
+      "composerBridgeUrl",
       "https://composer-bridge.izumy.me/",
+    );
+    useSettingsStore.getState().set("experiments", { youtubeBridge: true });
+    useSettingsStore.getState().resetToDefaults();
+    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(false);
+    expect(useSettingsStore.getState().composerBridgeUrl).toBe(
+      "http://localhost:7777",
     );
   });
 

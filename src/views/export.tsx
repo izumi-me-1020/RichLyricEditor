@@ -27,7 +27,7 @@ import { Highlight, themes } from "prism-react-renderer";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { t } from "i18next";
 import { Popover } from "@/ui/popover";
-import { Settings, FileUp, Send } from "lucide-react";
+import { Settings, FileUp } from "lucide-react";
 
 // -- Components ---------------------------------------------------------------
 

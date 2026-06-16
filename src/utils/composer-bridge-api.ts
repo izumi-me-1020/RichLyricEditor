@@ -3,7 +3,7 @@
 // See `experiments/composer-bridge/README.md` for what the binary is.
 import { t } from "@/language/i18n";
 
-const DEFAULT_BRIDGE_URL = "https://composer-bridge.izumy.me/";
+const DEFAULT_BRIDGE_URL = "http://localhost:7777";
 const HEALTH_QUERY_KEY = "composer-bridge-health";
 const HEALTH_TIMEOUT_MS = 1500;
 const AUDIO_TIMEOUT_MS = 5 * 60 * 1000;
