@@ -13,6 +13,23 @@ describe("preview renderer settings", () => {
     useSettingsStore.setState({ ...DEFAULTS });
   });
 
+  it("defaults YouTube imports to the RichLyricEditor Bridge", () => {
+    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(true);
+    expect(useSettingsStore.getState().composerBridgeUrl).toBe(
+      "https://composer-bridge.izumy.me/",
+    );
+  });
+
+  it("resetToDefaults restores the bridge defaults", () => {
+    useSettingsStore.getState().set("composerBridgeUrl", "http://localhost:7777");
+    useSettingsStore.getState().set("experiments", { youtubeBridge: false });
+    useSettingsStore.getState().resetToDefaults();
+    expect(useSettingsStore.getState().experiments.youtubeBridge).toBe(true);
+    expect(useSettingsStore.getState().composerBridgeUrl).toBe(
+      "https://composer-bridge.izumy.me/",
+    );
+  });
+
   it("defaults language to auto detection", () => {
     expect(useSettingsStore.getState().language).toBe("auto");
   });

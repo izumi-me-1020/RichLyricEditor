@@ -55,6 +55,19 @@ interface FakeBridge {
 
 let bridge: FakeBridge;
 
+interface FakeCobaltEntry {
+  tunnelUrl: string;
+  filename?: string;
+}
+
+interface FakeCobalt {
+  audio: Map<string, FakeCobaltEntry>;
+  tunnelBytes: Map<string, ArrayBuffer>;
+  standardCalls: string[];
+}
+
+let cobalt: FakeCobalt;
+
 function asBytes(text: string): ArrayBuffer {
   return new TextEncoder().encode(text).buffer;
 }
@@ -65,6 +78,11 @@ beforeEach(() => {
     thumb: new Map(),
     audioCalls: [],
     thumbCalls: [],
+  };
+  cobalt = {
+    audio: new Map(),
+    tunnelBytes: new Map(),
+    standardCalls: [],
   };
 
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -112,6 +130,34 @@ beforeEach(() => {
         });
       }
       return new Response(entry.bytes, { headers: { "content-type": "image/png" } });
+    }
+
+    if (url === "https://cobalt.example.com/" && init?.method === "POST") {
+      const body = JSON.parse(String(init.body)) as { url?: string };
+      const videoId = body.url?.match(/[?&]v=([A-Za-z0-9_-]+)/)?.[1];
+      if (!videoId) return new Response(JSON.stringify({ status: "error" }), { status: 400 });
+      cobalt.standardCalls.push(videoId);
+      const entry = cobalt.audio.get(videoId);
+      if (!entry) {
+        return new Response(
+          JSON.stringify({ status: "error", error: { code: "youtube.bot" } }),
+          { headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          status: "tunnel",
+          url: entry.tunnelUrl,
+          filename: entry.filename,
+        }),
+        { headers: { "content-type": "application/json" } },
+      );
+    }
+
+    if (url.startsWith("https://cobalt.example.com/tunnel/")) {
+      const bytes = cobalt.tunnelBytes.get(url);
+      if (!bytes) return new Response(null, { status: 502 });
+      return new Response(bytes, { headers: { "content-type": "audio/ogg" } });
     }
 
     return new Response(null, { status: 404 });
@@ -271,6 +317,27 @@ describe("useResolveYouTubeTunnel — file format", () => {
     const file = (useAudioStore.getState().source as { file: File }).file;
     expect(file.name).toBe("dQw4w9WgXcQ.m4a");
     expect(file.type).toBe("audio/mp4");
+  });
+});
+
+describe("useResolveYouTubeTunnel — cobalt errors", () => {
+  it("surfaces a friendly message when bridge fails and the default cobalt fallback needs Turnstile config", async () => {
+    useSettingsStore.setState({
+      experiments: { youtubeBridge: false },
+      selectedCobaltInstanceId: "default",
+      cobaltInstances: [],
+    });
+
+    useAudioStore.getState().setYouTubeSource("dQw4w9WgXcQ");
+    await render(withQueryClient(<HookHost />));
+
+    await waitFor(() => useAudioStore.getState().youtubeLoadError !== null);
+    expect(useAudioStore.getState().youtubeLoadError).toContain(
+      "Start ComposerBridge from Settings",
+    );
+    expect(useAudioStore.getState().youtubeLoadError).not.toContain(
+      "VITE_TURNSTILE_SITEKEY",
+    );
   });
 });
 

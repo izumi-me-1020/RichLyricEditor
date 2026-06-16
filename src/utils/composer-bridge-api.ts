@@ -1,8 +1,9 @@
 // HTTP client for the optional companion `composer-bridge` Go binary that
 // users run locally to extract YouTube audio through their residential IP.
 // See `experiments/composer-bridge/README.md` for what the binary is.
+import { t } from "@/language/i18n";
 
-const DEFAULT_BRIDGE_URL = "http://localhost:7777";
+const DEFAULT_BRIDGE_URL = "https://composer-bridge.izumy.me/";
 const HEALTH_QUERY_KEY = "composer-bridge-health";
 const HEALTH_TIMEOUT_MS = 1500;
 const AUDIO_TIMEOUT_MS = 5 * 60 * 1000;
@@ -189,20 +190,43 @@ function buildBridgeAudioFile(
   });
 }
 
-function formatBridgeErrorForToast(err: unknown): string {
+interface BridgeToastOptions {
+  preferDesktopInstall?: boolean;
+}
+
+function formatBridgeErrorForToast(
+  err: unknown,
+  options: BridgeToastOptions = {},
+): string {
+  if (options.preferDesktopInstall) {
+    return t(
+      "パソコンでは Composer Bridge をインストールして起動してください。Settings → Advanced から設定できます。",
+    );
+  }
   if (err instanceof BridgeError) {
     switch (err.code) {
       case "unreachable":
-        return "RichLyricEditor Bridge is not running. Start the bridge or disable the YouTube Bridge setting.";
+        return t(
+          "Couldn't fetch YouTube audio with yt-dlp. Start ComposerBridge from Settings → Advanced and try again.",
+        );
       case "timeout":
-        return "RichLyricEditor Bridge timed out. Check that the bridge process is healthy.";
+        return t(
+          "yt-dlp timed out while fetching YouTube audio. Check ComposerBridge, then try again.",
+        );
       case "empty":
-        return "Bridge returned no audio. Try a different video.";
+        return t(
+          "yt-dlp returned no audio for this video. Start ComposerBridge from Settings → Advanced and try again.",
+        );
       case "http":
-        return `Bridge error (HTTP ${err.status ?? "unknown"}). Check the bridge console for details.`;
+        return t(
+          "ComposerBridge failed to fetch YouTube audio (HTTP {{status}}). Check the bridge console, then try again.",
+          { status: err.status ?? "unknown" },
+        );
     }
   }
-  return "RichLyricEditor Bridge failed for an unknown reason.";
+  return t(
+    "Couldn't fetch YouTube audio with yt-dlp. Start ComposerBridge from Settings → Advanced and try again.",
+  );
 }
 
 export {

@@ -147,7 +147,7 @@ const DEFAULTS: SettingsState = {
   selectedCobaltInstanceId: DEFAULT_COBALT_INSTANCE_ID,
   cobaltInstanceStatus: {},
 
-  experiments: { youtubeBridge: false },
+  experiments: { youtubeBridge: true },
   composerBridgeUrl: DEFAULT_BRIDGE_URL,
   language: "auto",
 };
@@ -197,8 +197,6 @@ const useSettingsStore = create<SettingsState & SettingsActions>()(
           cobaltInstances: state.cobaltInstances,
           selectedCobaltInstanceId: state.selectedCobaltInstanceId,
           cobaltInstanceStatus: state.cobaltInstanceStatus,
-          experiments: state.experiments,
-          composerBridgeUrl: state.composerBridgeUrl,
         })),
       addCobaltInstance: (instance) =>
         set((state) => {

@@ -22,10 +22,14 @@ import {
 } from "@/utils/cobalt-api";
 import {
   BridgeError,
+  DEFAULT_BRIDGE_URL,
   buildBridgeAudioFile,
   formatBridgeErrorForToast,
   getAudioFromBridge,
+  normalizeBaseUrl,
 } from "@/utils/composer-bridge-api";
+import { t } from "@/language/i18n";
+import { isDesktopOperatingSystem } from "@/utils/device";
 
 // -- Constants ----------------------------------------------------------------
 
@@ -33,6 +37,8 @@ const LOG_PREFIX = "[YouTubeTunnel]";
 const AUDIO_MIME = "audio/ogg";
 const BRIDGE_INSTANCE_ID = "__composer_bridge__";
 const BRIDGE_INSTANCE_LABEL = "RichLyricEditor Bridge";
+const DEFAULT_COBALT_FALLBACK_UNAVAILABLE_MESSAGE =
+  "Couldn't use RichLyricEditor's default Cobalt fallback because Turnstile is not configured. Start ComposerBridge from Settings → Advanced, or select a custom Cobalt instance.";
 
 interface TunnelResult {
   file: File;
@@ -64,6 +70,10 @@ class TunnelError extends Error {
     this.instanceLabel = instanceLabel;
     this.wasDefault = wasDefault;
   }
+}
+
+function isMissingTurnstileSitekeyError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes("VITE_TURNSTILE_SITEKEY");
 }
 
 // -- Helpers ------------------------------------------------------------------
@@ -124,7 +134,15 @@ async function fetchViaCobalt(
     let tunnelUrl: string;
     let filename: string | undefined;
     if (wasDefault) {
-      const jwt = await ensureAuth();
+      let jwt: string;
+      try {
+        jwt = await ensureAuth();
+      } catch (err) {
+        if (isMissingTurnstileSitekeyError(err)) {
+          throw new Error(DEFAULT_COBALT_FALLBACK_UNAVAILABLE_MESSAGE);
+        }
+        throw err;
+      }
       if (signal.aborted) throw new DOMException("aborted", "AbortError");
       ({ tunnelUrl, filename } = await getAudio(videoId, jwt));
     } else {
@@ -253,9 +271,16 @@ function useResolveYouTubeTunnel(): void {
     const instanceLabel =
       tunnelErr?.instanceLabel ?? getActiveCobaltInstance().label;
     const wasDefault = tunnelErr?.wasDefault ?? isUsingDefaultCobaltInstance();
+    const preferDesktopBridgeInstall =
+      cause instanceof BridgeError &&
+      isDesktopOperatingSystem() &&
+      normalizeBaseUrl(useSettingsStore.getState().composerBridgeUrl) ===
+        normalizeBaseUrl(DEFAULT_BRIDGE_URL);
     const message =
       cause instanceof BridgeError
-        ? formatBridgeErrorForToast(cause)
+        ? formatBridgeErrorForToast(cause, {
+            preferDesktopInstall: preferDesktopBridgeInstall,
+          })
         : formatCobaltErrorForToast(cause, {
             isDefault: wasDefault,
             instanceLabel,
@@ -263,7 +288,7 @@ function useResolveYouTubeTunnel(): void {
     if (shouldShowBridgeCta(cause)) {
       toast.error(message, {
         action: {
-          label: "Try Bridge",
+          label: t("Try Bridge"),
           onClick: () => useUIStore.getState().openSettings("bridge-section"),
         },
       });

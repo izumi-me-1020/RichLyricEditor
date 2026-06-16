@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CobaltApiError,
+  GENERIC_YOUTUBE_AUDIO_ERROR,
   formatCobaltErrorForToast,
   mapError,
   parseStandardCobaltResponse,
@@ -37,6 +38,7 @@ describe("mapError - known codes", () => {
       "Session expired, refresh and try again",
     );
   });
+
 });
 
 describe("mapError - unknown codes", () => {
@@ -211,12 +213,12 @@ describe("formatCobaltErrorForToast", () => {
   const defaultCtx = { isDefault: true, instanceLabel: "RichLyricEditor" };
   const customCtx = { isDefault: false, instanceLabel: "Woof Monster" };
 
-  it("returns a generic message for non-CobaltApiError throwables", () => {
+  it("returns a useful fallback for non-CobaltApiError throwables", () => {
     expect(formatCobaltErrorForToast(new Error("boom"), defaultCtx)).toBe(
-      "Couldn't load YouTube audio.",
+      "boom",
     );
     expect(formatCobaltErrorForToast("nope", defaultCtx)).toBe(
-      "Couldn't load YouTube audio.",
+      GENERIC_YOUTUBE_AUDIO_ERROR,
     );
   });
 

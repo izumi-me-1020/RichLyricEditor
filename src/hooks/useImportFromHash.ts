@@ -10,6 +10,7 @@ import type { LyricLine } from "@/domain/line/model";
 import type { ProjectMetadata } from "@/domain/project/metadata";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { t } from "@/language/i18n";
 
 const IMPORT_HASH_PREFIX = "#import=";
 
@@ -66,7 +67,7 @@ function useImportFromHash(): void {
         const payload: unknown = JSON.parse(decoded);
         if (!isValidPayload(payload)) {
           console.error("[RichLyricEditor] Invalid import payload structure");
-          toast.error("Could not import converter result");
+          toast.error(t("Could not import converter result"));
           return;
         }
 
@@ -113,13 +114,13 @@ function useImportFromHash(): void {
           "",
           window.location.pathname + window.location.search,
         );
-        toast.success("Imported from converter");
+        toast.success(t("Imported from converter"));
       } catch (importError) {
         console.error(
           "[RichLyricEditor] Failed to import from hash",
           importError,
         );
-        toast.error("Could not import converter result");
+        toast.error(t("Could not import converter result"));
       } finally {
         markHashImportSettled();
       }

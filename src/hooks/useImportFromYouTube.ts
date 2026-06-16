@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useLoadYouTubeSource } from "@/hooks/useLoadYouTubeSource";
+import { t } from "@/language/i18n";
 import { getPersistenceSettled } from "@/lib/persistence-settled";
 import { useAudioStore } from "@/stores/audio";
 import { stripQueryParams } from "@/utils/url-params";
@@ -40,7 +41,7 @@ function useImportFromYouTube(): void {
     cleanYouTubeParamsFromUrl();
 
     if (!videoId) {
-      toast.error("That URL doesn't look like a valid YouTube video");
+      toast.error(t("That URL doesn't look like a valid YouTube video"));
       return;
     }
 

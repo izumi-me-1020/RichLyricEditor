@@ -37,7 +37,7 @@ const UploadSection: React.FC<UploadSectionProps> = ({
   const acceptFile = useCallback(
     (file: File) => {
       if (!ACCEPTED_EXTENSIONS.test(file.name)) {
-        toast.error(UNSUPPORTED_TYPE_MESSAGE);
+        toast.error(t(UNSUPPORTED_TYPE_MESSAGE));
         return;
       }
       void onFile(file);

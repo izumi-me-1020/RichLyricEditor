@@ -57,16 +57,12 @@ describe("decodeHeader", () => {
   });
 
   it("decodes percent-encoded UTF-8 (the fullwidth comma the bridge had to escape)", () => {
-    // 0xEF 0xBC 0x8C is the fullwidth comma. Regression: this was the actual
-    // mojibake the user hit ("Tylerï¼Œ..." in the original Latin-1 read).
     expect(decodeHeader("Tyler%EF%BC%8C%20The%20Creator")).toBe(
       "Tyler， The Creator",
     );
   });
 
   it("returns the raw string when decoding throws (malformed percent sequence)", () => {
-    // %ZZ is not valid hex; decodeURIComponent throws URIError. We expect the
-    // raw value back so the caller still gets *something* readable.
     expect(decodeHeader("bad%ZZencoding")).toBe("bad%ZZencoding");
   });
 
@@ -128,8 +124,6 @@ describe("extensionForBridgeMime", () => {
   });
 
   it("prefers opus over webm when both substrings are present (regression for the .m4a-mislabel bug)", () => {
-    // The bug had us labeling everything .m4a regardless of bytes. Confirm
-    // opus wins even when wrapped in a webm container hint.
     expect(extensionForBridgeMime("audio/webm; codecs=opus")).toBe("opus");
   });
 });
@@ -274,8 +268,6 @@ describe("composeAbortSignals", () => {
       composed.addEventListener("abort", handler);
       caller.abort();
       timeout.abort();
-      // The composed signal is a single AbortController under the hood; it
-      // fires "abort" exactly once even if both upstream signals fire.
       expect(handler).toHaveBeenCalledTimes(1);
     });
   });
@@ -318,33 +310,44 @@ describe("formatBridgeErrorForToast", () => {
     const msg = formatBridgeErrorForToast(
       new BridgeError("unreachable", "ECONNREFUSED"),
     );
-    expect(msg).toMatch(/RichLyricEditor Bridge is not running/);
+    expect(msg).toMatch(/Start ComposerBridge/);
   });
 
   it("returns a timeout message for 'timeout'", () => {
     const msg = formatBridgeErrorForToast(
       new BridgeError("timeout", "deadline exceeded"),
     );
-    expect(msg).toMatch(/timed out/);
+    expect(msg).toMatch(/yt-dlp timed out/);
   });
 
-  it("returns a 'try a different video' message for 'empty'", () => {
+  it("returns a bridge-start message for 'empty'", () => {
     const msg = formatBridgeErrorForToast(new BridgeError("empty", "no bytes"));
-    expect(msg).toMatch(/Try a different video/);
+    expect(msg).toMatch(/Start ComposerBridge/);
   });
 
   it("includes the HTTP status for 'http' errors", () => {
     const msg = formatBridgeErrorForToast(
       new BridgeError("http", "bad gateway", 502),
     );
-    expect(msg).toMatch(/502/);
+    expect(msg).toMatch(/HTTP 502/);
   });
 
-  it("returns 'unknown' for non-BridgeError exceptions", () => {
+  it("returns a bridge-start hint for non-BridgeError exceptions", () => {
     expect(formatBridgeErrorForToast(new Error("boom"))).toMatch(
-      /unknown reason/,
+      /Start ComposerBridge/,
     );
-    expect(formatBridgeErrorForToast("string error")).toMatch(/unknown reason/);
-    expect(formatBridgeErrorForToast(null)).toMatch(/unknown reason/);
+    expect(formatBridgeErrorForToast("string error")).toMatch(
+      /Start ComposerBridge/,
+    );
+    expect(formatBridgeErrorForToast(null)).toMatch(/Start ComposerBridge/);
+  });
+
+  it("returns a desktop install hint when requested", () => {
+    const msg = formatBridgeErrorForToast(
+      new BridgeError("unreachable", "ECONNREFUSED"),
+      { preferDesktopInstall: true },
+    );
+    expect(msg).toMatch(/Composer Bridge/);
+    expect(msg).toMatch(/インストール/);
   });
 });

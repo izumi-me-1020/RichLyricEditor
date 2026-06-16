@@ -1,4 +1,5 @@
 import { getActiveCobaltInstance } from "@/stores/settings";
+import { t } from "@/language/i18n";
 
 // -- Types --------------------------------------------------------------------
 
@@ -236,6 +237,9 @@ interface ToastErrorContext {
   instanceLabel: string;
 }
 
+const GENERIC_YOUTUBE_AUDIO_ERROR =
+  "Couldn't fetch YouTube audio. Try again or enable ComposerBridge from Settings → Advanced.";
+
 function switchSuffix(ctx: ToastErrorContext): string {
   return ctx.isDefault
     ? ""
@@ -246,7 +250,12 @@ function formatCobaltErrorForToast(
   err: unknown,
   ctx: ToastErrorContext,
 ): string {
-  if (!(err instanceof CobaltApiError)) return "Couldn't load YouTube audio.";
+  if (!(err instanceof CobaltApiError)) {
+    if (err instanceof Error && err.message.trim().length > 0) {
+      return err.message;
+    }
+    return t(GENERIC_YOUTUBE_AUDIO_ERROR);
+  }
 
   const { isDefault, instanceLabel } = ctx;
   const switchHint = switchSuffix(ctx);
@@ -254,65 +263,94 @@ function formatCobaltErrorForToast(
   switch (err.code) {
     case "empty_audio":
       return isDefault
-        ? "Couldn't extract audio for this video. Try again in a bit."
-        : `${instanceLabel} returned an empty file for this video.${switchHint}`;
+        ? t("Couldn't extract audio for this video. Try again in a bit.")
+        : t("{{instanceLabel}} returned an empty file for this video.{{switchHint}}", {
+            instanceLabel,
+            switchHint,
+          });
 
     case "bad_response":
-      return `${instanceLabel} sent a malformed response.${switchHint}`;
+      return t("{{instanceLabel}} sent a malformed response.{{switchHint}}", {
+        instanceLabel,
+        switchHint,
+      });
 
     case "cobalt_failed":
-      return `${instanceLabel} couldn't fetch the audio for this video.${switchHint}`;
+      return t("{{instanceLabel}} couldn't fetch the audio for this video.{{switchHint}}", {
+        instanceLabel,
+        switchHint,
+      });
 
     case "bot_detection":
       return isDefault
-        ? "YouTube is blocking RichLyricEditor's default Cobalt instance. Open Settings → Advanced, add a working instance from cobalt.directory, and switch to it."
-        : `YouTube is blocking ${instanceLabel} as a bot.${switchHint}`;
+        ? t(
+            "YouTube is blocking RichLyricEditor's default Cobalt instance. Open Settings → Advanced, add a working instance from cobalt.directory, and switch to it.",
+          )
+        : t("YouTube is blocking {{instanceLabel}} as a bot.{{switchHint}}", {
+            instanceLabel,
+            switchHint,
+          });
 
     case "geo_blocked":
       return isDefault
-        ? "This video isn't available in this region."
-        : `${instanceLabel} can't access this video in its region.${switchHint}`;
+        ? t("This video isn't available in this region.")
+        : t("{{instanceLabel}} can't access this video in its region.{{switchHint}}", {
+            instanceLabel,
+            switchHint,
+          });
 
     case "rate_limited":
       return isDefault
-        ? "Too many requests. Wait a minute and try again."
-        : `${instanceLabel} is rate-limiting you. Wait a minute or pick a different instance.`;
+        ? t("Too many requests. Wait a minute and try again.")
+        : t(
+            "{{instanceLabel}} is rate-limiting you. Wait a minute or pick a different instance.",
+            { instanceLabel },
+          );
 
     case "too_long":
       return isDefault
-        ? "This video is too long to import."
-        : `${instanceLabel} won't process videos this long.${switchHint}`;
+        ? t("This video is too long to import.")
+        : t("{{instanceLabel}} won't process videos this long.{{switchHint}}", {
+            instanceLabel,
+            switchHint,
+          });
 
     case "auth_required":
-      return `${instanceLabel} requires authentication that RichLyricEditor doesn't support.${switchHint}`;
+      return t(
+        "{{instanceLabel}} requires authentication that RichLyricEditor doesn't support.{{switchHint}}",
+        { instanceLabel, switchHint },
+      );
 
     case "invalid_origin":
-      return `${instanceLabel} doesn't allow requests from this site.${switchHint}`;
+      return t("{{instanceLabel}} doesn't allow requests from this site.{{switchHint}}", {
+        instanceLabel,
+        switchHint,
+      });
 
     case "video_unavailable":
-      return "YouTube marks this video as private, removed, or age-restricted.";
+      return t("YouTube marks this video as private, removed, or age-restricted.");
 
     case "picker_unsupported":
-      return "This URL returns multiple items, which RichLyricEditor can't import.";
+      return t("This URL returns multiple items, which RichLyricEditor can't import.");
 
     case "invalid_video_id":
-      return "That doesn't look like a valid YouTube video.";
+      return t("That doesn't look like a valid YouTube video.");
 
     case "network_error":
-      return "Network error. Check your connection and try again.";
+      return t("Network error. Check your connection and try again.");
 
     case "turnstile_failed":
-      return "Verification failed. Refresh the page and try again.";
+      return t("Verification failed. Refresh the page and try again.");
 
     case "turnstile_missing":
-      return "Verification didn't complete. Refresh the page.";
+      return t("Verification didn't complete. Refresh the page.");
 
     case "jwt_expired":
     case "jwt_invalid":
-      return "Your session expired. Refresh the page.";
+      return t("Your session expired. Refresh the page.");
 
     case "ip_mismatch":
-      return "Your network changed. Refresh the page to continue.";
+      return t("Your network changed. Refresh the page to continue.");
 
     default:
       return err.message;
@@ -323,6 +361,7 @@ function formatCobaltErrorForToast(
 
 export {
   CobaltApiError,
+  GENERIC_YOUTUBE_AUDIO_ERROR,
   formatCobaltErrorForToast,
   getAudio,
   getAudioFromStandardCobalt,

@@ -229,7 +229,7 @@ const LyricsImportModalShell: React.FC = () => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
     if (!ACCEPTED_EXTENSIONS.test(file.name)) {
-      toast.error(UNSUPPORTED_TYPE_MESSAGE);
+      toast.error(t(UNSUPPORTED_TYPE_MESSAGE));
       return;
     }
     setPendingFile(file);

@@ -5,15 +5,22 @@ import { useAudioStore } from "@/stores/audio";
 import { Button } from "@/ui/button";
 import { Popover } from "@/ui/popover";
 import { cn } from "@/utils/cn";
-import { IconCheck, type IconProps, IconLoader2, IconMicrophone, IconMusic, IconWaveSine } from "@tabler/icons-react";
+import {
+  IconCheck,
+  type IconProps,
+  IconLoader2,
+  IconMicrophone,
+  IconMusic,
+  IconWaveSine,
+} from "@tabler/icons-react";
 import { t } from "i18next";
 import { type ComponentType, useEffect } from "react";
 import type { Stem } from "@/audio/separation/types";
 
 const STEM_LABELS: Record<Stem, string> = {
-  original: t("Original"),
-  vocals: t("Vocals"),
-  instrumental: t("Instrumental"),
+  original: "Original",
+  vocals: "Vocals",
+  instrumental: "Instrumental",
 };
 
 const STEM_ICONS: Record<Stem, ComponentType<IconProps>> = {
@@ -44,7 +51,9 @@ const VocalSeparationDropdown: React.FC = () => {
   const availableStems = useSeparationStore((s) => s.availableStems);
   const modelCached = useSeparationStore((s) => s.modelCached);
   const hostingConfigured = useSeparationStore((s) => s.hostingConfigured);
-  const refreshModelCacheStatus = useSeparationStore((s) => s.refreshModelCacheStatus);
+  const refreshModelCacheStatus = useSeparationStore(
+    (s) => s.refreshModelCacheStatus,
+  );
 
   const variant = useSettingsStore((s) => s.vocalModelVariant);
   const descriptor = getModelDescriptor(variant);
@@ -63,9 +72,16 @@ const VocalSeparationDropdown: React.FC = () => {
   if (!hostingConfigured) return null;
   if (!source) return null;
 
-  const pct = progress.total > 0 ? Math.round((progress.loaded / progress.total) * 100) : 0;
-  const triggerLabel = status === "downloading" || status === "processing" ? `${pct}%` : STEM_LABELS[currentStem];
-  const triggerIconClass = "size-4 text-composer-text opacity-50 group-hover:opacity-100 transition-opacity";
+  const pct =
+    progress.total > 0
+      ? Math.round((progress.loaded / progress.total) * 100)
+      : 0;
+  const triggerLabel =
+    status === "downloading" || status === "processing"
+      ? `${pct}%`
+      : t(STEM_LABELS[currentStem]);
+  const triggerIconClass =
+    "size-4 text-composer-text opacity-50 group-hover:opacity-100 transition-opacity";
   const triggerIcon =
     status === "downloading" || status === "processing" ? (
       <IconLoader2 className={`${triggerIconClass} animate-spin`} />
@@ -117,7 +133,10 @@ const VocalSeparationDropdown: React.FC = () => {
                 title={t("Separating vocals…")}
                 detail={
                   progress.total > 0
-                    ? t("Chunk {{loaded}} of {{total}}", { loaded: progress.loaded, total: progress.total })
+                    ? t("Chunk {{loaded}} of {{total}}", {
+                        loaded: progress.loaded,
+                        total: progress.total,
+                      })
                     : t("Preparing…")
                 }
                 pct={pct}
@@ -152,7 +171,9 @@ const VocalSeparationDropdown: React.FC = () => {
             )}
 
             {status === "cancelled" && (
-              <p className="text-xs text-composer-text-muted">{t("Cancelled. Open again to retry.")}</p>
+              <p className="text-xs text-composer-text-muted">
+                {t("Cancelled. Open again to retry.")}
+              </p>
             )}
           </div>
         );
@@ -161,12 +182,12 @@ const VocalSeparationDropdown: React.FC = () => {
   );
 };
 
-const ProgressState: React.FC<{ title: string; detail: string; pct: number; onCancel: () => void }> = ({
-  title,
-  detail,
-  pct,
-  onCancel,
-}) => (
+const ProgressState: React.FC<{
+  title: string;
+  detail: string;
+  pct: number;
+  onCancel: () => void;
+}> = ({ title, detail, pct, onCancel }) => (
   <div className="flex flex-col gap-2 min-w-60">
     <p className="text-sm font-medium text-composer-text">{title}</p>
     <p className="text-xs text-composer-text-muted tabular-nums">{detail}</p>
@@ -185,7 +206,9 @@ const IdleNoModelState: React.FC<{
   onSeparate: () => void;
 }> = ({ approxMb, onDownload, onSeparate }) => (
   <div className="flex flex-col gap-2">
-    <p className="text-sm font-medium text-composer-text">{t("Vocal separation")}</p>
+    <p className="text-sm font-medium text-composer-text">
+      {t("Vocal separation")}
+    </p>
     <p className="text-xs text-composer-text-muted">
       {t(
         "Isolate the vocals or hear an instrumental version of this track. Requires a one-time ~{{approxMb}} MB model download.",
@@ -212,7 +235,9 @@ const IdleReadyState: React.FC<{
   const hasSeparated = availableStems.includes("vocals");
   return (
     <div className="flex flex-col gap-2 min-w-60">
-      <p className="text-sm font-medium text-composer-text">{t("Playback source")}</p>
+      <p className="text-sm font-medium text-composer-text">
+        {t("Playback source")}
+      </p>
       <div className="flex flex-col gap-0.5">
         {(["original", "vocals", "instrumental"] as Stem[]).map((stem) => {
           const enabled = stem === "original" || availableStems.includes(stem);
@@ -227,27 +252,39 @@ const IdleReadyState: React.FC<{
               className={cn(
                 "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-left text-composer-text transition-colors",
                 selected && "bg-composer-button font-medium",
-                !selected && enabled && "cursor-pointer hover:bg-composer-button",
+                !selected &&
+                  enabled &&
+                  "cursor-pointer hover:bg-composer-button",
                 !enabled && "cursor-not-allowed opacity-55",
               )}
             >
               <Icon
                 className={cn(
                   "size-4 shrink-0",
-                  selected ? "text-composer-accent-text" : "text-composer-text opacity-55",
+                  selected
+                    ? "text-composer-accent-text"
+                    : "text-composer-text opacity-55",
                 )}
               />
-              <span className="flex-1">{STEM_LABELS[stem]}</span>
+              <span className="flex-1">{t(STEM_LABELS[stem])}</span>
               <IconCheck
                 aria-hidden={!selected}
-                className={cn("size-3.5 text-composer-accent shrink-0", !selected && "invisible")}
+                className={cn(
+                  "size-3.5 text-composer-accent shrink-0",
+                  !selected && "invisible",
+                )}
               />
             </button>
           );
         })}
       </div>
       {!hasSeparated && (
-        <Button size="sm" variant="primary" onClick={onSeparate} className="mt-1">
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={onSeparate}
+          className="mt-1"
+        >
           {t("Separate now")}
         </Button>
       )}
@@ -255,13 +292,15 @@ const IdleReadyState: React.FC<{
   );
 };
 
-const ErrorState: React.FC<{ message: string; onRetry: () => void; onDismiss: () => void }> = ({
-  message,
-  onRetry,
-  onDismiss,
-}) => (
+const ErrorState: React.FC<{
+  message: string;
+  onRetry: () => void;
+  onDismiss: () => void;
+}> = ({ message, onRetry, onDismiss }) => (
   <div className="flex flex-col gap-2">
-    <p className="text-sm font-medium text-composer-text">{t("Vocal separation failed")}</p>
+    <p className="text-sm font-medium text-composer-text">
+      {t("Vocal separation failed")}
+    </p>
     <p className="text-xs text-composer-text-muted break-words">{message}</p>
     <div className="flex gap-2 pt-1 justify-end">
       <Button size="sm" variant="ghost" onClick={onDismiss}>
